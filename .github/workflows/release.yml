@@ -1,0 +1,157 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+  id-token: write    # for Sigstore keyless signing via OIDC
+  attestations: write # for GitHub artifact attestations
+
+jobs:
+  build:
+    name: Build & test
+    runs-on: ubuntu-latest
+    outputs:
+      digests: ${{ steps.hash.outputs.digests }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Test
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      - name: Pack tarball
+        run: |
+          mkdir -p release
+          npm pack --pack-destination release
+          mv release/*.tgz release/witseal-${GITHUB_REF_NAME}.tgz
+
+      - name: Generate SBOM (CycloneDX)
+        run: |
+          npx --yes @cyclonedx/cyclonedx-npm \
+            --output-file release/witseal-${GITHUB_REF_NAME}.cdx.json
+          ls -la release/
+
+      - name: Compute artifact digests
+        id: hash
+        run: |
+          cd release
+          # SHA-256 hashes for SLSA provenance
+          shasum -a 256 *.tgz *.cdx.json > SHA256SUMS
+          cat SHA256SUMS
+          DIGESTS=$(cat SHA256SUMS | base64 -w0)
+          echo "digests=$DIGESTS" >> "$GITHUB_OUTPUT"
+
+      - name: Upload release artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-artifacts
+          path: release/
+          retention-days: 7
+
+  sign:
+    name: Sigstore sign
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: write
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: release-artifacts
+          path: release/
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3
+
+      - name: Sign each artifact (keyless, OIDC, Rekor inclusion)
+        env:
+          COSIGN_EXPERIMENTAL: '1'
+        run: |
+          cd release
+          for artifact in *.tgz *.cdx.json; do
+            echo "Signing $artifact"
+            cosign sign-blob --yes \
+              --output-signature "${artifact}.sig" \
+              --output-certificate "${artifact}.crt" \
+              "$artifact"
+          done
+          ls -la
+
+      - name: Upload signed artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-signed
+          path: release/
+
+  provenance:
+    name: SLSA L2 provenance
+    needs: build
+    permissions:
+      actions: read
+      id-token: write
+      contents: write
+    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.0.0
+    with:
+      base64-subjects: ${{ needs.build.outputs.digests }}
+      upload-assets: true
+
+  publish-release:
+    name: Publish GitHub release
+    needs: [build, sign, provenance]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download signed artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: release-signed
+          path: release/
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            release/*.tgz
+            release/*.cdx.json
+            release/*.sig
+            release/*.crt
+            release/SHA256SUMS
+          generate_release_notes: true
+          body: |
+            ## Verification
+
+            All artifacts in this release are signed with Sigstore Cosign and
+            included in the public Rekor transparency log.
+
+            ```bash
+            cosign verify-blob \
+              --certificate-identity-regexp 'https://github.com/${{ github.repository }}/.+' \
+              --certificate-oidc-issuer 'https://token.actions.githubusercontent.com' \
+              --signature witseal-${{ github.ref_name }}.tgz.sig \
+              --certificate witseal-${{ github.ref_name }}.tgz.crt \
+              witseal-${{ github.ref_name }}.tgz
+            ```
+
+            See [SECURITY.md](SECURITY.md) for the full verification policy.

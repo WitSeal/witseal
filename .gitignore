@@ -1,0 +1,51 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build output
+dist/
+build/
+*.tsbuildinfo
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/launch.json
+*.swp
+*.swo
+*~
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Env files (never commit secrets)
+.env
+.env.local
+.env.*.local
+
+# WitSeal local data (developer-machine state)
+.witseal/
+*.witseal-state
+
+# Sigstore signing artifacts (generated during release)
+*.sig
+*.crt
+*.intoto.jsonl
+*.cdx.json
+SHA256SUMS
+
+# Release artifacts (built by CI)
+release/
+*.tar.gz
+*.zip
