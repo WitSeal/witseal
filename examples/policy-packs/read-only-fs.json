@@ -1,0 +1,35 @@
+{
+  "schema_version": "witseal.policy.v0.1",
+  "pack_id": "read-only-fs",
+  "version": "1.0.0",
+  "description": "Denies all file_write actions and shell commands that obviously modify the filesystem. Allows file reads and informational commands.",
+  "rules": [
+    {
+      "id": "deny-all-file-write",
+      "match": { "action_type": "file_write" },
+      "decision": "deny",
+      "reason": "read-only-fs pack: file_write actions are prohibited"
+    },
+    {
+      "id": "deny-mutation-shell",
+      "match": {
+        "any_of": [
+          { "command_matches": "^(rm|mv|cp|touch|mkdir|rmdir|ln)\\s" },
+          { "command_matches": "\\b(chmod|chown|chgrp)\\s" },
+          { "command_matches": "\\b(tee|truncate)\\s" },
+          { "command_matches": ">\\s*[^&]" },
+          { "command_matches": ">>\\s" }
+        ]
+      },
+      "decision": "deny",
+      "reason": "read-only-fs pack: shell command modifies the filesystem"
+    },
+    {
+      "id": "allow-file-read",
+      "match": { "action_type": "file_read" },
+      "decision": "allow",
+      "reason": "read-only-fs pack: reads are permitted"
+    }
+  ],
+  "default_decision": "allow"
+}
