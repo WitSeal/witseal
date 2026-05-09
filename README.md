@@ -55,15 +55,34 @@ For how WitSeal compares to other products in the space, see [`docs/competitive-
 
 ## Quick start
 
-> ⚠️ Phase 1 implementation in progress. The commands below describe the target Phase 1 surface; not all are functional yet.
+> ⚠️ Phase 1 pre-release. APIs and CLI surface are unstable until v1.0.
+
+<!-- ASCIICAST_PLACEHOLDER: replace this comment with the asciinema embed once recorded -->
+<!-- [![asciicast](https://asciinema.org/a/<id>.svg)](https://asciinema.org/a/<id>) -->
 
 ### Install
 
 ```bash
-npm install -g @witseal/cli   # planned
-# or
-brew install witseal          # planned
+npm install -g @witseal/cli
 ```
+
+### Verify the release before using (recommended)
+
+Every release is signed via [Sigstore Cosign](https://www.sigstore.dev/) using
+keyless OIDC signing through GitHub Actions, with inclusion in the public
+[Rekor transparency log](https://docs.sigstore.dev/rekor/overview/).
+
+```bash
+cosign verify-blob \
+  --certificate-identity-regexp 'https://github.com/WitSeal/witseal/.+' \
+  --certificate-oidc-issuer 'https://token.actions.githubusercontent.com' \
+  --signature witseal-v0.1.0-pre.tgz.sig \
+  --certificate witseal-v0.1.0-pre.tgz.crt \
+  witseal-v0.1.0-pre.tgz
+```
+
+The exact one-liner is published in each release's notes. See
+[`SECURITY.md`](./SECURITY.md) for the full verification policy.
 
 ### Hello, witness
 
@@ -165,21 +184,11 @@ These limitations are not weaknesses — they are honest scope boundaries. Phase
 
 ---
 
-## Status of integrations
+## Integrations
 
-Phase 1 wedge is **OpenCode**. Phase 7 expands to:
+Phase 1 wedge integrates with **OpenCode**. The adapter contract is documented in [`src/adapters/README.md`](./src/adapters/README.md) — external contributors who want to write an adapter for their preferred framework are welcome.
 
-| Framework | Status |
-|---|---|
-| OpenCode | in development (Phase 1) |
-| Claude Code | adapter sketched (Phase 1 stretch) |
-| Cursor | planned (Phase 7) |
-| Gemini CLI | planned (Phase 7) |
-| OpenAI Agents SDK | planned (Phase 7) |
-| LangGraph | planned (Phase 7) |
-| CrewAI | planned (Phase 7) |
-
-External contributors who want to write an adapter for their preferred framework are welcome — see `src/adapters/README.md`.
+Adapters for additional frameworks (Claude Code, Cursor, Gemini CLI, OpenAI Agents SDK, LangGraph, CrewAI) follow in subsequent phases as adapter SDK stabilizes.
 
 ---
 
@@ -197,30 +206,18 @@ Apache License 2.0 — see [`LICENSE`](./LICENSE).
 
 ---
 
-## Related projects
-
-WitSeal is the operational product wedge in a three-layer architecture:
-
-- **WitSeal** — operational runtime (this repo)
-- **PAI-TrustAgents** — category and ecosystem (deferred to month 18+)
-- **PAI-Kernel** — constitutional substrate (deferred to month 30+)
-
-The relationship: PAI-Kernel defines authority. WitSeal operationalizes authority.
-
-For the full strategic framework, see the founder's strategic document (private — request via security@witseal contact).
-
----
-
 ## Contributing
 
-WitSeal is in active early-stage development. The maintainers are looking for design partners — AI infra engineers, OSS maintainers, or AI security engineers actively running coding agents in production workflows. Open an issue with the `design-partner` label or email contact@witseal.
+WitSeal is in active early-stage development. We are recruiting 5 design partners — AI infra engineers, OSS maintainers, or AI security engineers running coding agents in production-relevant workflows. Open the [design partner inquiry template](https://github.com/WitSeal/witseal/issues/new?template=design-partner.yml).
 
-For code contributions, please:
+For code contributions, see [`CONTRIBUTING.md`](./CONTRIBUTING.md). In short:
 
-1. Read [`docs/STYLE.md`](./docs/STYLE.md) — vocabulary discipline matters
-2. Read the relevant ADR before changing core behavior
-3. Open an RFC for any change that affects schemas, the runtime pipeline, or the public CLI surface
-4. Run `npm test` and `npm run lint` before submitting
+1. Read [`STYLE.md`](./STYLE.md) — vocabulary discipline matters
+2. Read the relevant [ADR](./docs/adr/) before changing core behavior
+3. Open an [RFC](./docs/RFCS.md) for any change to schemas, cryptographic primitives, or CLI surface
+4. Run `npm test`, `npm run typecheck`, and `node scripts/style-check.mjs` before submitting
+
+Code is contributed under [Apache License 2.0](./LICENSE) with [DCO sign-off](https://developercertificate.org/) (`git commit -s`).
 
 ---
 
