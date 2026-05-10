@@ -120,6 +120,35 @@ launch).
 for Phase 1. If you'd like to pilot, see the
 [design partner inquiry template](https://github.com/WitSeal/witseal/issues/new?template=design-partner.yml).
 
+## How is this different from logging tools like Datadog, Splunk, or CloudWatch?
+
+Logs record what a system did, in a format optimized for diagnostics and
+search. WitSeal records actions in a format optimized for **evidence** —
+something a third party can verify, replay, and reason about cryptographically.
+
+Three concrete differences:
+
+- **Tamper-evidence.** Standard logs can be edited or truncated by anyone with
+  filesystem access; modification leaves no trace. WitSeal's hash chain breaks
+  at the exact point of any modification. A single changed byte is detectable.
+
+- **Pre-execution mediation.** WitSeal can deny an action *before* it runs,
+  based on a policy pack. Logging tools only describe what has already
+  happened. The wedge is being able to refuse silently dangerous actions, not
+  just observe them.
+
+- **Replay.** Given the WitSeal evidence chain alone, you can deterministically
+  reconstruct the action history. Standard logs let you reconstruct only what
+  was logged, in whatever format the logger chose, and only as accurately
+  as the logger captured.
+
+WitSeal does **not** replace your existing logging stack. It complements it
+specifically for actions taken by AI agents — the place where conventional
+logging tools were not designed to provide cryptographic guarantees.
+
+If you already have Datadog or Splunk, you keep them. WitSeal adds the
+evidence layer that those tools don't provide for agentic workflows.
+
 ## Can I try it without an AI agent?
 
 Yes. The 90-second [`hello-witness`](../examples/hello-witness/) walkthrough
