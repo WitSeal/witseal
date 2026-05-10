@@ -57,8 +57,7 @@ For how WitSeal compares to other products in the space, see [`docs/competitive-
 
 > ⚠️ Phase 1 pre-release. APIs and CLI surface are unstable until v1.0.
 
-<!-- ASCIICAST_PLACEHOLDER: replace this comment with the asciinema embed once recorded -->
-<!-- [![asciicast](https://asciinema.org/a/<id>.svg)](https://asciinema.org/a/<id>) -->
+[![asciicast](https://asciinema.org/a/927BuD568ai3Ff4q.svg)](https://asciinema.org/a/927BuD568ai3Ff4q)
 
 ### Install
 
