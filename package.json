@@ -22,7 +22,7 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
-    "witseal": "./dist/cli/index.js"
+    "witseal": "./dist/src/cli/index.js"
   },
   "files": [
     "dist/",
