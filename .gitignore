@@ -49,3 +49,7 @@ SHA256SUMS
 release/
 *.tar.gz
 *.zip
+
+# Local development artifacts
+evidence.json
+.witseal/
