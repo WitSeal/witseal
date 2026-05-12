@@ -58,7 +58,7 @@ jobs:
           echo "digests=$DIGESTS" >> "$GITHUB_OUTPUT"
 
       - name: Upload release artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: release-artifacts
           path: release/
@@ -96,7 +96,7 @@ jobs:
           ls -la
 
       - name: Upload signed artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: release-signed
           path: release/
