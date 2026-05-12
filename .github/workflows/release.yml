@@ -36,19 +36,17 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Publish to npm with provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          npm publish --access public --provenance
+
       - name: Pack tarball
         run: |
           mkdir -p release
           npm pack --pack-destination release
           mv release/*.tgz release/witseal-${GITHUB_REF_NAME}.tgz
-
-      - name: Publish to npm with provenance
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: |
-          npm publish release/witseal-${GITHUB_REF_NAME}.tgz \
-            --access public \
-            --provenance
 
       - name: Generate SBOM (CycloneDX)
         run: |
