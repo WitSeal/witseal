@@ -25,6 +25,7 @@ jobs:
         with:
           node-version: '22'
           cache: 'npm'
+          registry-url: 'https://registry.npmjs.org'
 
       - name: Install dependencies
         run: npm ci
@@ -40,6 +41,14 @@ jobs:
           mkdir -p release
           npm pack --pack-destination release
           mv release/*.tgz release/witseal-${GITHUB_REF_NAME}.tgz
+
+      - name: Publish to npm with provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          npm publish release/witseal-${GITHUB_REF_NAME}.tgz \
+            --access public \
+            --provenance
 
       - name: Generate SBOM (CycloneDX)
         run: |
@@ -152,6 +161,12 @@ jobs:
               --signature witseal-${{ github.ref_name }}.tgz.sig \
               --certificate witseal-${{ github.ref_name }}.tgz.crt \
               witseal-${{ github.ref_name }}.tgz
+            ```
+
+            The package is also published to npm with SLSA provenance:
+
+            ```bash
+            npm install -g @witseal/cli@${{ github.ref_name }}
             ```
 
             See [SECURITY.md](SECURITY.md) for the full verification policy.
