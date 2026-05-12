@@ -1,6 +1,6 @@
 {
   "name": "@witseal/cli",
-  "version": "0.1.0-pre",
+  "version": "0.1.0-pre.1",
   "description": "A witnessed execution runtime for AI agents.",
   "keywords": [
     "witnessed-execution",
