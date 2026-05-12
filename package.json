@@ -1,6 +1,6 @@
 {
   "name": "@witseal/cli",
-  "version": "0.1.0-pre.3",
+  "version": "0.1.0-pre.4",
   "description": "A witnessed execution runtime for AI agents.",
   "keywords": [
     "witnessed-execution",
@@ -14,7 +14,7 @@
   "bugs": "https://github.com/witseal/witseal/issues",
   "repository": {
     "type": "git",
-    "url": "https://github.com/witseal/witseal.git"
+    "url": "git+https://github.com/WitSeal/witseal.git"
   },
   "license": "Apache-2.0",
   "author": "WitSeal contributors",
