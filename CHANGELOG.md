@@ -8,6 +8,27 @@ Pre-1.0 versions: schemas and CLI surface are unstable. Minor versions may intro
 
 ## [Unreleased]
 
+## [0.1.0-rc.1] - TBD
+
+Phase 1 release-candidate draft for the WitSeal witnessed execution runtime.
+
+### Added
+
+- Phase 1 README coverage for Witness Mode and Gate Mode, with the claim
+  boundary called out for developer-facing use.
+- CLI entry point guidance for running an action with `witseal run`.
+- Execution evidence artifacts for witnessed actions: witness events, execution
+  receipts, and hash-chained evidence for verification within the documented
+  claim boundary.
+
+### Notes
+
+- Witness Mode witnesses actions and emits receipts beside the action path; it
+  does not make a permissioned-execution claim.
+- Gate Mode is the deny-by-default mode for policy-mediated execution through
+  the WitSeal pipeline.
+- `v0.1.0-rc.1` remains pre-`v1.0`; schemas and CLI surface may change.
+
 ## [0.1.0-pre] — 2026-05-12
 
 Initial pre-release of the WitSeal Phase 1 wedge: the witnessed CLI runtime that mediates AI-agent shell actions on a single developer machine.
@@ -47,4 +68,5 @@ Documented honestly in [`docs/threat-model.md`](docs/threat-model.md):
 All schemas at `v0.1`. Stabilization to `v1.0` targeted at end of Phase 5.
 
 [Unreleased]: https://github.com/WitSeal/witseal/compare/v0.1.0-pre...HEAD
+[0.1.0-rc.1]: https://github.com/WitSeal/witseal/releases/tag/v0.1.0-rc.1
 [0.1.0-pre]: https://github.com/WitSeal/witseal/releases/tag/v0.1.0-pre
