@@ -10,7 +10,9 @@ Date: 2026-05-08
 
 ## 1. Document Scope
 
-This document defines the runtime architecture for WitSeal Phase 1: the witnessed CLI runtime that wraps an AI coding agent's actions on a single developer machine.
+This document defines the runtime architecture for WitSeal Phase 1: the
+witnessed CLI runtime for AI coding agent actions on a single developer
+machine.
 
 **In scope:**
 - Runtime pipeline (intent → evidence)
@@ -27,11 +29,41 @@ This document defines the runtime architecture for WitSeal Phase 1: the witnesse
 
 This document is the architectural contract Phase 1 implementation must satisfy. Deviations require an RFC.
 
+### 1.1 Deployment Modes
+
+Phase 1 is one product with one receipt protocol, deployed in exactly two modes.
+The mode is selected on the single execution command:
+
+```bash
+witseal exec --mode witness|gate
+```
+
+- **Witness Mode** places WitSeal beside the agent's action path. WitSeal
+  observes the action, witnesses it, and emits an execution receipt without
+  blocking the agent's normal execution path.
+- **Gate Mode** places WitSeal in the agent's critical path. The full governed
+  pipeline runs: risk classification, policy evaluation, approval, controlled
+  execution, witness event, execution receipt, and hash-chain update. The
+  Gate-Mode pipeline is `deny-by-default`.
+
+Witness Mode and Gate Mode share the runtime pipeline, receipt protocol,
+evidence chain, schema relationships, and trust-boundary model below. The
+difference is WitSeal's position relative to the action path, and therefore
+whether the policy and approval gate is exercised. Phase 1 has no third
+deployment mode; in particular, it has no guard or sandbox-execution mode.
+
 ---
 
 ## 2. The Runtime Pipeline
 
-Every WitSeal-mediated action passes through this pipeline in this order. The order is canonical and must not change without an RFC.
+The diagram below is the full Gate-Mode pipeline. In Gate Mode, every
+WitSeal-mediated action passes through these stages in this order; the order is
+canonical and must not change without an RFC.
+
+Witness Mode uses the same product, runtime pipeline, and receipt protocol, but
+WitSeal is beside the agent's action path. It observes the action, witnesses it,
+and emits an execution receipt without exercising the policy and approval gate
+or blocking the action path.
 
 ```mermaid
 flowchart TD
@@ -67,7 +99,7 @@ flowchart TD
     classDef output fill:#e6f4ea,stroke:#137333,stroke-width:2px,color:#000
 ```
 
-**Invariants enforced by the pipeline:**
+**Invariants enforced by the Gate-Mode pipeline:**
 
 1. Every intent enters at step 1; intents cannot skip stages.
 2. A `deny` decision at step 2 short-circuits steps 3–6 but still emits a witness event at step 5.
@@ -76,13 +108,20 @@ flowchart TD
 5. Step 7 is atomic: the chain root either advances or does not. Partial advances are forbidden.
 6. The chain head is always reproducible from the event log — the chain is derived, not stored separately.
 
+The witness event, receipt, and hash-chain invariants remain evidence invariants
+in both deployment modes. The policy-decision and approval-gate invariants above
+are Gate-Mode invariants; Witness Mode makes no permissioned-execution claim.
+
 ---
 
 ## 3. State Machines
 
 ### 3.1 Execution State Machine
 
-Each action that enters WitSeal traverses one of these state machines to completion. Terminal states are bolded.
+This execution state machine is the full Gate-Mode path. Witness Mode still
+witnesses, receipts, and chains an observed action, but WitSeal is beside the
+action path and does not exercise this policy and approval gate before the
+action proceeds. Terminal states are bolded.
 
 ```mermaid
 stateDiagram-v2
@@ -139,7 +178,8 @@ stateDiagram-v2
 
 ### 3.2 Approval State Machine
 
-Triggered when policy evaluation produces `require-approval`. Runs to terminal state before execution may proceed.
+In Gate Mode, this state machine is triggered when policy evaluation produces
+`require-approval`. It runs to terminal state before execution may proceed.
 
 ```mermaid
 stateDiagram-v2
@@ -163,7 +203,8 @@ stateDiagram-v2
     end note
 ```
 
-**Default behavior on TIMED_OUT:** treated as REJECTED. This is the deny-by-default principle applied to approvals: silence is not consent.
+**Default behavior on TIMED_OUT:** treated as REJECTED. This is the Gate-Mode
+`deny-by-default` principle applied to approvals: silence is not consent.
 
 **ApprovalRecord schema (referenced by witness event):**
 
@@ -234,7 +275,9 @@ stateDiagram-v2
 
 - A FINALIZED receipt: "this is a structured record of an action."
 - A CHAINED receipt: "this action is part of WitSeal's evidence chain at chain head H."
-- A CHAINED receipt + chain head + classifier version + active policies at the time: "this action passed WitSeal Phase 1 evaluation under these specific rules."
+- In Gate Mode, a CHAINED receipt + chain head + classifier version + active
+  policies at the time: "this action passed WitSeal Phase 1 evaluation under
+  these specific rules."
 
 **What a Phase 1 receipt does NOT claim:**
 
@@ -310,19 +353,28 @@ flowchart TD
     classDef output fill:#d2e3fc,stroke:#1967d2,stroke-width:3px,color:#000
 ```
 
+The graph shows the full Gate-Mode pipeline relationships. Witness Mode uses the
+same execution receipt and evidence chain, without a policy decision or approval
+gate for the observed action.
+
 **Critical relationships:**
 
-- One intent → exactly one classified intent → exactly one policy decision.
-- One policy decision → zero or one approval record (zero if decision is allow or deny).
+- In Gate Mode, one intent → exactly one classified intent → exactly one policy decision.
+- In Gate Mode, one policy decision → zero or one approval record (zero if decision is allow or deny).
 - One execution → exactly one witness event → exactly one receipt.
 - One witness event references the previous event by hash; the chain is total-ordered.
-- One evidence package contains a contiguous range of witness events, their receipts, the policies in effect for that range, the classifier version, and the chain root at the start and end of the range.
+- In Gate Mode, one evidence package contains a contiguous range of witness
+  events, their receipts, the policies in effect for that range, the classifier
+  version, and the chain root at the start and end of the range.
 
 ---
 
 ## 5. Trust Boundaries
 
-WitSeal mediates across five trust boundaries. Each boundary has a specific attack surface, mediation strategy, and evidence claim.
+Phase 1 defines five trust boundaries. The boundary map is shared by both
+deployment modes. The mediation steps that put WitSeal in the critical path are
+Gate-Mode steps; in Witness Mode, WitSeal observes from beside the action path
+and does not claim to gate or permission the action.
 
 ```mermaid
 flowchart TD
@@ -366,7 +418,9 @@ flowchart TD
 
 **Trust assumption:** the agent's intent is **untrusted input**. The agent may have been prompt-injected, jailbroken, or simply wrong. WitSeal does not verify the agent's reasoning; it evaluates the proposed action.
 
-**Mediation:** WitSeal classifies and evaluates *what the agent proposes to do*, not *why it proposes it*. The classifier and policy engine are deterministic, version-pinned, and inspectable.
+**Mediation:** In Gate Mode, WitSeal classifies and evaluates *what the agent
+proposes to do*, not *why it proposes it*. The classifier and policy engine are
+deterministic, version-pinned, and inspectable.
 
 **Evidence claim:** "This is the action the agent proposed and the decision WitSeal made about it." WitSeal does **not** claim "the agent's intent was legitimate."
 
@@ -378,7 +432,10 @@ flowchart TD
 
 **Trust assumption:** the tool layer is host-native. WitSeal does not introspect what a shell command does after spawning it; it captures inputs and outputs at the boundary.
 
-**Mediation:** WitSeal owns the spawning / invocation. The agent does not directly invoke `child_process.exec`; it sends an intent to WitSeal which, after evaluation, invokes the tool layer with the exact captured arguments.
+**Mediation:** In Gate Mode, WitSeal owns the spawning / invocation. The agent
+does not directly invoke `child_process.exec`; it sends an intent to WitSeal
+which, after evaluation, invokes the tool layer with the exact captured
+arguments.
 
 **Evidence claim:** "This is the exact command/argument/payload that was passed to the tool layer, and this is what came back."
 
@@ -390,11 +447,17 @@ flowchart TD
 
 **Trust assumption:** the host shell is trusted to execute the command faithfully. WitSeal does not run inside a sandbox in Phase 1; it observes execution from outside.
 
-**Mediation:** WitSeal spawns subprocesses with explicit argv (no `sh -c "..."` string interpolation that obscures arguments), captures stdout/stderr, records exit code, and produces a stdout_hash and stderr_hash for the receipt.
+**Mediation:** In Gate Mode, WitSeal spawns subprocesses with explicit argv (no
+`sh -c "..."` string interpolation that obscures arguments), captures
+stdout/stderr, records exit code, and produces a stdout_hash and stderr_hash for
+the receipt.
 
 **Evidence claim:** "This subprocess was spawned with these exact arguments, exited with this code, and produced output with these content hashes."
 
-**Phase 1 limitation:** WitSeal does not prevent a malicious agent from achieving an effect through a shell command that is allowed by policy. Policy authoring is the responsibility of the user; WitSeal proves what was attempted and what happened.
+**Phase 1 limitation:** In Gate Mode, WitSeal does not prevent a malicious agent
+from achieving an effect through a shell command that is allowed by policy.
+Policy authoring is the responsibility of the user; WitSeal proves what was
+attempted and what happened.
 
 ### 5.4 Filesystem Boundary
 
@@ -402,7 +465,10 @@ flowchart TD
 
 **Trust assumption:** the host filesystem semantics are trusted. WitSeal does not interpose at the syscall layer in Phase 1.
 
-**Mediation:** filesystem operations performed *through* WitSeal's tool layer (e.g., a `write_file` action) are mediated and witnessed. Filesystem operations performed *by* an executed shell command are observed only via stdout/stderr capture and exit code.
+**Mediation:** In Gate Mode, filesystem operations performed *through* WitSeal's
+tool layer (e.g., a `write_file` action) are mediated and witnessed. Filesystem
+operations performed *by* an executed shell command are observed only via
+stdout/stderr capture and exit code.
 
 **Evidence claim:** "These specific file operations were performed through WitSeal." WitSeal does **not** claim "these are the only files the agent's actions touched" — an executed shell command may have touched files that WitSeal does not observe.
 
@@ -424,7 +490,10 @@ flowchart TD
 
 ## 6. Determinism Requirements
 
-For the runtime pipeline to support replay, several stages must be deterministic.
+For the runtime pipeline to support replay, several stages must be
+deterministic. The policy-evaluation and approval rows describe the full
+Gate-Mode pipeline; the evidence reconstruction requirements are shared by both
+deployment modes.
 
 | Stage | Determinism requirement | What this implies |
 |---|---|---|
@@ -443,6 +512,11 @@ This is the entire point of Phase 1's hash-chain: to make tampering detectable t
 ---
 
 ## 7. Failure Modes and Their Handling
+
+The classifier, policy, approval, and policy-pack failure modes below describe
+Gate Mode where they depend on the policy and approval gate. The execution,
+receipt, and hash-chain evidence failures remain relevant to both deployment
+modes.
 
 ### 7.1 Classifier failure
 
@@ -510,7 +584,11 @@ These are documented limitations of Phase 1, not features. They must appear in t
 
 2. **No kernel-level mediation.** WitSeal observes shell command outcomes via stdout/stderr/exit-code capture. A malicious shell command may perform side effects that WitSeal does not directly witness. Phase 5 introduces kernel-level interposition (eBPF / ptrace) to close this gap on supported platforms.
 
-3. **No prompt-injection defense.** WitSeal evaluates proposed actions, not the model output that produced them. If a prompt-injected agent proposes an action that policy allows, WitSeal will allow it. The boundary is intentional: WitSeal is action governance, not model security. Pair WitSeal with a prompt-injection-aware gateway for defense in depth.
+3. **No prompt-injection defense.** In Gate Mode, WitSeal evaluates proposed
+actions, not the model output that produced them. If a prompt-injected agent
+proposes an action that policy allows, Gate Mode will allow it. The boundary is
+intentional: WitSeal is action governance, not model security. Pair WitSeal
+with a prompt-injection-aware gateway for defense in depth.
 
 4. **No remote witness chain.** Phase 1 is single-node. Multi-node evidence federation is Phase 6.
 
@@ -518,7 +596,9 @@ These are documented limitations of Phase 1, not features. They must appear in t
 
 6. **No replay-during-execution.** Replay is post-hoc reconstruction from evidence. Phase 1 does not support speculative re-execution or what-if analysis.
 
-7. **No automatic remediation.** When WitSeal denies an action, the agent is told the action was denied. The agent must adapt; WitSeal does not propose alternatives.
+7. **No automatic remediation.** When Gate Mode denies an action, the agent is
+told the action was denied. The agent must adapt; WitSeal does not propose
+alternatives.
 
 These limitations are honest. Documenting them is a trust signal, not a weakness.
 
@@ -591,4 +671,14 @@ These ADRs are written before any non-trivial code is committed. They become the
 
 ## 12. The One-Paragraph Summary
 
-WitSeal Phase 1 is a deterministic pipeline that turns AI-agent action intents into hash-chained, replayable evidence. Every intent is classified, evaluated against policy, optionally approved, executed through a controlled boundary, witnessed, receipted, and chained. The chain is the canonical state. Replay reconstructs it from evidence alone. Failures and denials are first-class events — silence is never consent. The entire pipeline runs on a single developer machine, in-process, with sub-100ms p99 overhead. What Phase 1 does not do — third-party signing, kernel-level mediation, remote federation, prompt-injection defense — is documented honestly and addressed in later phases. The architecture's job is to make later phases additive, not retroactive.
+WitSeal Phase 1 is one product with one receipt protocol and exactly two
+deployment modes. Witness Mode sits beside the agent's action path: it observes
+the action, witnesses it, and emits hash-chained, replayable evidence without
+gating the action. Gate Mode runs the full deterministic pipeline: every intent
+is classified, evaluated against policy, optionally approved, executed through a
+controlled boundary, witnessed, receipted, and chained, with
+`deny-by-default`. Both modes share the evidence chain; replay reconstructs it
+from evidence alone. What Phase 1 does not do — third-party signing,
+kernel-level mediation, remote federation, prompt-injection defense — is
+documented honestly and addressed in later phases. The architecture's job is to
+make later phases additive, not retroactive.
