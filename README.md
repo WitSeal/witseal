@@ -40,10 +40,10 @@ npm install -g @witseal/cli
 
 ## Run
 
-Use `witseal run` to run an action through the CLI runtime:
+Use `witseal exec` to run an action through the CLI runtime:
 
 ```bash
-witseal run "npm test"
+witseal exec "npm test"
 ```
 
 ## Minimal example
@@ -51,7 +51,7 @@ witseal run "npm test"
 Run a benign command, then verify the evidence chain:
 
 ```bash
-witseal run "echo hello"
+witseal exec "echo hello"
 witseal verify
 ```
 

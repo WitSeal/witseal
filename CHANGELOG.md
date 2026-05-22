@@ -16,7 +16,7 @@ Phase 1 release-candidate draft for the WitSeal witnessed execution runtime.
 
 - Phase 1 README coverage for Witness Mode and Gate Mode, with the claim
   boundary called out for developer-facing use.
-- CLI entry point guidance for running an action with `witseal run`.
+- CLI entry point guidance for running an action with `witseal exec`.
 - Execution evidence artifacts for witnessed actions: witness events, execution
   receipts, and hash-chained evidence for verification within the documented
   claim boundary.
