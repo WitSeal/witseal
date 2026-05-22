@@ -422,7 +422,9 @@ flowchart TD
 proposes to do*, not *why it proposes it*. The classifier and policy engine are
 deterministic, version-pinned, and inspectable.
 
-**Evidence claim:** "This is the action the agent proposed and the decision WitSeal made about it." WitSeal does **not** claim "the agent's intent was legitimate."
+**Evidence claim:** In Gate Mode: "This is the action the agent proposed and
+the decision WitSeal made about it." WitSeal does **not** claim "the agent's
+intent was legitimate."
 
 **Out of scope for Phase 1:** detecting prompt injection, jailbreaks, or model misalignment. These are model-layer problems; WitSeal operates downstream.
 
@@ -437,7 +439,9 @@ does not directly invoke `child_process.exec`; it sends an intent to WitSeal
 which, after evaluation, invokes the tool layer with the exact captured
 arguments.
 
-**Evidence claim:** "This is the exact command/argument/payload that was passed to the tool layer, and this is what came back."
+**Evidence claim:** In Gate Mode: "This is the exact
+command/argument/payload that was passed to the tool layer, and this is what
+came back."
 
 **Phase 1 scope:** shell commands, filesystem reads/writes. MCP tool calls (Phase 4) and remote tool invocations (Phase 6) extend this boundary.
 
@@ -452,7 +456,9 @@ arguments.
 stdout/stderr, records exit code, and produces a stdout_hash and stderr_hash for
 the receipt.
 
-**Evidence claim:** "This subprocess was spawned with these exact arguments, exited with this code, and produced output with these content hashes."
+**Evidence claim:** In Gate Mode: "This subprocess was spawned with these
+exact arguments, exited with this code, and produced output with these content
+hashes."
 
 **Phase 1 limitation:** In Gate Mode, WitSeal does not prevent a malicious agent
 from achieving an effect through a shell command that is allowed by policy.
@@ -470,7 +476,10 @@ tool layer (e.g., a `write_file` action) are mediated and witnessed. Filesystem
 operations performed *by* an executed shell command are observed only via
 stdout/stderr capture and exit code.
 
-**Evidence claim:** "These specific file operations were performed through WitSeal." WitSeal does **not** claim "these are the only files the agent's actions touched" — an executed shell command may have touched files that WitSeal does not observe.
+**Evidence claim:** In Gate Mode: "These specific file operations were
+performed through WitSeal." WitSeal does **not** claim "these are the only
+files the agent's actions touched" — an executed shell command may have touched
+files that WitSeal does not observe.
 
 **This limitation must be documented in the threat model.** It is a known gap, addressed in Phase 5 with kernel-level mediation.
 
@@ -505,7 +514,11 @@ deployment modes.
 | Receipt | Deterministic given witness event | Receipt hash is reproducible from witness event content |
 | Hash-chain | Deterministic given (previous chain head, receipt hash) | Chain head is reproducible from event log |
 
-**The replay invariant:** given an evidence package, a verifier with the same classifier version and policy packs can reconstruct the chain head deterministically. If their reconstruction differs from the recorded chain head, evidence has been tampered with.
+**The replay invariant:** given an evidence package, a verifier can reconstruct
+the chain head deterministically. In Gate Mode, the verifier uses the same
+classifier version and policy packs for the policy-dependent stages. If the
+reconstruction differs from the recorded chain head, evidence has been tampered
+with.
 
 This is the entire point of Phase 1's hash-chain: to make tampering detectable through replay, without yet requiring third-party signatures (those come in Phase 5).
 
