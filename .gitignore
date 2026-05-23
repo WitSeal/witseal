@@ -46,7 +46,7 @@ yarn-error.log*
 SHA256SUMS
 
 # Release artifacts (built by CI)
-release/
+/release/
 *.tar.gz
 *.zip
 
