@@ -1,0 +1,17 @@
+{
+  "schema_version": "witseal.receipt.v0.2",
+  "receipt_id": null,
+  "witness_event_id": "evt_fixture00000000000003",
+  "chain_segment_id": "fixture-segment-1",
+  "finalized_at": "2026-05-22T12:00:02Z",
+  "policy_decision_hash": "1111111111111111111111111111111111111111111111111111111111111111",
+  "classified_intent_hash": "2222222222222222222222222222222222222222222222222222222222222222",
+  "execution_result_hash": null,
+  "outcome": "execution_lost",
+  "prev_hash": null,
+  "signature": "coxpXwZGbwZ80ydsrmjyhLkF87JPgs9MdM/vlG4vg8gv1NCR0mKpT+3qZd9PwKu6k+2swoE69I4/RV3tEltBDQ==",
+  "git_commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "artifact_digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "attestation_digest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+  "receipt_hash": "dd1037274d7b16c6c3226cc5845bc03de5cc2cdfdc3a2b8cac2b664d41c95fc8"
+}
