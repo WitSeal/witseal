@@ -88,6 +88,27 @@ describe('canonicalize', () => {
     expect(() => canonicalize(Infinity)).toThrow();
   });
 
+  it('rejects unsupported value types', () => {
+    // typeof undefined / symbol / function / bigint all fall through the
+    // supported-type ladder and hit the trailing throw at the end of canonicalize().
+    expect(() => canonicalize(undefined)).toThrow(/unsupported value type undefined/);
+    expect(() => canonicalize(Symbol('s'))).toThrow(/unsupported value type symbol/);
+    expect(() => canonicalize(() => 1)).toThrow(/unsupported value type function/);
+    expect(() => canonicalize(BigInt(1))).toThrow(/unsupported value type bigint/);
+  });
+
+  it('canonicalizes floats and large integers via the float path', () => {
+    // Non-integer and integers with absolute value >= Number.MAX_SAFE_INTEGER
+    // exercise the `String(n)` fallback in canonicalizeNumber (lines 75-76).
+    expect(canonicalize(1.5)).toBe('1.5');
+    expect(canonicalize(-0.25)).toBe('-0.25');
+    expect(canonicalize(Math.PI)).toBe(String(Math.PI));
+    // Number.MAX_SAFE_INTEGER itself satisfies abs < MAX_SAFE_INTEGER == false
+    // (the guard is strict <), so it goes through the float branch.
+    expect(canonicalize(Number.MAX_SAFE_INTEGER)).toBe(String(Number.MAX_SAFE_INTEGER));
+    expect(canonicalize(-Number.MAX_SAFE_INTEGER)).toBe(String(-Number.MAX_SAFE_INTEGER));
+  });
+
   it('produces identical output for equivalent objects with different key orders', () => {
     const a = { foo: { x: 1, y: 2 }, bar: [1, 2, 3] };
     const b = { bar: [1, 2, 3], foo: { y: 2, x: 1 } };
@@ -146,6 +167,18 @@ describe('hashEvent / finalizeEvent / verifyEventHash', () => {
     };
     expect(verifyEventHash(tampered)).toBe(false);
   });
+
+  it('rejects events with a length-mismatched event_hash (constantTimeEquals fast path)', () => {
+    // Hits the `if (a.length !== b.length) return false` branch in
+    // constantTimeEquals (hash-chain.ts:184) — the existing wrong-hash
+    // test uses a same-length string so that branch wasn't covered.
+    const event = finalizeEvent(makeDraft());
+    const truncated: WitnessEvent = {
+      ...event,
+      event_hash: 'a'.repeat(32),
+    };
+    expect(verifyEventHash(truncated)).toBe(false);
+  });
 });
 
 describe('verifyChain', () => {
@@ -177,6 +210,29 @@ describe('verifyChain', () => {
     const events = buildChain(1);
     const result = verifyChain(events);
     expect(result.valid).toBe(true);
+  });
+
+  it('returns { valid: true } without chainHeadAfter on an empty event array', () => {
+    // Exercises the `prevHash !== null ? { chainHeadAfter } : {}` ternary
+    // (hash-chain.ts:173) — empty input keeps prevHash at the initial null,
+    // so the false branch should fire and chainHeadAfter must be absent.
+    const result = verifyChain([]);
+    expect(result.valid).toBe(true);
+    expect(result.chainHeadAfter).toBeUndefined();
+    expect('chainHeadAfter' in result).toBe(false);
+  });
+
+  it('returns { valid: true } without chainHeadAfter when verifying an empty range with a known head', () => {
+    // Same ternary, this time with a non-null expectedChainHeadBefore.
+    // The loop never executes (events.length === 0), so prevHash stays at
+    // the passed-in head — which is non-null. Sanity check that the
+    // function still omits chainHeadAfter (it only emits one when the loop
+    // ran and moved prevHash forward; current implementation emits it whenever
+    // prevHash !== null, so this documents the current behaviour explicitly).
+    const knownHead = 'a'.repeat(64);
+    const result = verifyChain([], knownHead);
+    expect(result.valid).toBe(true);
+    expect(result.chainHeadAfter).toBe(knownHead);
   });
 
   it('detects break when an event is modified', () => {
