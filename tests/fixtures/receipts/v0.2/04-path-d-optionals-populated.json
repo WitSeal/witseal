@@ -9,7 +9,7 @@
   "execution_result_hash": "3333333333333333333333333333333333333333333333333333333333333333",
   "outcome": "allowed_executed",
   "prev_hash": null,
-  "signature": "1L7YEeigbY7Zol7Au84xktiFrihlY6kSNINM4I8RdnmcQ5A8op80P9PNu3dWgOXkwgWKwhmNrtyHFguKmMcgDg==",
+  "signature": "ed25519:1L7YEeigbY7Zol7Au84xktiFrihlY6kSNINM4I8RdnmcQ5A8op80P9PNu3dWgOXkwgWKwhmNrtyHFguKmMcgDg==",
   "git_commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
   "artifact_digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
   "attestation_digest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",

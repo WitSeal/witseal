@@ -155,7 +155,9 @@ describe('sign / verify round-trip', () => {
     const receipt = signReceiptV02(draft, privateKey);
 
     expect(receipt.receipt_hash).toMatch(/^[a-f0-9]{64}$/);
-    expect(receipt.signature).toMatch(/^[A-Za-z0-9+/]{86}==$/);
+    // RFC-002 §6 amendment: algorithm-prefixed signature.
+    expect(receipt.signature).toMatch(/^ed25519:[A-Za-z0-9+/]{86}==$/);
+    expect(receipt.signature.length).toBe(96);
 
     expect(verifyReceiptV02(receipt, publicKey)).toEqual({ valid: true });
   });
@@ -169,7 +171,8 @@ describe('sign / verify round-trip', () => {
   it('accepts a 32-byte raw Ed25519 seed as private key material', () => {
     const seed = randomBytes(32);
     const receipt = signReceiptV02(makeDraft(), seed);
-    expect(receipt.signature).toMatch(/^[A-Za-z0-9+/]{86}==$/);
+    // RFC-002 §6 amendment: algorithm-prefixed signature.
+    expect(receipt.signature).toMatch(/^ed25519:[A-Za-z0-9+/]{86}==$/);
   });
 
   it('verification fails under a different public key', () => {
@@ -396,14 +399,54 @@ describe('generateReceiptByVersion dispatch', () => {
   });
 });
 
-describe('signature format invariant', () => {
-  it('produces 88-char base64 std-padded signatures across many keys', () => {
-    const re = /^[A-Za-z0-9+/]{86}==$/;
+describe('signature format invariant — RFC-002 §6 algorithm-prefixed', () => {
+  it('produces ed25519:-prefixed base64 std-padded signatures (96 chars) across many keys', () => {
+    const re = /^ed25519:[A-Za-z0-9+/]{86}==$/;
     for (let i = 0; i < 8; i++) {
       const { privateKey } = makeKeyPair();
       const r = signReceiptV02(makeDraft(), privateKey);
       expect(r.signature).toMatch(re);
+      expect(r.signature.length).toBe(96);
+      expect(r.signature.startsWith('ed25519:')).toBe(true);
     }
+  });
+
+  it('schema rejects bare base64 signature (legacy pre-amendment form)', () => {
+    const { privateKey } = makeKeyPair();
+    const receipt = signReceiptV02(makeDraft(), privateKey);
+    // Strip the prefix to simulate a legacy bare-base64 wire value.
+    const legacy = receipt.signature.slice('ed25519:'.length);
+    expect(legacy.length).toBe(88);
+    const bad = { ...receipt, signature: legacy };
+    expect(() => ExecutionReceiptV02Schema.parse(bad)).toThrow();
+  });
+
+  it('schema rejects unknown algorithm-tag prefix', () => {
+    const { privateKey } = makeKeyPair();
+    const receipt = signReceiptV02(makeDraft(), privateKey);
+    const payload = receipt.signature.slice('ed25519:'.length);
+    const bad = { ...receipt, signature: 'rsa2048:' + payload };
+    expect(() => ExecutionReceiptV02Schema.parse(bad)).toThrow();
+  });
+
+  it('verifyReceiptV02 returns valid=false (malformed) when prefix is missing', () => {
+    const { privateKey, publicKey } = makeKeyPair();
+    const receipt = signReceiptV02(makeDraft(), privateKey);
+    const legacy = receipt.signature.slice('ed25519:'.length);
+    const tampered = { ...receipt, signature: legacy };
+    const result = verifyReceiptV02(tampered, publicKey);
+    expect(result.valid).toBe(false);
+    expect(result.reason).toMatch(/algorithm tag|prefix|malformed/i);
+  });
+
+  it('verifyReceiptV02 returns valid=false (malformed) for unknown algorithm tag', () => {
+    const { privateKey, publicKey } = makeKeyPair();
+    const receipt = signReceiptV02(makeDraft(), privateKey);
+    const payload = receipt.signature.slice('ed25519:'.length);
+    const tampered = { ...receipt, signature: 'mldsa:' + payload };
+    const result = verifyReceiptV02(tampered, publicKey);
+    expect(result.valid).toBe(false);
+    expect(result.reason).toMatch(/algorithm tag|prefix|malformed/i);
   });
 });
 
