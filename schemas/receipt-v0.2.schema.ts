@@ -6,8 +6,12 @@
  * Adds to v0.1:
  *   - `signature`            Ed25519 signature over the canonical receipt
  *                            with `signature = ""` (R-3 empty-string sentinel,
- *                            NOT field-removal). Base64 RFC 4648 § 4 standard
- *                            alphabet, padded.
+ *                            NOT field-removal). Algorithm-prefixed per
+ *                            RFC-002 §6 amendment (2026-05-23): the final
+ *                            populated value is `ed25519:` + base64 RFC 4648
+ *                            § 4 standard alphabet, padded. The prefix is
+ *                            present only in the final wire value; during
+ *                            pre-image construction `signature = ""`.
  *   - `git_commit`           Bare 40-char lowercase SHA-1 hex (no `git:` prefix).
  *   - `artifact_digest`      `sha256:` prefix + 64-hex.
  *   - `attestation_digest`   `sha256:` prefix + 64-hex.
@@ -37,7 +41,24 @@ import { z } from 'zod';
 const Sha256Hex = z.string().regex(/^[a-f0-9]{64}$/);
 const Sha1HexLower = z.string().regex(/^[a-f0-9]{40}$/);
 const Sha256Prefixed = z.string().regex(/^sha256:[a-f0-9]{64}$/);
-const Base64StdPadded64 = z.string().regex(/^[A-Za-z0-9+/]{86}==$/);
+/**
+ * Algorithm-prefixed Ed25519 signature per RFC-002 §6 (post-amendment 2026-05-23).
+ *
+ * Form: `ed25519:` + base64(64 raw signature bytes), standard alphabet, padded.
+ * Total length: 8 (prefix) + 88 (base64) = 96 chars.
+ *
+ * The prefix mirrors the §5 digest prefix (`sha256:<hex>`). In schema version
+ * 0.2 the only permitted algorithm tag is `ed25519`; any other prefix is a
+ * schema-level violation (v0.2 verifiers MUST treat such a receipt as
+ * malformed, distinct from "invalid signature").
+ *
+ * The prefix appears only in the final, populated `signature` field value.
+ * During pre-image construction `signature` is the empty string (R-3
+ * sentinel), unaffected by this prefix.
+ */
+const Ed25519PrefixedSignature = z
+  .string()
+  .regex(/^ed25519:[A-Za-z0-9+/]{86}==$/);
 const ReceiptId = z.string().regex(/^rcpt_[0-9a-zA-Z]{20,}$/);
 const WitnessEventId = z.string().regex(/^evt_[0-9a-zA-Z]{20,}$/);
 
@@ -66,8 +87,11 @@ export const ExecutionReceiptV02Schema = z.object({
    *  `null` at chain-segment genesis (Option B). */
   prev_hash: Sha256Hex.nullable(),
 
-  /** Ed25519 signature, base64 standard-padded, 64 raw bytes → 88 chars. */
-  signature: Base64StdPadded64,
+  /** Algorithm-prefixed Ed25519 signature per RFC-002 §6 (amendment 2026-05-23):
+   *  `ed25519:` + base64 std-padded 64 raw signature bytes (88 base64 chars →
+   *  96 chars total). The prefix mirrors §5 digest prefix and exists so future
+   *  algorithm changes are v0.2-compatible extensions rather than wire breaks. */
+  signature: Ed25519PrefixedSignature,
 
   /** Build provenance (M9 populates from real build context). */
   git_commit: Sha1HexLower,

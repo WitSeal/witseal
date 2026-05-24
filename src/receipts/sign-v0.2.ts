@@ -1,5 +1,6 @@
 /**
- * v0.2 receipt signing — R-3 empty-string-sentinel procedure.
+ * v0.2 receipt signing — R-3 empty-string-sentinel procedure + RFC-002 §6
+ * algorithm-prefixed final value.
  *
  * The signing pre-image is
  * built by canonicalizing the receipt body with `signature = ""` (empty
@@ -8,21 +9,31 @@
  * key and a present-but-empty `signature` key produce different canonical
  * byte streams; the empty-sentinel form is the binding choice.
  *
+ * Per RFC-002 §6 amendment (2026-05-23, three-track concurrence collected),
+ * the FINAL populated `signature` value carries an algorithm prefix:
+ * `ed25519:` + base64. The prefix appears only in the final wire value, NOT
+ * in the pre-image (the pre-image still uses `signature = ""`). The prefix
+ * mirrors the §5 digest prefix and exists for future-algorithm extension
+ * without a wire break.
+ *
  * Signing procedure:
  *
  *   1. Build draft `D₀` from receipt body excluding `{receipt_hash}` and
  *      with `signature = ""`.
  *   2. Compute `receipt_hash = sha256(JCS(D₀))`.
  *   3. Build `D₁` = D₀ ∪ {receipt_hash}; `signature` still = "".
- *   4. Compute `signature = ed25519_sign(privkey, JCS(D₁))`.
- *   5. Final receipt = D₁ with `signature` set to base64 std-padded encoding
- *      of the 64 raw signature bytes.
+ *   4. Compute `signature_bytes = ed25519_sign(privkey, JCS(D₁))`.
+ *   5. Final receipt = D₁ with `signature` set to
+ *      `"ed25519:" + base64(signature_bytes)`.
  *
  * Verification:
  *
- *   1. Take receipt; rebuild `D₁` by setting `signature` to "".
- *   2. `ed25519_verify(pubkey, sig, JCS(D₁))` → must succeed.
- *   3. Take `D₀` by removing `receipt_hash` from D₁; recompute
+ *   1. Take receipt; require `signature` matches `ed25519:<base64>` —
+ *      reject as malformed otherwise (distinct from "invalid signature").
+ *   2. Strip the `ed25519:` prefix; base64-decode the payload.
+ *   3. Rebuild `D₁` by setting `signature` to "".
+ *   4. `ed25519_verify(pubkey, sig_bytes, JCS(D₁))` → must succeed.
+ *   5. Take `D₀` by removing `receipt_hash` from D₁; recompute
  *      `sha256(JCS(D₀))`; assert equality with `receipt.receipt_hash`.
  *
  * This module exposes those two operations as pure functions. Key
@@ -41,6 +52,11 @@ import type {
 
 /** Empty-string sentinel used during signing pre-image construction (R-3). */
 export const SIGNATURE_SENTINEL = '';
+
+/** Algorithm-prefix tag carried on the final populated `signature` value per
+ *  RFC-002 §6 amendment (2026-05-23). Schema version 0.2 permits this exact
+ *  prefix only; any other tag is a malformed-receipt schema violation. */
+export const SIGNATURE_ALGORITHM_PREFIX = 'ed25519:';
 
 /**
  * Build the canonical signing pre-image bytes for a receipt body.
@@ -96,7 +112,11 @@ export function signReceiptV02(
   const preImage = signingPreImageBytes(d1 as unknown as Record<string, unknown>);
   const key = coercePrivateKey(privateKey);
   const sigBytes = nodeSign(null, preImage, key);
-  const signature = Buffer.from(sigBytes).toString('base64');
+  // RFC-002 §6 amendment: prepend the algorithm-prefix to the final wire value.
+  // The prefix is added AFTER signing; the signed pre-image carries
+  // `signature = ""` (the R-3 empty-string sentinel) and is unaffected.
+  const signature =
+    SIGNATURE_ALGORITHM_PREFIX + Buffer.from(sigBytes).toString('base64');
 
   return { ...d1, signature } as ExecutionReceiptV02;
 }
@@ -112,15 +132,30 @@ export function verifyReceiptV02(
 ): { valid: boolean; reason?: string } {
   const { signature, receipt_hash, ...rest } = receipt;
 
-  // Rebuild D₁ with signature = "".
+  // RFC-002 §6 amendment: the final wire value MUST be algorithm-prefixed.
+  // Missing or wrong algorithm-tag → malformed receipt (distinct diagnostic
+  // from "invalid signature"); both collapse to { valid: false } here, but
+  // the `reason` field preserves the distinction for callers.
+  if (!signature.startsWith(SIGNATURE_ALGORITHM_PREFIX)) {
+    return {
+      valid: false,
+      reason:
+        'malformed signature: missing or unknown algorithm tag (v0.2 requires "ed25519:" prefix per RFC-002 §6)',
+    };
+  }
+  const sigPayload = signature.slice(SIGNATURE_ALGORITHM_PREFIX.length);
+
+  // Rebuild D₁ with signature = "" (pre-image carries the empty-string
+  // sentinel — prefix appears only in the final wire value, never in the
+  // signed bytes).
   const d1 = { ...rest, receipt_hash, signature: SIGNATURE_SENTINEL };
   const preImage = signingPreImageBytes(d1 as unknown as Record<string, unknown>);
 
   let sigBytes: Buffer;
   try {
-    sigBytes = Buffer.from(signature, 'base64');
+    sigBytes = Buffer.from(sigPayload, 'base64');
   } catch {
-    return { valid: false, reason: 'signature is not valid base64' };
+    return { valid: false, reason: 'signature payload is not valid base64' };
   }
 
   const key = coercePublicKey(publicKey);
