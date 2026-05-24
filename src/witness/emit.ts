@@ -54,7 +54,10 @@ export async function emitWitnessEvent(
   const draft: WitnessEventDraft = {
     schema_version: WITNESS_SCHEMA_VERSION,
     event_id: eventId,
-    chain_segment_id: 'default',
+    // P0-5: read the segment from the EventLog instance rather than hardcoding
+    // 'default'. This makes `--segment <id>` at the CLI surface propagate into
+    // each persisted WitnessEvent's `chain_segment_id`.
+    chain_segment_id: eventLog.segmentId,
     sequence,
     timestamp: new Date().toISOString().replace(/\.\d{3}Z$/, 'Z'),
     previous_event_hash: head,

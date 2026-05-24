@@ -381,4 +381,36 @@ describe('emitWitnessEvent — chain segment isolation', () => {
     expect(a.sequence).toBe(0);
     expect(b.sequence).toBe(0);
   });
+
+  // P0-5 (runtime-boundary audit 2026-05-25): the CLI `--segment` flag must
+  // propagate into the persisted WitnessEvent's `chain_segment_id`. Before the
+  // fix, emit.ts hardcoded `chain_segment_id: 'default'` so any non-default
+  // segment was silently mis-stamped.
+
+  it('stamps chain_segment_id from the EventLog instance (default segment)', async () => {
+    const log = new EventLog({ root: dataDir, segmentId: 'default' });
+    const ev = await emitWitnessEvent(log, makeEmitInput());
+    expect(ev.chain_segment_id).toBe('default');
+  });
+
+  it('stamps chain_segment_id from a non-default segment (P0-5 traceability)', async () => {
+    const log = new EventLog({ root: dataDir, segmentId: 'forensic-2026-05-25' });
+    const ev = await emitWitnessEvent(log, makeEmitInput());
+    expect(ev.chain_segment_id).toBe('forensic-2026-05-25');
+  });
+
+  it('persisted events carry the segment id verbatim across read-back', async () => {
+    const segC = new EventLog({ root: dataDir, segmentId: 'incident-abc' });
+    await emitWitnessEvent(segC, makeEmitInput());
+    await emitWitnessEvent(segC, makeEmitInput());
+    const fresh = new EventLog({ root: dataDir, segmentId: 'incident-abc' });
+    const back = await fresh.readAllEvents();
+    expect(back).toHaveLength(2);
+    expect(back.every((e) => e.chain_segment_id === 'incident-abc')).toBe(true);
+  });
+
+  it('EventLog.segmentId getter exposes the segment for emitter use', () => {
+    const log = new EventLog({ root: dataDir, segmentId: 'getter-test' });
+    expect(log.segmentId).toBe('getter-test');
+  });
 });

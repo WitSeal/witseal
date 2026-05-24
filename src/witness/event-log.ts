@@ -39,15 +39,27 @@ export class EventLog {
   private readonly logPath: string;
   private readonly headCachePath: string;
   private readonly lock: ChainLock;
+  private readonly _segmentId: string;
 
   constructor(paths: EventLogPaths) {
     const eventsDir = join(paths.root, 'events');
     if (!existsSync(eventsDir)) {
       mkdirSync(eventsDir, { recursive: true });
     }
+    this._segmentId = paths.segmentId;
     this.logPath = join(eventsDir, `${paths.segmentId}.jsonl`);
     this.headCachePath = join(eventsDir, `${paths.segmentId}.head`);
     this.lock = new ChainLock(join(eventsDir, `${paths.segmentId}.lock`));
+  }
+
+  /**
+   * The chain segment ID this EventLog operates on. Used by the emitter to
+   * stamp each WitnessEvent's `chain_segment_id` so segment selection at the
+   * CLI / API surface (`--segment`) propagates verbatim to persisted evidence
+   * (P0-5 — segment traceability per the 2026-05-25 runtime-boundary audit).
+   */
+  get segmentId(): string {
+    return this._segmentId;
   }
 
   /**
