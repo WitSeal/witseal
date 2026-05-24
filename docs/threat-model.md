@@ -112,7 +112,13 @@ For each threat, this section states the Phase 1 posture: **mitigated**, **parti
 
 **Description:** Two `witseal exec` invocations run simultaneously, race on the chain head, produce a corrupted log.
 
-**Posture:** **Mitigated.** ADR-0006 (concurrency model) — single-writer-per-chain enforced by `flock`. Concurrent invocations queue. Recursive invocation (WitSeal calling WitSeal) is handled via `WITSEAL_LOCK_HELD_BY_PID`.
+**Posture:** **Mitigated where `fs.flockSync` is available (Node 24+); fail-closed by default elsewhere (P0-3 — runtime-boundary audit 2026-05-25).**
+
+- **Native path (Node 24+):** ADR-0006 (concurrency model) — single-writer-per-chain enforced by `fs.flockSync`. Concurrent invocations queue. Recursive invocation (WitSeal calling WitSeal) is handled via `WITSEAL_LOCK_HELD_BY_PID`.
+- **Fallback (Node 22 LTS and older without `fs.flockSync`):** `ChainLock` refuses to acquire any lock and throws `ChainLockUnavailableError`. The runtime fails closed — no witness event can be emitted on this runtime by default. This is the production-grade behavior since the 2026-05-25 P0-3 remediation; the prior silent advisory-only return was a known gap and is no longer permitted.
+- **Operator-explicit advisory-only mode:** setting `WITSEAL_UNSAFE_LOCKLESS=1` opts in to advisory-only acquire on runtimes without native `flockSync`. The first acquire emits a visible `WARNING` to stderr naming the env var and the multi-writer risk. This mode is for single-process dev/test only; cross-process write integrity is the operator's responsibility under it. See `src/integrity/lock.ts` (`ENV_UNSAFE_LOCKLESS`, `ChainLockUnavailableError`) and `tests/integrity-lock.test.ts` ("ChainLock — lockless fail-closed default (P0-3)").
+
+**Residual:** an operator who sets `WITSEAL_UNSAFE_LOCKLESS=1` in a multi-writer deployment is unprotected against this threat — the env var is the audit trail. Phase 2+ will provide a portable advisory-lock shim for pre-Node-24 runtimes so the opt-in becomes unnecessary.
 
 ### T12. Crash mid-append
 
