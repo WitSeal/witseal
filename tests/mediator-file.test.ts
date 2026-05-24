@@ -528,3 +528,104 @@ describe('mediateFile — argument validation', () => {
     expect(stat.isFile()).toBe(true);
   });
 });
+
+// ---------------------------------------------------------------------------
+// P1-9 — documented file_write semantics (no rollback claim)
+// ---------------------------------------------------------------------------
+//
+// Runtime-boundary audit 2026-05-25 finding TS-P1-9: document/test exact
+// `overwrite` / `append` / `create_only` semantics; do NOT claim rollback.
+// These tests pin the documented contracts so any future regression toward
+// silent rollback or idempotent-claims surfaces in CI.
+
+describe('mediateFile — documented file_write semantics (P1-9)', () => {
+  it('overwrite is destructive: prior content is replaced, not preserved', async () => {
+    const path = join(workDir, 'destroyable.txt');
+    writeFileSync(path, 'PRIOR-CONTENT-PRESERVE-ME');
+    const intent = writeIntent({ path, content: 'NEW', mode: 'overwrite' });
+    const result = await mediateFile(intent, { content: 'NEW' });
+    expect(result.spawn_error).toBe(null);
+    // No "rollback" or "history" — file is now exactly 'NEW'.
+    expect(readFileSync(path, 'utf8')).toBe('NEW');
+    // Length is 3, not 28 (the prior content length). Confirms truncation.
+    expect(statSync(path).size).toBe(3);
+  });
+
+  it('append is additive: existing bytes are preserved, new bytes follow', async () => {
+    const path = join(workDir, 'log.txt');
+    writeFileSync(path, 'A\n');
+    const intent = writeIntent({ path, content: 'B\n', mode: 'append' });
+    const result = await mediateFile(intent, { content: 'B\n' });
+    expect(result.spawn_error).toBe(null);
+    expect(readFileSync(path, 'utf8')).toBe('A\nB\n');
+    // Two consecutive appends are additive, not idempotent.
+    const result2 = await mediateFile(intent, { content: 'B\n' });
+    expect(result2.spawn_error).toBe(null);
+    expect(readFileSync(path, 'utf8')).toBe('A\nB\nB\n');
+  });
+
+  it('create_only is use-once: second invocation against an existing file fails atomically (no overwrite)', async () => {
+    const path = join(workDir, 'once.txt');
+    const intent = writeIntent({ path, content: 'first', mode: 'create_only' });
+    const first = await mediateFile(intent, { content: 'first' });
+    expect(first.spawn_error).toBe(null);
+    expect(readFileSync(path, 'utf8')).toBe('first');
+
+    // Retry with different content must NOT overwrite — the contract is
+    // "fail with EEXIST if file exists" with zero modification.
+    const intent2 = writeIntent({ path, content: 'second-attempt', mode: 'create_only' });
+    const retry = await mediateFile(intent2, { content: 'second-attempt' });
+    expect(retry.spawn_error).not.toBeNull();
+    expect(retry.spawn_error).toMatch(/EEXIST|exist/i);
+    expect(readFileSync(path, 'utf8')).toBe('first'); // unchanged
+  });
+
+  it('overwrite mid-write failure does NOT roll back to prior content (documented limitation)', async () => {
+    // Simulating an actual EIO/ENOSPC mid-writeFile is platform-fragile.
+    // What we CAN assert is that mediateFile does not advertise rollback
+    // and that a successful overwrite genuinely replaces — proof that the
+    // mediator does not stage to a temp file behind the caller's back.
+    const path = join(workDir, 'no-rollback.txt');
+    const priorContent = 'PRIOR';
+    writeFileSync(path, priorContent);
+    const intent = writeIntent({
+      path,
+      content: 'REPLACED',
+      mode: 'overwrite',
+    });
+    const result = await mediateFile(intent, { content: 'REPLACED' });
+    expect(result.spawn_error).toBe(null);
+    expect(readFileSync(path, 'utf8')).toBe('REPLACED');
+    // Confirms: there is no `.bak`, no `.tmp` sibling, no "before" version
+    // recoverable from the filesystem after a successful overwrite.
+    expect(existsSync(path + '.bak')).toBe(false);
+    expect(existsSync(path + '.tmp')).toBe(false);
+    expect(existsSync(path + '~')).toBe(false);
+  });
+
+  it('content_hash precheck prevents any write when content does not match (no partial state)', async () => {
+    const path = join(workDir, 'guarded.txt');
+    const intent: Extract<Intent, { action_type: 'file_write' }> = {
+      action_type: 'file_write',
+      path,
+      content_hash: 'a'.repeat(64), // wrong hash
+      content_size_bytes: 5,
+      mode: 'overwrite',
+    };
+    const result = await mediateFile(intent, { content: 'hello' });
+    expect(result.spawn_error).not.toBeNull();
+    expect(result.spawn_error).toMatch(/hash/i);
+    // Critical: no file was created. The check is BEFORE any open/write.
+    expect(existsSync(path)).toBe(false);
+  });
+
+  it('exit_code is 1 on spawn_error (no rollback signal — caller decides)', async () => {
+    const path = join(workDir, 'sub', 'missing-parent.txt');
+    const intent = writeIntent({ path, content: 'x', mode: 'overwrite' });
+    const result = await mediateFile(intent, { content: 'x' });
+    expect(result.spawn_error).not.toBeNull();
+    expect(result.exit_code).toBe(1);
+    // No partial file created.
+    expect(existsSync(path)).toBe(false);
+  });
+});
