@@ -54,6 +54,15 @@ function obtainViaCI(
   const matchedRuleId = decision.matched_rule?.rule_id;
   const allowed = matchedRuleId ? allowList.includes(matchedRuleId) : false;
 
+  // P1-7: when WITSEAL_CI_PRINCIPAL is unset, the principal identifier
+  // carries the `fallback:` marker so evidence consumers can distinguish
+  // configured CI identity from the runtime's default. The marker remains
+  // acceptable for ad-hoc use; production CI integrations should set the
+  // env var.
+  const configuredCiPrincipal = process.env['WITSEAL_CI_PRINCIPAL'];
+  const ciIdentifier = configuredCiPrincipal && configuredCiPrincipal.length > 0
+    ? configuredCiPrincipal
+    : 'fallback:ci-default';
   return {
     schema_version: 'witseal.approval.v0.1',
     approval_id: approvalId,
@@ -63,7 +72,7 @@ function obtainViaCI(
     outcome: allowed ? 'approved' : 'rejected',
     principal: {
       type: 'ci',
-      identifier: process.env['WITSEAL_CI_PRINCIPAL'] ?? 'ci',
+      identifier: ciIdentifier,
     },
     timeout_seconds: timeoutS,
     ...(allowed
@@ -83,6 +92,14 @@ function obtainViaTTY(
 
   const outcome = readApprovalChar(timeoutS);
 
+  // P1-7: when neither $USER nor $LOGNAME is set (rare — typically only on
+  // service accounts or stripped environments), the principal identifier
+  // carries the `fallback:` marker so the chain reader can distinguish a
+  // real interactive user from an environment that couldn't name one.
+  const userEnv = process.env['USER'] ?? process.env['LOGNAME'];
+  const humanIdentifier = userEnv && userEnv.length > 0
+    ? userEnv
+    : 'fallback:no-user-env';
   return {
     schema_version: 'witseal.approval.v0.1',
     approval_id: approvalId,
@@ -92,7 +109,7 @@ function obtainViaTTY(
     outcome,
     principal: {
       type: 'human',
-      identifier: process.env['USER'] ?? process.env['LOGNAME'] ?? 'unknown',
+      identifier: humanIdentifier,
     },
     timeout_seconds: timeoutS,
   };
