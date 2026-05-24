@@ -197,6 +197,17 @@ export class EventLog {
     return this.lock.withExclusive(() => {
       const { head, sequence } = this.readChainHeadUnsafe();
       const draft = buildDraft(head, sequence);
+
+      // P1-8 (runtime-boundary audit 2026-05-25): append-retry
+      // idempotency. If the draft declares an `operation_id`, scan the
+      // chain for a prior event with the same key. If found, return that
+      // event without appending — the chain state is unchanged and the
+      // caller observes the original event_id.
+      if (draft.operation_id !== undefined) {
+        const existing = this.findEventByOperationIdSync(draft.operation_id);
+        if (existing !== null) return existing;
+      }
+
       if (draft.previous_event_hash !== head) {
         throw new StaleAppendError(
           `buildDraft must use the provided chain head (previous_event_hash)`,
@@ -215,6 +226,30 @@ export class EventLog {
       this.appendEventUnsafe(event);
       return event;
     });
+  }
+
+  /**
+   * P1-8: synchronous scan for the first event in the segment carrying
+   * the requested `operation_id`. Returns `null` if absent. O(N) over the
+   * chain; acceptable for Phase 1 chains (small, single-segment use). A
+   * Phase 2 index sidecar can drop this to O(1) when chains grow.
+   *
+   * Called inside `appendDraftEvent`'s critical section so the dedupe
+   * decision is consistent with the chain head observed under the same
+   * lock.
+   */
+  private findEventByOperationIdSync(operationId: string): WitnessEvent | null {
+    if (!existsSync(this.logPath)) return null;
+    const content = readFileSync(this.logPath, 'utf8');
+    for (const line of content.split('\n')) {
+      const trimmed = line.trim();
+      if (!trimmed) continue;
+      const parsed = JSON.parse(trimmed) as { operation_id?: string };
+      if (parsed.operation_id === operationId) {
+        return WitnessEventSchema.parse(parsed);
+      }
+    }
+    return null;
   }
 
   /**

@@ -225,6 +225,57 @@ const FILE_READ_EXECUTABLE = 'witseal:file-read';
  *
  * Returns an ExecutionResult with the same schema as mediateShell. Failures
  * surface via spawn_error; the exit_code is 0 on success and 1 on spawn_error.
+ *
+ * --- file_write semantics (P1-9, runtime-boundary audit 2026-05-25) ---
+ *
+ * Three write modes, each with documented behavior and NO ROLLBACK GUARANTEE:
+ *
+ *   `overwrite` — `fs.promises.writeFile(absPath, bytes)`. Opens
+ *     `O_WRONLY | O_CREAT | O_TRUNC`. Atomically replaces file content from
+ *     the writer's perspective; concurrent readers may observe a partial
+ *     state if they read mid-write (Node's writeFile is not atomic at the
+ *     filesystem level — see "Retry behavior" below).
+ *
+ *   `append` — `fs.promises.appendFile(absPath, bytes)`. Opens
+ *     `O_WRONLY | O_APPEND | O_CREAT`. Creates the file if missing. Multiple
+ *     concurrent appenders interleave at byte boundaries; if append-mode
+ *     atomicity matters (e.g. line-oriented log), the caller is responsible
+ *     for ensuring each call writes one logical record.
+ *
+ *   `create_only` — `fs.promises.open(absPath, 'wx')`. Opens with
+ *     `O_WRONLY | O_CREAT | O_EXCL`. Fails with `EEXIST` (returned via
+ *     `spawn_error`) if the file already exists. This is the only mode that
+ *     gives a use-once guarantee at the filesystem level.
+ *
+ * --- Retry behavior (caller MUST handle; no rollback) ---
+ *
+ * If mediateFile returns `spawn_error: null` AND `exit_code: 0`, the write
+ * completed and persisted to disk before the function returned. If
+ * mediateFile returns `spawn_error: <error message>`, the contract is:
+ *
+ *   - `overwrite` mid-write failure (e.g. disk full mid-`writeFile`): the
+ *     file MAY exist with PARTIAL CONTENT. The mediator does NOT roll back
+ *     to the prior state. Callers requiring atomic replacement MUST stage
+ *     to a sibling temp file + rename — that orchestration is OUTSIDE
+ *     mediateFile's contract in v0.1.
+ *   - `append` mid-write failure: the file MAY have grown by less than
+ *     `content_size_bytes`. The partial bytes remain on disk. Callers
+ *     MUST de-duplicate by content (e.g. via the receipt chain).
+ *   - `create_only` failure due to EEXIST: the file is unchanged (the
+ *     exclusive-create mode prevents any write attempt).
+ *   - All other modes' failures (ENOENT parent, EACCES, symlink-refused):
+ *     no bytes are written.
+ *
+ * --- What mediateFile does NOT claim ---
+ *
+ * - NO rollback on partial write. The caller designs idempotency on top.
+ * - NO concurrency control across multiple mediateFile invocations against
+ *   the same path. Two concurrent `overwrite` calls race at the kernel
+ *   level; the last writer wins or interleaves per the OS. Higher-level
+ *   serialization (e.g. via the chain lock for path-scoped writes) is the
+ *   orchestrator's responsibility.
+ * - NO retry. mediateFile attempts the write once; retry policy lives in
+ *   the caller.
  */
 export async function mediateFile(
   intent: Extract<Intent, { action_type: 'file_write' | 'file_read' }>,

@@ -88,7 +88,13 @@ For each threat, this section states the Phase 1 posture: **mitigated**, **parti
 
 **Description:** A required approval times out and the action proceeds anyway.
 
-**Posture:** **Mitigated by design.** Timeout is treated as `rejected`. Silence is not consent. There is no configuration flag to change this in Phase 1.
+**Posture:** **Mitigated by design in non-TTY modes; documented limitation in TTY mode (P1-6, runtime-boundary audit 2026-05-25).**
+
+- **CI mode (non-interactive, `WITSEAL_NON_INTERACTIVE=1` or non-TTY stderr):** the approval gate resolves immediately without waiting — auto-approval via the `WITSEAL_AUTO_APPROVE` allow-list or rejection otherwise. No timeout race exists; the gate is functionally synchronous.
+- **Callback mode (`WITSEAL_APPROVAL_MODE=callback`):** stub for Phase 1; returns `timed_out` immediately and surfaces "not implemented in v0.1" to stderr.
+- **TTY mode (default in interactive sessions):** uses a synchronous blocking `readSync('/dev/tty')`. **The `timeout_seconds` value is informational and not enforced as an OS-level deadline in Phase 1.** The blocking read remains pending until the operator types a character or sends EOF; the runtime cannot interrupt the syscall portably without raw-mode + select/poll wiring that Phase 1 deliberately defers. The prompt UX flags this with `(no timer — Ctrl+C to cancel)` so operators are not misled into expecting auto-timeout.
+
+**Residual:** an operator who leaves a TTY approval prompt unattended in a session where the parent process holds the chain lock keeps that lock until input arrives or the parent process is killed. Phase 2 introduces `select()`-based timeout handling for TTY mode; until then, the public claim is **"silence is not consent in CI"** (true) but **NOT "approval timeout is enforced for TTY"** (false; explicitly removed from public artifacts per the 2026-05-25 claim-discipline list).
 
 ### T8. Forged receipt
 

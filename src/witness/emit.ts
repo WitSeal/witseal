@@ -38,6 +38,13 @@ export interface EmitInput {
   outcome: WitnessOutcome;
   agentIdentifier: string;
   classifierVersion: string;
+  /**
+   * P1-8: optional idempotency key. When set, EventLog.appendDraftEvent
+   * scans the chain for a prior event with the same operation_id and
+   * returns it WITHOUT re-appending. Use a UUIDv4 (or similar) generated
+   * once at the request boundary and reused across retries.
+   */
+  operationId?: string;
 }
 
 export async function emitWitnessEvent(
@@ -87,6 +94,10 @@ function buildBaseDraft(
     // JCS byte-identity with Rust's serde skip_serializing_if pattern.
     ...(intentRecordedEventId !== undefined
       ? { intent_recorded_event_id: intentRecordedEventId }
+      : {}),
+    // P1-8: append-retry idempotency key. Same skip-when-absent rule.
+    ...(input.operationId !== undefined
+      ? { operation_id: input.operationId }
       : {}),
     versions: {
       witseal_runtime: WITSEAL_RUNTIME_VERSION,
