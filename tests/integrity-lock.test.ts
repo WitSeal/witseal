@@ -78,7 +78,7 @@ import { mkdtempSync, rmSync, existsSync, statSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { ChainLock } from '../src/integrity/lock.js';
+import { ChainLock, ChainLockUnavailableError, ENV_UNSAFE_LOCKLESS } from '../src/integrity/lock.js';
 
 // ---------------------------------------------------------------------------
 // Shim helpers
@@ -353,5 +353,96 @@ describe('ChainLock — withExclusive + env-holder interaction', () => {
     expect(stub.calls.length).toBe(2);
     // Env var deleted after outer release.
     expect(process.env[ENV_LOCK_HOLDER]).toBeUndefined();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// P0-3 — lockless fail-closed default (no flockSync, no opt-in env var)
+// ---------------------------------------------------------------------------
+//
+// Runtime-boundary audit 2026-05-25 finding TS-P0-3: when `fs.flockSync` is
+// unavailable AND the operator has not opted in via WITSEAL_UNSAFE_LOCKLESS=1,
+// acquire must throw `ChainLockUnavailableError` rather than silently return
+// success. These tests delete the env var that `tests/setup.ts` sets by
+// default and verify the production fail-closed path.
+
+describe('ChainLock — lockless fail-closed default (P0-3)', () => {
+  let unsafeSnap: string | undefined;
+
+  beforeEach(() => {
+    // tests/setup.ts sets WITSEAL_UNSAFE_LOCKLESS=1 by default for the suite
+    // (so unrelated tests using EventLog on Node 22 don't trip the new
+    // fail-closed). This block needs the production default — explicitly
+    // remove the opt-in and restore after each case.
+    unsafeSnap = process.env[ENV_UNSAFE_LOCKLESS];
+    delete process.env[ENV_UNSAFE_LOCKLESS];
+  });
+
+  afterEach(() => {
+    if (unsafeSnap === undefined) delete process.env[ENV_UNSAFE_LOCKLESS];
+    else process.env[ENV_UNSAFE_LOCKLESS] = unsafeSnap;
+  });
+
+  it('acquireExclusive throws ChainLockUnavailableError when flockSync is missing', () => {
+    // No flockSync stub installed — real namespace lacks flockSync on Node 22.
+    const lock = new ChainLock(freshLockPath());
+    expect(() => lock.acquireExclusive()).toThrow(ChainLockUnavailableError);
+  });
+
+  it('acquireShared throws ChainLockUnavailableError when flockSync is missing', () => {
+    const lock = new ChainLock(freshLockPath());
+    expect(() => lock.acquireShared()).toThrow(ChainLockUnavailableError);
+  });
+
+  it('withExclusive throws before invoking the wrapped fn', () => {
+    const lock = new ChainLock(freshLockPath());
+    let invoked = false;
+    expect(() =>
+      lock.withExclusive(() => {
+        invoked = true;
+        return 'never-reached';
+      })
+    ).toThrow(ChainLockUnavailableError);
+    expect(invoked).toBe(false);
+  });
+
+  it('error message names the lock path and points at the env var escape hatch', () => {
+    const lockPath = freshLockPath('audit.lock');
+    const lock = new ChainLock(lockPath);
+    try {
+      lock.acquireExclusive();
+      throw new Error('should have thrown');
+    } catch (e: unknown) {
+      expect(e).toBeInstanceOf(ChainLockUnavailableError);
+      const msg = (e as Error).message;
+      expect(msg).toContain(lockPath);
+      expect(msg).toContain(ENV_UNSAFE_LOCKLESS);
+      expect(msg).toContain('T11');
+    }
+  });
+
+  it('opt-in via WITSEAL_UNSAFE_LOCKLESS=1 restores advisory-only acquire', () => {
+    process.env[ENV_UNSAFE_LOCKLESS] = '1';
+    const lock = new ChainLock(freshLockPath());
+    // Should NOT throw; returns a release handle (advisory-only mode).
+    const handle = lock.acquireExclusive();
+    expect(typeof handle.release).toBe('function');
+    expect(() => handle.release()).not.toThrow();
+  });
+
+  it('opt-in with a value other than "1" does not unlock the fallback', () => {
+    process.env[ENV_UNSAFE_LOCKLESS] = 'true';
+    const lock = new ChainLock(freshLockPath());
+    expect(() => lock.acquireExclusive()).toThrow(ChainLockUnavailableError);
+
+    process.env[ENV_UNSAFE_LOCKLESS] = '0';
+    expect(() => lock.acquireExclusive()).toThrow(ChainLockUnavailableError);
+
+    process.env[ENV_UNSAFE_LOCKLESS] = '';
+    expect(() => lock.acquireExclusive()).toThrow(ChainLockUnavailableError);
+  });
+
+  it('exports ENV_UNSAFE_LOCKLESS as the canonical env-var name', () => {
+    expect(ENV_UNSAFE_LOCKLESS).toBe('WITSEAL_UNSAFE_LOCKLESS');
   });
 });

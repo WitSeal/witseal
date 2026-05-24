@@ -22,7 +22,11 @@ import {
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { EventLog } from '../src/witness/event-log.js';
+import { EventLog, StaleAppendError } from '../src/witness/event-log.js';
+import { finalizeEvent } from '../src/integrity/hash-chain.js';
+import { generateEventId, generateReceiptId, WITSEAL_RUNTIME_VERSION as RUNTIME_VERSION_FOR_DRAFT } from '../src/witness/emit.js';
+import type { WitnessEventDraft } from '../schemas/witness-event.schema.js';
+import { hostname } from 'node:os';
 import { emitWitnessEvent, WITSEAL_RUNTIME_VERSION } from '../src/witness/emit.js';
 import type { ClassifiedIntent } from '../schemas/intent.schema.js';
 import type { PolicyDecision } from '../schemas/policy.schema.js';
@@ -230,5 +234,199 @@ describe('EventLog — head cache edge cases', () => {
     // readAllEvents goes through the same iterator — also exercise it.
     const all = await eventLog.readAllEvents();
     expect(all.map((e) => e.event_hash)).toEqual(seen);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// P0-2 — atomic append-under-lock + stale-event rejection
+// ---------------------------------------------------------------------------
+//
+// Runtime-boundary audit 2026-05-25 finding TS-P0-2: before this fix
+// `emitWitnessEvent` read the chain head OUTSIDE the lock and the legacy
+// `appendEvent(event)` appended the event under lock WITHOUT revalidating
+// `previous_event_hash` / `sequence` against the head observed in the
+// critical section. A second writer could advance the chain in the gap,
+// silently corrupting the linkage. These tests exercise the new
+// `appendDraftEvent(buildDraft)` atomic helper and the `appendEvent` stale
+// rejection path (`StaleAppendError`).
+
+function makeDraftAt(
+  log: EventLog,
+  head: string | null,
+  sequence: number,
+  seed: number
+): WitnessEventDraft {
+  return {
+    schema_version: 'witseal.witness.v0.1',
+    event_id: generateEventId(),
+    chain_segment_id: log.segmentId,
+    sequence,
+    timestamp: '2026-05-25T12:00:00Z',
+    previous_event_hash: head,
+    originating_node: hostname() || 'local',
+    agent_identifier: `p0-2-test-${seed}`,
+    classified_intent: makeClassifiedIntent(seed),
+    policy_decision: makeDecision(),
+    approval: null,
+    execution_result: null,
+    outcome: 'denied_by_policy',
+    receipt_id: generateReceiptId(),
+    versions: {
+      witseal_runtime: RUNTIME_VERSION_FOR_DRAFT,
+      classifier: 'evlogtest-1.0',
+      schema: 'witseal.witness.v0.1',
+    },
+  };
+}
+
+describe('EventLog.appendDraftEvent (P0-2 atomic critical section)', () => {
+  let dataDir: string;
+  let log: EventLog;
+
+  beforeEach(() => {
+    dataDir = mkdtempSync(join(tmpdir(), 'witseal-p0-2-'));
+    log = new EventLog({ root: dataDir, segmentId: 'default' });
+  });
+
+  afterEach(() => {
+    rmSync(dataDir, { recursive: true, force: true });
+  });
+
+  it('builds + finalizes + appends in one critical section (happy path)', () => {
+    const event = log.appendDraftEvent((head, sequence) => {
+      expect(head).toBeNull();
+      expect(sequence).toBe(0);
+      return makeDraftAt(log, head, sequence, 0);
+    });
+    expect(event.sequence).toBe(0);
+    expect(event.previous_event_hash).toBeNull();
+    expect(event.event_hash).toMatch(/^[a-f0-9]{64}$/);
+  });
+
+  it('rejects a buildDraft callback that ignores the provided head', () => {
+    const first = log.appendDraftEvent((h, s) => makeDraftAt(log, h, s, 0));
+    expect(() =>
+      log.appendDraftEvent((_head, sequence) => {
+        // Ignore the head and lie with a stale value.
+        return makeDraftAt(log, 'a'.repeat(64), sequence, 1);
+      })
+    ).toThrow(StaleAppendError);
+    // First event still on disk; nothing partial appended.
+    expect(first.sequence).toBe(0);
+  });
+
+  it('rejects a buildDraft callback that ignores the provided sequence', () => {
+    log.appendDraftEvent((h, s) => makeDraftAt(log, h, s, 0));
+    expect(() =>
+      log.appendDraftEvent((head, _sequence) =>
+        // Use head correctly but lie about sequence.
+        makeDraftAt(log, head, 0, 1)
+      )
+    ).toThrow(StaleAppendError);
+  });
+
+  it('chains contiguously across many sequential atomic appends', () => {
+    const seq: string[] = [];
+    for (let i = 0; i < 5; i++) {
+      const ev = log.appendDraftEvent((h, s) => makeDraftAt(log, h, s, i));
+      expect(ev.sequence).toBe(i);
+      seq.push(ev.event_hash);
+    }
+    // Each event's prev should equal the prior event's hash.
+    const persisted = readFileSync(
+      join(dataDir, 'events', 'default.jsonl'),
+      'utf8'
+    )
+      .split('\n')
+      .filter((l) => l.trim())
+      .map((l) => JSON.parse(l));
+    expect(persisted).toHaveLength(5);
+    for (let i = 1; i < 5; i++) {
+      expect(persisted[i]!.previous_event_hash).toBe(persisted[i - 1]!.event_hash);
+      expect(persisted[i]!.sequence).toBe(i);
+    }
+  });
+
+  it('emitWitnessEvent via Promise.all preserves contiguous sequence', async () => {
+    // Five concurrent emits scheduled together. Each goes through
+    // appendDraftEvent under the exclusive lock; the resulting sequence
+    // must be 0..4 with valid prev-hash linkage.
+    const emits = await Promise.all(
+      Array.from({ length: 5 }, (_, i) =>
+        emitWitnessEvent(log, {
+          classifiedIntent: makeClassifiedIntent(i),
+          policyDecision: makeDecision(),
+          approval: null,
+          executionResult: null,
+          outcome: 'denied_by_policy',
+          agentIdentifier: `parallel-${i}`,
+          classifierVersion: 'evlogtest-1.0',
+        })
+      )
+    );
+    const sequences = emits.map((e) => e.sequence).sort((a, b) => a - b);
+    expect(sequences).toEqual([0, 1, 2, 3, 4]);
+    const all = await log.readAllEvents();
+    expect(all).toHaveLength(5);
+    expect(all[0]!.previous_event_hash).toBeNull();
+    for (let i = 1; i < 5; i++) {
+      expect(all[i]!.previous_event_hash).toBe(all[i - 1]!.event_hash);
+    }
+  });
+});
+
+describe('EventLog.appendEvent stale rejection (P0-2)', () => {
+  let dataDir: string;
+  let log: EventLog;
+
+  beforeEach(() => {
+    dataDir = mkdtempSync(join(tmpdir(), 'witseal-p0-2-stale-'));
+    log = new EventLog({ root: dataDir, segmentId: 'default' });
+  });
+
+  afterEach(() => {
+    rmSync(dataDir, { recursive: true, force: true });
+  });
+
+  it('rejects an event whose previous_event_hash does not match current head', () => {
+    // Establish a genesis.
+    log.appendDraftEvent((h, s) => makeDraftAt(log, h, s, 0));
+    // Build a "second" event but pretend the head is null (stale).
+    const stale = finalizeEvent(makeDraftAt(log, null, 1, 1));
+    expect(() => log.appendEvent(stale)).toThrow(StaleAppendError);
+  });
+
+  it('rejects an event whose sequence does not match next-expected', () => {
+    log.appendDraftEvent((h, s) => makeDraftAt(log, h, s, 0));
+    const head = log.readChainHead();
+    // Correct prev_hash, but wrong sequence (jump to 5 instead of 1).
+    const stale = finalizeEvent(makeDraftAt(log, head.head, 5, 1));
+    expect(() => log.appendEvent(stale)).toThrow(StaleAppendError);
+  });
+
+  it('rejects a re-played first event after the chain has advanced', () => {
+    // First append.
+    const first = log.appendDraftEvent((h, s) => makeDraftAt(log, h, s, 0));
+    // Build another genesis-style event (prev=null, seq=0) — replay of the
+    // exact initial state.
+    const replayed = finalizeEvent(makeDraftAt(log, null, 0, 99));
+    expect(() => log.appendEvent(replayed)).toThrow(StaleAppendError);
+    // First event still intact.
+    expect(first.sequence).toBe(0);
+  });
+
+  it('StaleAppendError carries the field name + expected + actual values', () => {
+    log.appendDraftEvent((h, s) => makeDraftAt(log, h, s, 0));
+    const stale = finalizeEvent(makeDraftAt(log, null, 1, 1));
+    try {
+      log.appendEvent(stale);
+      throw new Error('should have thrown');
+    } catch (e: unknown) {
+      expect(e).toBeInstanceOf(StaleAppendError);
+      const err = e as StaleAppendError;
+      expect(err.field).toBe('previous_event_hash');
+      expect(err.actual).toBe('null');
+      expect(err.expected).not.toBe('null');
+    }
   });
 });

@@ -3,9 +3,18 @@
  *
  * See ADR-0006 for design rationale.
  *
- * Phase 1 implementation: POSIX flock(2) via the `fs.flockSync` shim.
- * Node.js stdlib does not expose flock natively, so we use a small
- * helper that opens a file and uses fcntl-like semantics.
+ * Phase 1 implementation: POSIX flock(2) via Node's `fs.flockSync` (added
+ * in Node 24+). When the host runtime does not expose `fs.flockSync`
+ * (current Node 22 LTS), the default behavior is **fail-closed**: any
+ * acquire throws `ChainLockUnavailableError`. This prevents silent
+ * concurrent-writer corruption of the chain (P0-3, runtime-boundary audit
+ * 2026-05-25).
+ *
+ * Operators who knowingly accept the multi-writer risk (single-process
+ * dev/test environments, immutable read-only data dirs, advisory-only
+ * tolerance) may opt in by setting the environment variable
+ * `WITSEAL_UNSAFE_LOCKLESS=1`. The opt-in is reported to stderr on first
+ * acquire so its presence is visible in the operator's logs.
  *
  * Cross-platform: macOS + Linux supported in v0.1; Windows uses a
  * compatibility path with `LockFileEx` planned for v0.2.
@@ -21,6 +30,33 @@ export interface LockHandle {
 }
 
 const ENV_LOCK_HOLDER = 'WITSEAL_LOCK_HELD_BY_PID';
+
+/**
+ * Environment variable opting into the lockless (advisory-only) fallback
+ * when the host Node runtime lacks `fs.flockSync`. Value must be exactly
+ * `'1'` to enable. Any other value (including unset) keeps the fail-closed
+ * default per P0-3.
+ */
+export const ENV_UNSAFE_LOCKLESS = 'WITSEAL_UNSAFE_LOCKLESS';
+
+/**
+ * Thrown when an exclusive or shared lock cannot be acquired because
+ * `fs.flockSync` is unavailable AND the operator has not opted into the
+ * advisory-only fallback via `WITSEAL_UNSAFE_LOCKLESS=1` (P0-3).
+ */
+export class ChainLockUnavailableError extends Error {
+  constructor(lockPath: string) {
+    super(
+      `ChainLock: native fs.flockSync is unavailable on this Node runtime ` +
+        `(stabilized in Node 24+). Concurrent writers cannot be mediated, ` +
+        `so witseal refuses to acquire a lock on ${lockPath} by default. ` +
+        `To accept the multi-writer risk and proceed in advisory-only mode ` +
+        `(e.g. single-process dev/test), set the environment variable ` +
+        `${ENV_UNSAFE_LOCKLESS}=1. See threat-model T11.`
+    );
+    this.name = 'ChainLockUnavailableError';
+  }
+}
 
 export class ChainLock {
   constructor(private readonly lockPath: string) {
@@ -44,12 +80,12 @@ export class ChainLock {
     const start = Date.now();
 
     while (true) {
-      if (tryFlock(fd, 'exclusive')) {
+      if (tryFlock(fd, 'exclusive', this.lockPath)) {
         process.env[ENV_LOCK_HOLDER] = String(process.pid);
         return {
           release: () => {
             try {
-              tryFlock(fd, 'unlock');
+              tryFlock(fd, 'unlock', this.lockPath);
             } finally {
               closeSync(fd);
               if (process.env[ENV_LOCK_HOLDER] === String(process.pid)) {
@@ -78,11 +114,11 @@ export class ChainLock {
     const start = Date.now();
 
     while (true) {
-      if (tryFlock(fd, 'shared')) {
+      if (tryFlock(fd, 'shared', this.lockPath)) {
         return {
           release: () => {
             try {
-              tryFlock(fd, 'unlock');
+              tryFlock(fd, 'unlock', this.lockPath);
             } finally {
               closeSync(fd);
             }
@@ -124,15 +160,23 @@ export class ChainLock {
 /**
  * Try to acquire/release a flock-style lock on a fd.
  *
- * Phase 1 v0.1: uses Node's `fs.flockSync` if available (Node 22+ has it on
- * supported platforms); otherwise falls back to a no-op with a warning.
+ * Native path: `fs.flockSync` (Node 24+) — exclusive / shared / unlock.
+ * Returns false on EAGAIN/EWOULDBLOCK so the caller can retry.
  *
- * For pre-22 Node, a follow-up shim using `flock(1)` CLI tool is
- * implementable but adds shell overhead; we accept that on older
- * runtimes the lock is advisory-only-by-convention and document this.
+ * Fallback path (P0-3 — runtime-boundary audit 2026-05-25): when
+ * `fs.flockSync` is unavailable, throws `ChainLockUnavailableError` UNLESS
+ * `WITSEAL_UNSAFE_LOCKLESS=1` is set in the environment. With the opt-in
+ * set, returns true (advisory-only) and emits a visible warning to stderr
+ * on first acquire so the operator sees the unsafe mode is in effect.
+ *
+ * `lockPath` is included only for the error message; it has no other use.
  */
-function tryFlock(fd: number, mode: 'exclusive' | 'shared' | 'unlock'): boolean {
-  // Prefer native fs.flockSync (Node 22+).
+function tryFlock(
+  fd: number,
+  mode: 'exclusive' | 'shared' | 'unlock',
+  lockPath: string
+): boolean {
+  // Prefer native fs.flockSync (Node 24+).
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const fs = nodeFs as any;
   if (typeof fs.flockSync === 'function') {
@@ -150,17 +194,28 @@ function tryFlock(fd: number, mode: 'exclusive' | 'shared' | 'unlock'): boolean 
     }
   }
 
-  // Fallback: lockless. v0.1 prints a single warning.
-  if (!warnedNoFlock && mode !== 'unlock') {
+  // Native unavailable. Default: fail closed (P0-3). Opt-in lockless via
+  // explicit env var; unlock path is always permitted (it would be a no-op
+  // anyway, and throwing on release would mask the original acquire error).
+  if (mode === 'unlock') {
+    return true;
+  }
+  if (process.env[ENV_UNSAFE_LOCKLESS] !== '1') {
+    throw new ChainLockUnavailableError(lockPath);
+  }
+  if (!warnedUnsafeLockless) {
     process.stderr.write(
-      'witseal: warning: native fs.flockSync unavailable; chain lock is advisory only.\n'
+      `witseal: WARNING: ${ENV_UNSAFE_LOCKLESS}=1 — operating in advisory-only ` +
+        `lockless mode (native fs.flockSync unavailable). Concurrent writers ` +
+        `are not mediated; chain integrity is the operator's responsibility ` +
+        `until the runtime gains fs.flockSync (Node 24+).\n`
     );
-    warnedNoFlock = true;
+    warnedUnsafeLockless = true;
   }
   return true;
 }
 
-let warnedNoFlock = false;
+let warnedUnsafeLockless = false;
 
 function isAncestorPid(targetPid: number): boolean {
   // Walk up the process tree from current pid; return true if targetPid found.

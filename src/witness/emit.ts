@@ -20,7 +20,6 @@
  */
 
 import { hostname } from 'node:os';
-import { finalizeEvent } from '../integrity/hash-chain.js';
 import type { EventLog } from './event-log.js';
 import type { WitnessEvent, WitnessEventDraft, WitnessOutcome } from '../../schemas/witness-event.schema.js';
 import type { ClassifiedIntent } from '../../schemas/intent.schema.js';
@@ -45,16 +44,32 @@ export async function emitWitnessEvent(
   eventLog: EventLog,
   input: EmitInput
 ): Promise<WitnessEvent> {
-  // Read current chain head (releases its own shared lock immediately).
-  const { head, sequence } = eventLog.readChainHead();
+  // P0-2: read-head + finalize + append happen under one exclusive critical
+  // section via EventLog.appendDraftEvent. The previous implementation read
+  // the chain head BEFORE acquiring the lock, leaving a race window where a
+  // second writer could advance the chain between the read and the append.
+  // The atomic helper closes that window.
+  return eventLog.appendDraftEvent((head, sequence) =>
+    buildBaseDraft(eventLog, head, sequence, input)
+  );
+}
 
-  const eventId = generateEventId();
-  const receiptId = generateReceiptId();
-
-  const draft: WitnessEventDraft = {
+/**
+ * Internal: assemble the base WitnessEventDraft from an EmitInput. Used by
+ * `emitWitnessEvent`, `emitIntentRecorded`, and `emitExecutionComplete` so
+ * the field set stays in sync.
+ */
+function buildBaseDraft(
+  eventLog: EventLog,
+  head: string | null,
+  sequence: number,
+  input: EmitInput,
+  intentRecordedEventId?: string
+): WitnessEventDraft {
+  return {
     schema_version: WITNESS_SCHEMA_VERSION,
-    event_id: eventId,
-    chain_segment_id: 'default',
+    event_id: generateEventId(),
+    chain_segment_id: eventLog.segmentId,
     sequence,
     timestamp: new Date().toISOString().replace(/\.\d{3}Z$/, 'Z'),
     previous_event_hash: head,
@@ -65,17 +80,73 @@ export async function emitWitnessEvent(
     approval: input.approval,
     execution_result: input.executionResult,
     outcome: input.outcome,
-    receipt_id: receiptId,
+    receipt_id: generateReceiptId(),
+    // P0-1 / RFC-001 §6.3a/§9.2: link the second-phase event to its
+    // matching `intent_recorded`. Use conditional spread so the field is
+    // omitted entirely (not serialized as null) when absent — preserves
+    // JCS byte-identity with Rust's serde skip_serializing_if pattern.
+    ...(intentRecordedEventId !== undefined
+      ? { intent_recorded_event_id: intentRecordedEventId }
+      : {}),
     versions: {
       witseal_runtime: WITSEAL_RUNTIME_VERSION,
       classifier: input.classifierVersion,
       schema: WITNESS_SCHEMA_VERSION,
     },
   };
+}
 
-  const event = finalizeEvent(draft);
-  eventLog.appendEvent(event);
-  return event;
+/**
+ * P0-1 / RFC-001 §6.3a — Phase A: emit `intent_recorded` BEFORE the
+ * execution attempt. The witness chain records the action's intent + policy
+ * decision so a crash mid-execution leaves a recoverable trace
+ * (`execution_lost` on next startup).
+ *
+ * The input must carry `outcome: 'pending'` and `executionResult: null`;
+ * this function does not synthesize those values to make the discipline
+ * explicit at the call site.
+ */
+export async function emitIntentRecorded(
+  eventLog: EventLog,
+  input: EmitInput
+): Promise<WitnessEvent> {
+  if (input.outcome !== 'pending') {
+    throw new Error(
+      `emitIntentRecorded: outcome must be 'pending' (got ${input.outcome})`
+    );
+  }
+  if (input.executionResult !== null) {
+    throw new Error(
+      `emitIntentRecorded: executionResult must be null (got non-null result)`
+    );
+  }
+  return eventLog.appendDraftEvent((head, sequence) =>
+    buildBaseDraft(eventLog, head, sequence, input)
+  );
+}
+
+/**
+ * P0-1 / RFC-001 §6.3a — Phase B: emit `execution_complete` AFTER the
+ * execution attempt returns. References the matching `intent_recorded`
+ * event via `intent_recorded_event_id`.
+ *
+ * Outcome here is the final computed outcome (allowed_executed,
+ * allowed_executed_with_error, approved_executed, etc.) — caller derives
+ * it from the policy decision + execution result.
+ */
+export async function emitExecutionComplete(
+  eventLog: EventLog,
+  input: EmitInput,
+  intentRecordedEventId: string
+): Promise<WitnessEvent> {
+  if (input.outcome === 'pending' || input.outcome === 'execution_lost') {
+    throw new Error(
+      `emitExecutionComplete: outcome must be a final outcome (got ${input.outcome})`
+    );
+  }
+  return eventLog.appendDraftEvent((head, sequence) =>
+    buildBaseDraft(eventLog, head, sequence, input, intentRecordedEventId)
+  );
 }
 
 const ID_ALPHABET = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';

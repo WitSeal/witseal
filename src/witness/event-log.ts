@@ -24,8 +24,9 @@ import { createInterface } from 'node:readline';
 import {
   WitnessEventSchema,
   type WitnessEvent,
+  type WitnessEventDraft,
 } from '../../schemas/witness-event.schema.js';
-import { verifyChain } from '../integrity/hash-chain.js';
+import { finalizeEvent, verifyChain } from '../integrity/hash-chain.js';
 import { ChainLock } from '../integrity/lock.js';
 
 export interface EventLogPaths {
@@ -35,19 +36,54 @@ export interface EventLogPaths {
   segmentId: string;
 }
 
+/**
+ * Thrown by `EventLog.appendEvent` / `appendDraftEvent` when the event the
+ * caller is trying to append does not match the chain state observed inside
+ * the append-time exclusive critical section (P0-2 — runtime-boundary audit
+ * 2026-05-25). Indicates that another writer advanced the chain between the
+ * caller's head-read and the append, OR that the caller built a draft with
+ * stale chain-position fields.
+ */
+export class StaleAppendError extends Error {
+  constructor(
+    public readonly field: string,
+    public readonly expected: string,
+    public readonly actual: string
+  ) {
+    super(
+      `EventLog.appendEvent: stale append rejected — ${field} mismatch ` +
+        `(expected ${expected}, got ${actual}). Another writer may have ` +
+        `advanced the chain; rebuild the event from the current head.`
+    );
+    this.name = 'StaleAppendError';
+  }
+}
+
 export class EventLog {
   private readonly logPath: string;
   private readonly headCachePath: string;
   private readonly lock: ChainLock;
+  private readonly _segmentId: string;
 
   constructor(paths: EventLogPaths) {
     const eventsDir = join(paths.root, 'events');
     if (!existsSync(eventsDir)) {
       mkdirSync(eventsDir, { recursive: true });
     }
+    this._segmentId = paths.segmentId;
     this.logPath = join(eventsDir, `${paths.segmentId}.jsonl`);
     this.headCachePath = join(eventsDir, `${paths.segmentId}.head`);
     this.lock = new ChainLock(join(eventsDir, `${paths.segmentId}.lock`));
+  }
+
+  /**
+   * The chain segment ID this EventLog operates on. Used by the emitter to
+   * stamp each WitnessEvent's `chain_segment_id` so segment selection at the
+   * CLI / API surface (`--segment`) propagates verbatim to persisted evidence
+   * (P0-5 — segment traceability per the 2026-05-25 runtime-boundary audit).
+   */
+  get segmentId(): string {
+    return this._segmentId;
   }
 
   /**
@@ -100,10 +136,96 @@ export class EventLog {
   }
 
   /**
-   * Append an event under exclusive chain lock. Recommended path.
+   * Append an event under exclusive chain lock and validate it against the
+   * actual chain state observed under the same lock (P0-2 — runtime-boundary
+   * audit 2026-05-25).
+   *
+   * Before the P0-2 fix, the legacy `emitWitnessEvent()` path read the chain
+   * head OUTSIDE the lock and then re-entered for the append. A second writer
+   * (another process; or, with the lock fail-closed default of P0-3, a
+   * misuse of `WITSEAL_UNSAFE_LOCKLESS=1`) could advance the chain between
+   * the read and the append; the stale event would silently corrupt the
+   * `previous_event_hash` / `sequence` linkage.
+   *
+   * This method now revalidates `event.previous_event_hash` and
+   * `event.sequence` against the chain state read inside the lock and rejects
+   * mismatches with a `StaleAppendError` rather than silently committing the
+   * stale event. For new code, prefer `appendDraftEvent()` which composes the
+   * read + build + finalize + append into one atomic critical section.
    */
   appendEvent(event: WitnessEvent): void {
-    this.lock.withExclusive(() => this.appendEventUnsafe(event));
+    this.lock.withExclusive(() => {
+      const { head, sequence } = this.readChainHeadUnsafe();
+      if (event.previous_event_hash !== head) {
+        throw new StaleAppendError(
+          `previous_event_hash`,
+          String(head),
+          String(event.previous_event_hash)
+        );
+      }
+      if (event.sequence !== sequence) {
+        throw new StaleAppendError(
+          `sequence`,
+          String(sequence),
+          String(event.sequence)
+        );
+      }
+      this.appendEventUnsafe(event);
+    });
+  }
+
+  /**
+   * Atomic build-and-append (P0-2): under one exclusive critical section,
+   *   1. read the chain head and next sequence,
+   *   2. invoke `buildDraft(head, sequence)` to produce a draft with those
+   *      values bound,
+   *   3. compute `event_hash` via `finalizeEvent`,
+   *   4. append + fsync,
+   *   5. update head cache,
+   * and return the finalized event.
+   *
+   * The caller's `buildDraft` callback must produce a draft whose
+   * `previous_event_hash` and `sequence` exactly match the values passed to
+   * it (this is enforced by re-checking after finalize); other fields the
+   * caller fills as needed. This shape lets emitters bind chain-position
+   * fields to the actual state under lock without ever touching a stale
+   * snapshot from outside the lock.
+   */
+  appendDraftEvent(
+    buildDraft: (chainHead: string | null, sequence: number) => WitnessEventDraft
+  ): WitnessEvent {
+    return this.lock.withExclusive(() => {
+      const { head, sequence } = this.readChainHeadUnsafe();
+      const draft = buildDraft(head, sequence);
+      if (draft.previous_event_hash !== head) {
+        throw new StaleAppendError(
+          `buildDraft must use the provided chain head (previous_event_hash)`,
+          String(head),
+          String(draft.previous_event_hash)
+        );
+      }
+      if (draft.sequence !== sequence) {
+        throw new StaleAppendError(
+          `buildDraft must use the provided sequence`,
+          String(sequence),
+          String(draft.sequence)
+        );
+      }
+      const event = finalizeEvent(draft);
+      this.appendEventUnsafe(event);
+      return event;
+    });
+  }
+
+  /**
+   * Internal: read the chain head and next-sequence WITHOUT acquiring the
+   * lock. Intended for use inside an already-acquired critical section
+   * (`appendEvent`, `appendDraftEvent`). External callers should use
+   * `readChainHead()` (which is read-only and lock-free, since reads are
+   * idempotent).
+   */
+  private readChainHeadUnsafe(): { head: string | null; sequence: number } {
+    return this.readChainHead();
   }
 
   /**
