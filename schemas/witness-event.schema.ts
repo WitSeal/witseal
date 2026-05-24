@@ -33,6 +33,16 @@ export const TimestampSchema = z
 
 /**
  * Outcome of the witness event — what actually happened to the action.
+ *
+ * Additive value `no_policy_configured` (P0-4, runtime-boundary audit
+ * 2026-05-25): emitted when the runtime detected that no policy packs are
+ * loaded. By default the runtime fails closed (no execution, `null`
+ * execution_result). With the operator-explicit opt-in
+ * `WITSEAL_UNSAFE_ALLOW_NO_POLICY=1`, the action proceeds but the witness
+ * event still carries this outcome (NOT `allowed_executed`) so downstream
+ * evidence consumers can distinguish "allowed by policy" from "ran without
+ * policy mediation". Presence of `execution_result` tells the consumer
+ * which case occurred: `null` = blocked; non-null = ran under escape hatch.
  */
 export const WitnessOutcomeSchema = z.enum([
   'allowed_executed',
@@ -42,6 +52,7 @@ export const WitnessOutcomeSchema = z.enum([
   'denied_by_policy',
   'denied_by_approval',
   'denied_by_classification_failure',
+  'no_policy_configured',
 ]);
 
 export type WitnessOutcome = z.infer<typeof WitnessOutcomeSchema>;
