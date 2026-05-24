@@ -20,9 +20,8 @@
  */
 
 import { hostname } from 'node:os';
-import { finalizeEvent } from '../integrity/hash-chain.js';
 import type { EventLog } from './event-log.js';
-import type { WitnessEvent, WitnessEventDraft, WitnessOutcome } from '../../schemas/witness-event.schema.js';
+import type { WitnessEvent, WitnessOutcome } from '../../schemas/witness-event.schema.js';
 import type { ClassifiedIntent } from '../../schemas/intent.schema.js';
 import type { PolicyDecision } from '../../schemas/policy.schema.js';
 import type { ApprovalRecord } from '../../schemas/approval.schema.js';
@@ -45,40 +44,38 @@ export async function emitWitnessEvent(
   eventLog: EventLog,
   input: EmitInput
 ): Promise<WitnessEvent> {
-  // Read current chain head (releases its own shared lock immediately).
-  const { head, sequence } = eventLog.readChainHead();
-
-  const eventId = generateEventId();
-  const receiptId = generateReceiptId();
-
-  const draft: WitnessEventDraft = {
-    schema_version: WITNESS_SCHEMA_VERSION,
-    event_id: eventId,
-    // P0-5: read the segment from the EventLog instance rather than hardcoding
-    // 'default'. This makes `--segment <id>` at the CLI surface propagate into
-    // each persisted WitnessEvent's `chain_segment_id`.
-    chain_segment_id: eventLog.segmentId,
-    sequence,
-    timestamp: new Date().toISOString().replace(/\.\d{3}Z$/, 'Z'),
-    previous_event_hash: head,
-    originating_node: hostname() || 'local',
-    agent_identifier: input.agentIdentifier,
-    classified_intent: input.classifiedIntent,
-    policy_decision: input.policyDecision,
-    approval: input.approval,
-    execution_result: input.executionResult,
-    outcome: input.outcome,
-    receipt_id: receiptId,
-    versions: {
-      witseal_runtime: WITSEAL_RUNTIME_VERSION,
-      classifier: input.classifierVersion,
-      schema: WITNESS_SCHEMA_VERSION,
-    },
-  };
-
-  const event = finalizeEvent(draft);
-  eventLog.appendEvent(event);
-  return event;
+  // P0-2: read-head + finalize + append happen under one exclusive critical
+  // section via EventLog.appendDraftEvent. The previous implementation read
+  // the chain head BEFORE acquiring the lock, leaving a race window where a
+  // second writer could advance the chain between the read and the append.
+  // The atomic helper closes that window.
+  return eventLog.appendDraftEvent((head, sequence) => {
+    const eventId = generateEventId();
+    const receiptId = generateReceiptId();
+    return {
+      schema_version: WITNESS_SCHEMA_VERSION,
+      event_id: eventId,
+      // P0-5: read the segment from the EventLog instance rather than
+      // hardcoding 'default'. The --segment flag propagates verbatim.
+      chain_segment_id: eventLog.segmentId,
+      sequence,
+      timestamp: new Date().toISOString().replace(/\.\d{3}Z$/, 'Z'),
+      previous_event_hash: head,
+      originating_node: hostname() || 'local',
+      agent_identifier: input.agentIdentifier,
+      classified_intent: input.classifiedIntent,
+      policy_decision: input.policyDecision,
+      approval: input.approval,
+      execution_result: input.executionResult,
+      outcome: input.outcome,
+      receipt_id: receiptId,
+      versions: {
+        witseal_runtime: WITSEAL_RUNTIME_VERSION,
+        classifier: input.classifierVersion,
+        schema: WITNESS_SCHEMA_VERSION,
+      },
+    };
+  });
 }
 
 const ID_ALPHABET = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
