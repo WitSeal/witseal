@@ -137,6 +137,30 @@ export const WitnessEventSchema = z.object({
     .regex(/^evt_[0-9a-zA-Z]{20,}$/, 'must be evt_<id>')
     .optional(),
 
+  /**
+   * P1-8 (runtime-boundary audit 2026-05-25) — optional idempotency key.
+   *
+   * When set, EventLog.appendDraftEvent first scans the chain for any
+   * prior event with the same `operation_id`; if found, it returns that
+   * existing event WITHOUT appending a duplicate. This makes append
+   * retry safe at the caller level (e.g. a network-driven exec that
+   * retries the same logical action does not double-record).
+   *
+   * Convention: the caller chooses an `operation_id` value that uniquely
+   * identifies the LOGICAL operation (e.g. a UUIDv4 generated once at
+   * the request boundary, NOT per retry). When absent, no dedupe is
+   * applied — the legacy "every append is a new event" semantics hold.
+   *
+   * Wire-format: optional + non-nullable. Omitted from JSON when absent
+   * to preserve JCS byte identity with implementations using
+   * `serde(skip_serializing_if = "Option::is_none")`.
+   *
+   * Phase 2+ scope (NOT in P1): the field-level idempotency in this
+   * release covers append retry only. Full file-write rollback /
+   * idempotency requires temp-file staging + rename and is deferred.
+   */
+  operation_id: z.string().min(1).max(128).optional(),
+
   /** Versions of the runtime components that produced this event. For replay. */
   versions: z.object({
     witseal_runtime: z.string(),
