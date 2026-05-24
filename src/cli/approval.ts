@@ -54,6 +54,15 @@ function obtainViaCI(
   const matchedRuleId = decision.matched_rule?.rule_id;
   const allowed = matchedRuleId ? allowList.includes(matchedRuleId) : false;
 
+  // P1-7: when WITSEAL_CI_PRINCIPAL is unset, the principal identifier
+  // carries the `fallback:` marker so evidence consumers can distinguish
+  // configured CI identity from the runtime's default. The marker remains
+  // acceptable for ad-hoc use; production CI integrations should set the
+  // env var.
+  const configuredCiPrincipal = process.env['WITSEAL_CI_PRINCIPAL'];
+  const ciIdentifier = configuredCiPrincipal && configuredCiPrincipal.length > 0
+    ? configuredCiPrincipal
+    : 'fallback:ci-default';
   return {
     schema_version: 'witseal.approval.v0.1',
     approval_id: approvalId,
@@ -63,7 +72,7 @@ function obtainViaCI(
     outcome: allowed ? 'approved' : 'rejected',
     principal: {
       type: 'ci',
-      identifier: process.env['WITSEAL_CI_PRINCIPAL'] ?? 'ci',
+      identifier: ciIdentifier,
     },
     timeout_seconds: timeoutS,
     ...(allowed
@@ -72,6 +81,24 @@ function obtainViaCI(
   };
 }
 
+/**
+ * Phase 1 TTY approval flow.
+ *
+ * P1-6 (runtime-boundary audit 2026-05-25): the `timeoutS` value is
+ * recorded in the resulting `ApprovalRecord.timeout_seconds` field but is
+ * NOT enforced as an OS-level deadline. `readApprovalChar` uses a blocking
+ * `readSync('/dev/tty')` and the runtime cannot interrupt that syscall
+ * portably without raw-mode + select/poll wiring that Phase 1 defers.
+ *
+ * Public claim discipline: "silence is not consent in CI" is accurate
+ * (the CI/non-interactive path resolves synchronously). The claim
+ * "approval timeout is enforced for TTY" is INACCURATE for Phase 1 and
+ * must not appear in public artifacts (README, landing, CHANGELOG, PR
+ * descriptions) per the 2026-05-25 claim-discipline list. The rendered
+ * prompt also flags the limitation inline so operators are not misled.
+ *
+ * Threat-model T7 documents the residual and the Phase 2 plan.
+ */
 function obtainViaTTY(
   intent: ClassifiedIntent,
   decision: PolicyDecision,
@@ -83,6 +110,14 @@ function obtainViaTTY(
 
   const outcome = readApprovalChar(timeoutS);
 
+  // P1-7: when neither $USER nor $LOGNAME is set (rare — typically only on
+  // service accounts or stripped environments), the principal identifier
+  // carries the `fallback:` marker so the chain reader can distinguish a
+  // real interactive user from an environment that couldn't name one.
+  const userEnv = process.env['USER'] ?? process.env['LOGNAME'];
+  const humanIdentifier = userEnv && userEnv.length > 0
+    ? userEnv
+    : 'fallback:no-user-env';
   return {
     schema_version: 'witseal.approval.v0.1',
     approval_id: approvalId,
@@ -92,7 +127,7 @@ function obtainViaTTY(
     outcome,
     principal: {
       type: 'human',
-      identifier: process.env['USER'] ?? process.env['LOGNAME'] ?? 'unknown',
+      identifier: humanIdentifier,
     },
     timeout_seconds: timeoutS,
   };
@@ -148,7 +183,10 @@ function renderPrompt(intent: ClassifiedIntent, decision: PolicyDecision, timeou
     out.write(`Policy:    ${decision.matched_rule.rule_id} (${decision.matched_rule.pack_id})\n`);
   }
   out.write(`Reason:    ${decision.reason}\n`);
-  out.write(`Timeout:   ${timeoutS}s\n`);
+  // P1-6: TTY mode does not enforce timeout in Phase 1 — make the
+  // limitation visible in the prompt itself so operators do not assume
+  // auto-rejection.
+  out.write(`Timeout:   ${timeoutS}s (no timer in TTY mode — Ctrl+C to cancel)\n`);
   out.write('─────────────────────────────────────────\n');
   out.write('Approve? [y/N]: ');
 }
@@ -163,12 +201,13 @@ function readApprovalChar(timeoutS: number): ApprovalOutcome {
   const fd = openSync('/dev/tty', 'r');
   try {
     const buf = Buffer.alloc(1);
-    // Note: this is a synchronous blocking read. For v0.1 we accept that
-    // a literal timeout is approximated by the OS; we cannot interrupt the
-    // syscall portably. The 60s default is informational; the outer process
-    // will appear to hang until input arrives. Phase 2 introduces select()-based
-    // timeout handling.
-    void timeoutS; // currently unused; documented above
+    // P1-6 (runtime-boundary audit 2026-05-25): synchronous blocking read.
+    // The `timeoutS` parameter is recorded in the resulting ApprovalRecord
+    // but NOT enforced here — interrupting a Node-level readSync of a tty
+    // fd without raw-mode + select/poll is non-portable. Phase 2 will
+    // switch to a select()-based wait. The rendered prompt flags the
+    // limitation inline so operators are not misled.
+    void timeoutS;
     const bytes = readSync(fd, buf, 0, 1, null);
     if (bytes === 0) {
       process.stderr.write('\n');
