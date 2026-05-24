@@ -53,6 +53,11 @@ export const WitnessOutcomeSchema = z.enum([
   'denied_by_approval',
   'denied_by_classification_failure',
   'no_policy_configured',
+  // P0-1 (runtime-boundary audit 2026-05-25) + RFC-001 §6.3a/§9.2:
+  // two-phase commit so the chain records the action BEFORE execution
+  // attempts and can recover from a crash mid-flight.
+  'pending',          // emitted as `intent_recorded` (Phase A), execution_result=null
+  'execution_lost',   // emitted on next startup when a `pending` tail has no successor
 ]);
 
 export type WitnessOutcome = z.infer<typeof WitnessOutcomeSchema>;
@@ -113,6 +118,24 @@ export const WitnessEventSchema = z.object({
 
   /** Receipt ID for this action. Receipts are paired 1:1 with witness events. */
   receipt_id: z.string().regex(/^rcpt_[0-9a-zA-Z]{20,}$/),
+
+  /**
+   * P0-1 / RFC-001 §6.3a/§9.2 — two-phase commit linkage.
+   *
+   * Populated only on `execution_complete`-style events (the second phase
+   * of an exec) and on `execution_lost` recovery events. References the
+   * `event_id` of the matching `pending` (`intent_recorded`) event in the
+   * same chain segment.
+   *
+   * Wire-format invariant: when absent, the field MUST be omitted entirely
+   * (not serialized as `null`) — the optional-without-nullable shape below
+   * matches Rust's `#[serde(skip_serializing_if = "Option::is_none")]` so
+   * mixed-track readers compute identical JCS canonical bytes.
+   */
+  intent_recorded_event_id: z
+    .string()
+    .regex(/^evt_[0-9a-zA-Z]{20,}$/, 'must be evt_<id>')
+    .optional(),
 
   /** Versions of the runtime components that produced this event. For replay. */
   versions: z.object({

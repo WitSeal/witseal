@@ -16,7 +16,13 @@ import { join } from 'node:path';
 import { classify, CLASSIFIER_VERSION } from '../risk/classifier.js';
 import { PolicyEngine } from '../policy/engine.js';
 import { EventLog } from '../witness/event-log.js';
-import { emitWitnessEvent, generateIntentId } from '../witness/emit.js';
+import {
+  emitExecutionComplete,
+  emitIntentRecorded,
+  emitWitnessEvent,
+  generateIntentId,
+} from '../witness/emit.js';
+import { runRecoveryIfNeeded } from '../witness/recovery.js';
 import { mediateShell } from '../execution/mediator.js';
 import { obtainApproval } from './approval.js';
 import type { ClassifiedIntent } from '../../schemas/intent.schema.js';
@@ -47,6 +53,23 @@ export interface ExecOptions {
 }
 
 export async function runExec(opts: ExecOptions): Promise<number> {
+  // 0. P0-1 recovery: if a prior invocation crashed between intent_recorded
+  //    and execution_complete, the chain tail is an unpaired `pending`.
+  //    Emit `execution_lost` before any new work so the chain captures
+  //    what was abandoned (RFC-001 §9.2). The check is cheap on healthy
+  //    chains (returns null after a single tail read).
+  {
+    const recoveryLog = new EventLog({ root: opts.dataDir, segmentId: opts.segmentId });
+    const recovered = await runRecoveryIfNeeded(recoveryLog);
+    if (recovered) {
+      process.stderr.write(
+        `witseal: recovered abandoned intent_recorded event ` +
+          `${recovered.intent_recorded_event_id ?? '<unknown>'} as ` +
+          `execution_lost ${recovered.event_id}\n`
+      );
+    }
+  }
+
   // 1. Build intent
   const intent: ClassifiedIntent['intent'] = {
     action_type: 'shell_command',
@@ -166,7 +189,22 @@ export async function runExec(opts: ExecOptions): Promise<number> {
     return 100;
   }
 
-  // 6. Execute
+  // 6a. P0-1 / RFC-001 §6.3a — Phase A: emit `intent_recorded` BEFORE the
+  //     mediator runs. A crash between this emit and the post-execution
+  //     emit leaves an unpaired `pending` event at the chain tail that
+  //     the next runExec invocation recovers as `execution_lost`.
+  const eventLog = new EventLog({ root: opts.dataDir, segmentId: opts.segmentId });
+  const intentRecorded = await emitIntentRecorded(eventLog, {
+    classifiedIntent,
+    policyDecision: decision,
+    approval,
+    executionResult: null,
+    outcome: 'pending',
+    agentIdentifier: opts.agentId,
+    classifierVersion: CLASSIFIER_VERSION,
+  });
+
+  // 6b. Execute
   const execResult: ExecutionResult = await mediateShell(intent, {
     timeoutMs: opts.timeoutMs > 0 ? opts.timeoutMs : 0,
   });
@@ -179,17 +217,23 @@ export async function runExec(opts: ExecOptions): Promise<number> {
     ? 'no_policy_configured'
     : computeOutcome(decision.outcome, approval !== null, execResult);
 
-  // 8. Emit witness event (advances chain)
-  const eventLog = new EventLog({ root: opts.dataDir, segmentId: opts.segmentId });
-  const event = await emitWitnessEvent(eventLog, {
-    classifiedIntent,
-    policyDecision: decision,
-    approval,
-    executionResult: execResult,
-    outcome,
-    agentIdentifier: opts.agentId,
-    classifierVersion: CLASSIFIER_VERSION,
-  });
+  // 8. P0-1 / RFC-001 §6.3a — Phase B: emit `execution_complete` AFTER
+  //    the mediator returns, referencing the Phase A intent_recorded so
+  //    the pair is independently navigable from receipt → event →
+  //    intent_recorded_event_id.
+  const event = await emitExecutionComplete(
+    eventLog,
+    {
+      classifiedIntent,
+      policyDecision: decision,
+      approval,
+      executionResult: execResult,
+      outcome,
+      agentIdentifier: opts.agentId,
+      classifierVersion: CLASSIFIER_VERSION,
+    },
+    intentRecorded.event_id
+  );
 
   // 9. Surface execution outputs to the user (head + tail)
   if (execResult.stdout.head) process.stdout.write(execResult.stdout.head);

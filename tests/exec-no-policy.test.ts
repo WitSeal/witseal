@@ -208,11 +208,15 @@ describe('runExec — no-policy escape hatch (WITSEAL_UNSAFE_ALLOW_NO_POLICY=1)'
     }
     const log = new EventLog({ root: dataDir, segmentId: 'default' });
     const events = await log.readAllEvents();
-    expect(events).toHaveLength(1);
-    expect(events[0]!.outcome).toBe('no_policy_configured');
-    // KEY DISTINCTION from the fail-closed case: execution_result is set.
-    expect(events[0]!.execution_result).not.toBeNull();
-    expect(events[0]!.execution_result?.exit_code).toBe(0);
+    // P0-1 two-phase: intent_recorded (pending) then execution_complete.
+    expect(events).toHaveLength(2);
+    expect(events[0]!.outcome).toBe('pending');
+    expect(events[1]!.outcome).toBe('no_policy_configured');
+    expect(events[1]!.intent_recorded_event_id).toBe(events[0]!.event_id);
+    // KEY DISTINCTION from the fail-closed case: execution_result is set
+    // on the second-phase event.
+    expect(events[1]!.execution_result).not.toBeNull();
+    expect(events[1]!.execution_result?.exit_code).toBe(0);
   });
 
   it('writes a visible WARNING to stderr before executing', async () => {
@@ -254,8 +258,9 @@ describe('runExec — no-policy escape hatch (WITSEAL_UNSAFE_ALLOW_NO_POLICY=1)'
     }
     const log = new EventLog({ root: dataDir, segmentId: 'default' });
     const events = await log.readAllEvents();
-    expect(events[0]!.outcome).toBe('no_policy_configured');
-    expect(events[0]!.execution_result?.exit_code).toBe(1);
+    // events[0] = intent_recorded (pending), events[1] = execution_complete
+    expect(events[1]!.outcome).toBe('no_policy_configured');
+    expect(events[1]!.execution_result?.exit_code).toBe(1);
   });
 });
 
@@ -301,7 +306,10 @@ describe('runExec — policy-allow remains distinguishable from no_policy_config
     }
     const log = new EventLog({ root: dataDir, segmentId: 'default' });
     const events = await log.readAllEvents();
-    expect(events[0]!.outcome).toBe('allowed_executed');
-    expect(events[0]!.outcome).not.toBe('no_policy_configured');
+    // P0-1: two events — intent_recorded then execution_complete.
+    expect(events).toHaveLength(2);
+    expect(events[0]!.outcome).toBe('pending');
+    expect(events[1]!.outcome).toBe('allowed_executed');
+    expect(events[1]!.outcome).not.toBe('no_policy_configured');
   });
 });
