@@ -99,6 +99,11 @@ function buildExecutionLostDraft(
     // recovery is not necessarily the same as the original — but the
     // abandoned action's identity is what the chain needs to record.
     agent_identifier: abandoned.agent_identifier,
+    // RFC-002 §7.2: propagate identity_origin from the abandoned event
+    // if present; omit-when-absent to preserve JCS byte-identity.
+    ...(abandoned.identity_origin !== undefined
+      ? { identity_origin: abandoned.identity_origin }
+      : {}),
     classified_intent: abandoned.classified_intent,
     policy_decision: abandoned.policy_decision,
     approval: abandoned.approval,

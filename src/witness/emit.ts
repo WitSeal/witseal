@@ -39,6 +39,12 @@ export interface EmitInput {
   agentIdentifier: string;
   classifierVersion: string;
   /**
+   * RFC-002 §7.2 — structured identity origin for `agentIdentifier`.
+   * When set, propagated into `WitnessEvent.identity_origin` using the
+   * same omit-when-absent discipline as other optional wire fields.
+   */
+  identityOrigin?: 'configured' | 'fallback';
+  /**
    * P1-8: optional idempotency key. When set, EventLog.appendDraftEvent
    * scans the chain for a prior event with the same operation_id and
    * returns it WITHOUT re-appending. Use a UUIDv4 (or similar) generated
@@ -82,6 +88,11 @@ function buildBaseDraft(
     previous_event_hash: head,
     originating_node: hostname() || 'local',
     agent_identifier: input.agentIdentifier,
+    // RFC-002 §7.2: structured identity origin. Omit-when-absent to preserve
+    // JCS byte-identity with implementations that do not emit the field.
+    ...(input.identityOrigin !== undefined
+      ? { identity_origin: input.identityOrigin }
+      : {}),
     classified_intent: input.classifiedIntent,
     policy_decision: input.policyDecision,
     approval: input.approval,

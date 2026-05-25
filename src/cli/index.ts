@@ -42,13 +42,22 @@ program
   .option('--timeout <ms>', 'Execution timeout in milliseconds', '0')
   .argument('<command>', 'Executable to run')
   .argument('[args...]', 'Arguments to pass')
-  .action(async (command: string, args: string[], opts) => {
+  .action(async (command: string, args: string[], opts, cmd) => {
+    // RFC-002 §7.2: detect whether --agent was explicitly set by the
+    // operator or is the CLI default. commander.getOptionValueSource()
+    // returns 'default' when the option was not provided on the command
+    // line; 'cli' (or 'env') when it was. This drives identity_origin
+    // in the witness event so evidence consumers can distinguish a
+    // configured agent identity from the runtime's built-in default.
+    const agentSource = (cmd as { getOptionValueSource: (k: string) => string }).getOptionValueSource('agent');
+    const identityOrigin = agentSource === 'default' ? 'fallback' : 'configured';
     const exitCode = await runExec({
       command,
       args,
-      agentId: opts.agent,
-      cwd: opts.cwd,
-      timeoutMs: parseInt(opts.timeout, 10) || 0,
+      agentId: opts.agent as string,
+      identityOrigin,
+      cwd: opts.cwd as string,
+      timeoutMs: parseInt(opts.timeout as string, 10) || 0,
       dataDir: program.opts()['dataDir'] as string,
       segmentId: program.opts()['segment'] as string,
     });
