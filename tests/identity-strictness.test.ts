@@ -1,21 +1,19 @@
 /**
- * P1-7 — Identity strictness (fallback identifier is marked in evidence).
+ * RFC-002 §7.2 — Identity origin (structured identity_origin field).
  *
- * Runtime-boundary audit 2026-05-25 finding TS-P1-7: default `--agent`
- * value `cli-user` and approval principal default `unknown` were
- * indistinguishable from a real configured identity. Per project decision
- * 2026-05-25, fallback identity is allowed only if visibly marked in
- * evidence/receipt; CI/agent integrations require stable configured IDs.
+ * Runtime-boundary audit 2026-05-25 finding TS-P1-7 established that
+ * default identifiers must be distinguishable from configured ones.
+ * The initial fix (PR #20) used a `fallback:` string prefix. RFC-002 §7.2
+ * supersedes the prefix convention with a structured `identity_origin`
+ * field (`'configured' | 'fallback'`), keeping identifiers clean.
  *
- * Fix landed in src/cli/index.ts and src/cli/approval.ts:
- *   - CLI `--agent` default → `'fallback:cli-default'`
- *   - approval CI principal default → `'fallback:ci-default'`
- *   - approval TTY principal default (no $USER/$LOGNAME) →
- *     `'fallback:no-user-env'`
+ * This file tests the §7.2 implementation:
+ *   - WitnessEvent.identity_origin set when identityOrigin is passed
+ *   - ApprovalPrincipal.identity_origin set by approval.ts
+ *   - agent_identifier and principal.identifier carry NO `fallback:` prefix
+ *   - identity_origin omitted (not null) when not applicable
  *
- * Convention: any identifier with the literal `fallback:` prefix
- * indicates the runtime fell back to a default rather than carrying a
- * configured identity. Evidence consumers can grep on the prefix.
+ * §7.3 confirmatory: operation_id field present on WitnessEventSchema.
  */
 
 import { describe, expect, it, beforeEach, afterEach, vi } from 'vitest';
@@ -73,17 +71,18 @@ afterEach(() => {
   rmSync(dataDir, { recursive: true, force: true });
 });
 
-describe('P1-7 — agent identifier fallback marker (witness event)', () => {
-  it('persists the fallback marker when runExec is called with the CLI default agentId', async () => {
+describe('RFC-002 §7.2 — agent identity_origin on witness event', () => {
+  it('sets identity_origin=fallback when identityOrigin option is fallback', async () => {
     writeAllowPack();
     const out = silenceOutput();
     try {
-      // Simulates: `witseal exec /bin/echo hi` with NO --agent flag (CLI
-      // parser would pass the default literal `fallback:cli-default`).
+      // Simulates: `witseal exec /bin/echo hi` with NO --agent flag; the
+      // CLI detects the default and passes identityOrigin='fallback'.
       await runExec({
         command: '/bin/echo',
         args: ['hi'],
-        agentId: 'fallback:cli-default',
+        agentId: 'cli-user',
+        identityOrigin: 'fallback',
         cwd: '/tmp',
         timeoutMs: 0,
         dataDir,
@@ -94,12 +93,16 @@ describe('P1-7 — agent identifier fallback marker (witness event)', () => {
     }
     const events = await new EventLog({ root: dataDir, segmentId: 'default' }).readAllEvents();
     expect(events).toHaveLength(2); // P0-1 two-phase
-    expect(events[0]!.agent_identifier).toBe('fallback:cli-default');
-    expect(events[0]!.agent_identifier.startsWith('fallback:')).toBe(true);
-    expect(events[1]!.agent_identifier).toBe('fallback:cli-default');
+    // agent_identifier is the clean value — NO fallback: prefix.
+    expect(events[0]!.agent_identifier).toBe('cli-user');
+    expect(events[0]!.agent_identifier.startsWith('fallback:')).toBe(false);
+    // identity_origin carries the structured signal.
+    expect(events[0]!.identity_origin).toBe('fallback');
+    expect(events[1]!.agent_identifier).toBe('cli-user');
+    expect(events[1]!.identity_origin).toBe('fallback');
   });
 
-  it('persists the operator-configured agentId verbatim (no fallback marker)', async () => {
+  it('sets identity_origin=configured and stores identifier verbatim for operator-supplied agent', async () => {
     writeAllowPack();
     const out = silenceOutput();
     try {
@@ -107,6 +110,7 @@ describe('P1-7 — agent identifier fallback marker (witness event)', () => {
         command: '/bin/echo',
         args: ['hi'],
         agentId: 'observability-agent-prod-7',
+        identityOrigin: 'configured',
         cwd: '/tmp',
         timeoutMs: 0,
         dataDir,
@@ -117,12 +121,39 @@ describe('P1-7 — agent identifier fallback marker (witness event)', () => {
     }
     const events = await new EventLog({ root: dataDir, segmentId: 'default' }).readAllEvents();
     expect(events[0]!.agent_identifier).toBe('observability-agent-prod-7');
-    expect(events[0]!.agent_identifier.startsWith('fallback:')).toBe(false);
+    expect(events[0]!.identity_origin).toBe('configured');
     expect(events[1]!.agent_identifier).toBe('observability-agent-prod-7');
+    expect(events[1]!.identity_origin).toBe('configured');
+  });
+
+  it('omits identity_origin entirely when not provided (JCS byte-identity preserved)', async () => {
+    // When identityOrigin is not passed, the field must be absent from the
+    // witness event JSON — not serialized as null. This preserves JCS
+    // byte-identity with pre-§7.2 readers.
+    writeAllowPack();
+    const out = silenceOutput();
+    try {
+      await runExec({
+        command: '/bin/echo',
+        args: ['hi'],
+        agentId: 'some-agent',
+        // identityOrigin deliberately omitted
+        cwd: '/tmp',
+        timeoutMs: 0,
+        dataDir,
+        segmentId: 'default',
+      });
+    } finally {
+      out.restore();
+    }
+    const events = await new EventLog({ root: dataDir, segmentId: 'default' }).readAllEvents();
+    // identity_origin must be undefined (absent), not null.
+    expect(events[0]!.identity_origin).toBeUndefined();
+    expect(Object.prototype.hasOwnProperty.call(events[0], 'identity_origin')).toBe(false);
   });
 });
 
-describe('P1-7 — approval CI principal fallback', () => {
+describe('RFC-002 §7.2 — approval CI principal identity_origin', () => {
   let userSnap: string | undefined;
   let logSnap: string | undefined;
   let nonInteractiveSnap: string | undefined;
@@ -179,23 +210,29 @@ describe('P1-7 — approval CI principal fallback', () => {
     };
   }
 
-  it('CI principal carries fallback marker when WITSEAL_CI_PRINCIPAL is unset', async () => {
+  it('CI principal: identity_origin=fallback + clean identifier when WITSEAL_CI_PRINCIPAL is unset', async () => {
     const record = await obtainApproval(fakeIntent(), fakeDecision());
     expect(record.principal.type).toBe('ci');
-    expect(record.principal.identifier).toBe('fallback:ci-default');
-    expect(record.principal.identifier.startsWith('fallback:')).toBe(true);
+    // Clean identifier — NO fallback: prefix.
+    expect(record.principal.identifier).toBe('ci-default');
+    expect(record.principal.identifier.startsWith('fallback:')).toBe(false);
+    // Structured identity_origin carries the fallback signal.
+    expect(record.principal.identity_origin).toBe('fallback');
   });
 
-  it('CI principal carries the configured value verbatim when WITSEAL_CI_PRINCIPAL is set', async () => {
+  it('CI principal: identity_origin=configured + verbatim identifier when WITSEAL_CI_PRINCIPAL is set', async () => {
     process.env['WITSEAL_CI_PRINCIPAL'] = 'github-actions-runner-42';
     const record = await obtainApproval(fakeIntent(), fakeDecision());
     expect(record.principal.identifier).toBe('github-actions-runner-42');
     expect(record.principal.identifier.startsWith('fallback:')).toBe(false);
+    expect(record.principal.identity_origin).toBe('configured');
   });
 
   it('CI principal treats empty string as fallback (not a real identity)', async () => {
     process.env['WITSEAL_CI_PRINCIPAL'] = '';
     const record = await obtainApproval(fakeIntent(), fakeDecision());
-    expect(record.principal.identifier).toBe('fallback:ci-default');
+    // Empty env var → fallback path; clean identifier, structured field.
+    expect(record.principal.identifier).toBe('ci-default');
+    expect(record.principal.identity_origin).toBe('fallback');
   });
 });

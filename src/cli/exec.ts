@@ -46,6 +46,13 @@ export interface ExecOptions {
   command: string;
   args: string[];
   agentId: string;
+  /**
+   * RFC-002 §7.2 — structured identity origin for `agentId`.
+   * `'configured'` when the agent ID was explicitly supplied by the
+   * operator; `'fallback'` when the CLI used its default value.
+   * Optional — omitted when unknown or not applicable.
+   */
+  identityOrigin?: 'configured' | 'fallback';
   cwd: string;
   timeoutMs: number;
   dataDir: string;
@@ -129,6 +136,7 @@ export async function runExec(opts: ExecOptions): Promise<number> {
       executionResult: null,
       outcome: 'no_policy_configured',
       agentIdentifier: opts.agentId,
+      ...(opts.identityOrigin !== undefined ? { identityOrigin: opts.identityOrigin } : {}),
       classifierVersion: CLASSIFIER_VERSION,
     });
     process.stderr.write(
@@ -163,6 +171,7 @@ export async function runExec(opts: ExecOptions): Promise<number> {
         executionResult: null,
         outcome: 'denied_by_approval',
         agentIdentifier: opts.agentId,
+        ...(opts.identityOrigin !== undefined ? { identityOrigin: opts.identityOrigin } : {}),
         classifierVersion: CLASSIFIER_VERSION,
       });
       process.stderr.write(`witseal: action denied by approval (event ${event.event_id})\n`);
@@ -180,6 +189,7 @@ export async function runExec(opts: ExecOptions): Promise<number> {
       executionResult: null,
       outcome: 'denied_by_policy',
       agentIdentifier: opts.agentId,
+      ...(opts.identityOrigin !== undefined ? { identityOrigin: opts.identityOrigin } : {}),
       classifierVersion: CLASSIFIER_VERSION,
     });
     process.stderr.write(
@@ -201,6 +211,7 @@ export async function runExec(opts: ExecOptions): Promise<number> {
     executionResult: null,
     outcome: 'pending',
     agentIdentifier: opts.agentId,
+    ...(opts.identityOrigin !== undefined ? { identityOrigin: opts.identityOrigin } : {}),
     classifierVersion: CLASSIFIER_VERSION,
   });
 
@@ -230,6 +241,7 @@ export async function runExec(opts: ExecOptions): Promise<number> {
       executionResult: execResult,
       outcome,
       agentIdentifier: opts.agentId,
+      ...(opts.identityOrigin !== undefined ? { identityOrigin: opts.identityOrigin } : {}),
       classifierVersion: CLASSIFIER_VERSION,
     },
     intentRecorded.event_id

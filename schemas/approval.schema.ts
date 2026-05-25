@@ -23,10 +23,35 @@ import { z } from 'zod';
 export const PrincipalTypeSchema = z.enum(['human', 'ci']);
 export type PrincipalType = z.infer<typeof PrincipalTypeSchema>;
 
+/**
+ * RFC-002 §7.2 — identity_origin enum.
+ *
+ *   configured — the identifier was explicitly set by the operator or
+ *                agent integration (e.g. $WITSEAL_CI_PRINCIPAL, $USER/
+ *                $LOGNAME, or a caller-supplied --agent value).
+ *   fallback   — the runtime fell back to a built-in default because no
+ *                configured identity was available. Evidence consumers
+ *                MUST NOT treat a `fallback` identifier as a verified
+ *                operator identity.
+ *
+ * Wire-format: optional, non-nullable. Omitted entirely when absent so
+ * JCS canonical bytes are identical to pre-§7.2 implementations that
+ * do not emit the field (matches Rust
+ * `#[serde(skip_serializing_if = "Option::is_none")]`).
+ */
+export const IdentityOriginSchema = z.enum(['configured', 'fallback']);
+export type IdentityOrigin = z.infer<typeof IdentityOriginSchema>;
+
 export const ApprovalPrincipalSchema = z.object({
   type: PrincipalTypeSchema,
   /** For 'human': the local username ($USER). For 'ci': $WITSEAL_CI_PRINCIPAL or 'ci'. */
   identifier: z.string().min(1),
+  /**
+   * RFC-002 §7.2 — structured identity origin. `'configured'` when the
+   * identifier was explicitly set by the operator; `'fallback'` when the
+   * runtime used a built-in default. Omitted when not set.
+   */
+  identity_origin: IdentityOriginSchema.optional(),
 });
 
 export type ApprovalPrincipal = z.infer<typeof ApprovalPrincipalSchema>;
