@@ -14,7 +14,7 @@
 import { z } from 'zod';
 import { ClassifiedIntentSchema } from './intent.schema.js';
 import { PolicyDecisionSchema } from './policy.schema.js';
-import { ApprovalRecordSchema } from './approval.schema.js';
+import { ApprovalRecordSchema, IdentityOriginSchema } from './approval.schema.js';
 import { ExecutionResultSchema } from './execution-result.schema.js';
 
 /**
@@ -43,6 +43,12 @@ export const TimestampSchema = z
  * evidence consumers can distinguish "allowed by policy" from "ran without
  * policy mediation". Presence of `execution_result` tells the consumer
  * which case occurred: `null` = blocked; non-null = ran under escape hatch.
+ *
+ * §7.1 placement guard: `no_policy_configured` is valid ONLY as a witness
+ * event outcome (here). It MUST NOT appear as a policy rule decision value
+ * (`PolicyRuleSchema.decision`) or as a policy pack default decision
+ * (`PolicyPackSchema.default_decision`). Those schemas enforce this by
+ * limiting their `decision` enum to `['allow', 'deny', 'require-approval']`.
  */
 export const WitnessOutcomeSchema = z.enum([
   'allowed_executed',
@@ -100,6 +106,20 @@ export const WitnessEventSchema = z.object({
 
   /** Identifier of the agent that produced the intent. Free-form in v0.1. */
   agent_identifier: z.string().min(1),
+
+  /**
+   * RFC-002 §7.2 — structured identity origin for `agent_identifier`.
+   *
+   * `'configured'`  — the identifier was explicitly supplied by the operator
+   *                   or agent integration (e.g. via `--agent`).
+   * `'fallback'`    — the runtime used a built-in default because no
+   *                   configured agent identity was available.
+   *
+   * Wire-format: optional, non-nullable. Omitted when not set so JCS
+   * canonical bytes are unchanged for events that predate §7.2 or that
+   * carry a fully-configured identity where the origin is unambiguous.
+   */
+  identity_origin: IdentityOriginSchema.optional(),
 
   /** The classified intent that was evaluated. */
   classified_intent: ClassifiedIntentSchema,
