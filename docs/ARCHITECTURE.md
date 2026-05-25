@@ -695,3 +695,33 @@ from evidence alone. What Phase 1 does not do — third-party signing,
 kernel-level mediation, remote federation, prompt-injection defense — is
 documented honestly and addressed in later phases. The architecture's job is to
 make later phases additive, not retroactive.
+
+
+---
+
+## Implementation Baseline
+
+The reference implementation is a TypeScript runtime on Node.js — the
+public, client-facing line and the basis of the `0.1.0` release. The
+table below records the implementation baseline as of this revision.
+Pinned versions are an implementation detail; the source of truth for
+exact versions is `package.json` together with the lockfile.
+
+| Layer | Technology |
+|---|---|
+| Runtime | Node.js |
+| Language | TypeScript |
+| CLI | commander |
+| Validation | zod |
+| Logging | JSONL |
+| Integrity | crypto hash chain |
+| Tests | vitest |
+
+Long-term language-layer architecture: TS surface / Rust trust core /
+Python SDK. Rust is the hardened parallel track (DR-0008) — hardened
+execution, sandboxing, cryptographic witness engine. Python is the
+SDK / verifier line. The full model and its staged evolution are the
+subject of DR-0018.
+
+This section is the source of truth for the implementation baseline
+referenced by PM System Prompt v1.5 §13.
