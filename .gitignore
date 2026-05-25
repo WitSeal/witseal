@@ -44,6 +44,10 @@ yarn-error.log*
 *.intoto.jsonl
 *.cdx.json
 SHA256SUMS
+# Allow fixture .sig files that ship under tests/fixtures/ (cross-track
+# golden-receipt corpora etc.); they are not release artifacts but pinned
+# byte-identity reference data.
+!tests/fixtures/**/*.sig
 
 # Release artifacts (built by CI)
 /release/
