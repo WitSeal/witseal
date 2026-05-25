@@ -722,6 +722,3 @@ Python SDK. Rust is the hardened parallel track (DR-0008) — hardened
 execution, sandboxing, cryptographic witness engine. Python is the
 SDK / verifier line. The full model and its staged evolution are the
 subject of DR-0018.
-
-This section is the source of truth for the implementation baseline
-referenced by PM System Prompt v1.5 §13.
