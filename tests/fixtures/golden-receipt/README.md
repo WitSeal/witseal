@@ -1,8 +1,8 @@
 # Golden-receipt fixed-input-vector — RFC-001 v0.2 / D6 § 8.1 conformance
 
-**Status:** cycle 69 publication (sub-3 track-owner). Inputs spec landed cycle 68; populated Rust-canonical output (`rust-golden.json` + `rust-golden.canonical` + `rust-golden.sig`) landed cycle 69 alongside reproduction-binary `crates/witseal-testkit/src/bin/generate_golden_receipt.rs` и library function `witseal_testkit::golden_receipt::generate_artifacts`. Cycle-69 байт-identity gate (cargo-test-driven) is а passing self-check.
+**Status:** cycle 69 publication (sub-3 track-owner). Inputs spec landed cycle 68; populated Rust-canonical output (`rust-golden.json` + `rust-golden.canonical` + `rust-golden.sig`) landed cycle 69 alongside reproduction-binary `crates/witseal-testkit/src/bin/generate_golden_receipt.rs` and library function `witseal_testkit::golden_receipt::generate_artifacts`. Cycle-69 byte-identity gate (cargo-test-driven) is a passing self-check.
 
-**Purpose:** establish а deterministic fixed-input-vector that, when fed through each track's (rust, python, typescript) Receipt v0.2 construction pipeline + RFC 8785 canonicalization + Ed25519 sign, produces **byte-identical canonical wire bytes** on all three tracks. This is the D6 § 8.1 conformance deliverable for the bridge-proof v0.2 cascade.
+**Purpose:** establish a deterministic fixed-input-vector that, when fed through each track's (rust, python, typescript) Receipt v0.2 construction pipeline + RFC 8785 canonicalization + Ed25519 sign, produces **byte-identical canonical wire bytes** on all three tracks. This is the D6 § 8.1 conformance deliverable for the bridge-proof v0.2 cascade.
 
 ---
 
@@ -14,7 +14,7 @@
 | `test-only-do-not-use-in-prod.key.json` | 68 | Fixed Ed25519 test-only signing key derivation rule + cross-track equivalents. |
 | `README.md` | 68 | This file: procedure, invariants, cross-track contract, reproduction instructions. |
 | `rust-golden.json` | 69 | Populated `ReceiptV0_2` JSON view (after construction + canonicalize + sign), pretty-printed. |
-| `rust-golden.canonical` | 69 | Raw RFC 8785 canonical bytes of the final wire-form receipt. Source-of-truth blob для cross-track byte-identity comparison. |
+| `rust-golden.canonical` | 69 | Raw RFC 8785 canonical bytes of the final wire-form receipt. Source-of-truth blob for cross-track byte-identity comparison. |
 | `rust-golden.sig` | 69 | Detached base64-standard-padded Ed25519 signature over the pre-finalize canonical bytes (step 4 of construction). |
 
 ---
@@ -23,17 +23,17 @@
 
 1. **Input-vector source of truth:** `inputs.json` (this directory). Cross-tracks reproduce the input vector independently following the construction procedure (`inputs.json` `_construction_procedure`).
 
-2. **Sentinel-hash determinism:** every hash-typed receipt field whose value is а `<derive: ...>` placeholder в `inputs.json` `receipt_inputs` is computed deterministically per `inputs.json` `_sentinel_seeds`. All tracks MUST produce byte-identical resolved values.
+2. **Sentinel-hash determinism:** every hash-typed receipt field whose value is a `<derive: ...>` placeholder in `inputs.json` `receipt_inputs` is computed deterministically per `inputs.json` `_sentinel_seeds`. All tracks MUST produce byte-identical resolved values.
 
-3. **Canonical-bytes source of truth:** `rust-golden.canonical` (cycle 69) is the byte-identity comparison target. Python и TypeScript tracks each compute their own canonical bytes independently, then `cmp` against this blob. Pass = byte-identical. Fail = surface immediately к Rust Tech Lead coordinator (B-4-axis reopen candidate).
+3. **Canonical-bytes source of truth:** `rust-golden.canonical` (cycle 69) is the byte-identity comparison target. Python and TypeScript tracks each compute their own canonical bytes independently, then `cmp` against this blob. Pass = byte-identical. Fail = surface immediately to Rust Tech Lead coordinator (B-4-axis reopen candidate).
 
-4. **Key derivation determinism:** the test-only signing key is derived deterministically from а seed string per `test-only-do-not-use-in-prod.key.json` `derivation`. All tracks MUST produce byte-identical seed bytes, private-key bytes, и public-key bytes.
+4. **Key derivation determinism:** the test-only signing key is derived deterministically from a seed string per `test-only-do-not-use-in-prod.key.json` `derivation`. All tracks MUST produce byte-identical seed bytes, private-key bytes, and public-key bytes.
 
-5. **Signature verification cross-check:** each track verifies the signature using its own Ed25519 primitives over its own computed canonical bytes. Pass = valid signature. (Note: Ed25519 is а deterministic signing scheme over а fixed message + key, so the signature byte sequence itself MUST also be byte-identical across tracks.)
+5. **Signature verification cross-check:** each track verifies the signature using its own Ed25519 primitives over its own computed canonical bytes. Pass = valid signature. (Note: Ed25519 is a deterministic signing scheme over a fixed message + key, so the signature byte sequence itself MUST also be byte-identical across tracks.)
 
 6. **Path D omission contract:** `sigstore_signature`, `classifier_version`, `shadow_mode` MUST NOT appear in canonical bytes. Any track emitting one of these keys breaks parity.
 
-7. **Explicit-null contract:** `prev_hash` MUST emit explicit `null`, not be skipped. Decision A invariant. `receipt_id` baseline uses `Some(...)` so the null-emission rule isn't exercised by THIS baseline (а follow-on extension fixture is suggested к cover the `None`-with-explicit-`null` path для RFC-001 § 7.1 v0.2 discriminated-union strict-on-`Some` complement).
+7. **Explicit-null contract:** `prev_hash` MUST emit explicit `null`, not be skipped. Decision A invariant. `receipt_id` baseline uses `Some(...)` so the null-emission rule isn't exercised by THIS baseline (a follow-on extension fixture is suggested to cover the `None`-with-explicit-`null` path for RFC-001 § 7.1 v0.2 discriminated-union strict-on-`Some` complement).
 
 ---
 
@@ -57,9 +57,9 @@ Serialize the struct per RFC 8785:
 - Path D optional fields omitted (`skip_serializing_if = "Option::is_none"`).
 - `prev_hash = None` emits explicit `null`.
 - `receipt_id` baseline uses `Some` → emits the string literal directly.
-- Hash fields use the wire form specified в `inputs.json` `_invariant_axes_under_test.sha256_hash_wire_form`.
+- Hash fields use the wire form specified in `inputs.json` `_invariant_axes_under_test.sha256_hash_wire_form`.
 
-The resulting byte sequence is the **canonical-bytes blob** for the hash/sign step. (Persisted к `rust-golden.canonical` after step 5 populates the final fields and re-canonicalizes; the **step-2 intermediate** bytes are NOT persisted separately because they can be re-derived from the final receipt by zeroing `receipt_hash` + emptying `signature` + re-canonicalizing.)
+The resulting byte sequence is the **canonical-bytes blob** for the hash/sign step. (Persisted to `rust-golden.canonical` after step 5 populates the final fields and re-canonicalizes; the **step-2 intermediate** bytes are NOT persisted separately because they can be re-derived from the final receipt by zeroing `receipt_hash` + emptying `signature` + re-canonicalizing.)
 
 ### Step 3 — compute receipt_hash
 `receipt_hash = SHA-256(canonical_bytes_from_step_2)`. Stored on the struct as `Sha256Hash` (raw `[u8; 32]`); wire-form bare 64-hex lowercase.
@@ -69,14 +69,14 @@ The resulting byte sequence is the **canonical-bytes blob** for the hash/sign st
 
 **Critical:** the message-bytes signed are the **step-2 bytes** (with `signature = ""` and `receipt_hash = Sha256Hash::zero()`), NOT the post-hash bytes. This is the F-2 / cascade § 2.2 clear-defaults procedure.
 
-Wire-form: `"ed25519:"`-prefixed base64 standard-padded matching `^ed25519:[A-Za-z0-9+/]{86}==$` (96 chars total) per RFC-002 §6 algorithm-prefix amendment (concurred 2026-05-24). Persisted detached в `rust-golden.sig`.
+Wire-form: `"ed25519:"`-prefixed base64 standard-padded matching `^ed25519:[A-Za-z0-9+/]{86}==$` (96 chars total) per RFC-002 §6 algorithm-prefix amendment (concurred 2026-05-24). Persisted detached in `rust-golden.sig`.
 
 ### Step 5 — finalize for wire
-Populate `signature` (step 4 result) и `receipt_hash` (step 3 result) on the struct; re-canonicalize per RFC 8785. The resulting bytes are the **final canonical wire-form receipt**. Persisted к `rust-golden.canonical`. The pretty-printed JSON view is also persisted к `rust-golden.json` for human inspection.
+Populate `signature` (step 4 result) and `receipt_hash` (step 3 result) on the struct; re-canonicalize per RFC 8785. The resulting bytes are the **final canonical wire-form receipt**. Persisted to `rust-golden.canonical`. The pretty-printed JSON view is also persisted to `rust-golden.json` for human inspection.
 
 ### Step 6 — verify (optional self-check)
 Independently re-derive:
-- Re-canonicalize the final receipt с `signature = ""` and `receipt_hash = Sha256Hash::zero()`; assert `SHA-256(...)` equals the stored `receipt_hash`.
+- Re-canonicalize the final receipt with `signature = ""` and `receipt_hash = Sha256Hash::zero()`; assert `SHA-256(...)` equals the stored `receipt_hash`.
 - Assert `Ed25519_verify(public_key, those_canonical_bytes, signature)` returns true.
 
 ---
@@ -88,7 +88,7 @@ Independently re-derive:
 | RFC 8785 canonicalization | Sorted keys, no whitespace, RFC 8785 escape rules | `witseal-canonical-json` crate |
 | `Sha256Hash` wire form | Bare 64-hex lowercase | `Sha256Hash` Serialize impl |
 | `Sha256DigestField` wire form | `"sha256:<64-hex lowercase>"` (prefixed) | `Sha256DigestField` Serialize impl |
-| `prev_hash` wire form | `"sha256:<64-hex lowercase>"` или explicit `null` | `receipt_hash_to_prev_hash_string` |
+| `prev_hash` wire form | `"sha256:<64-hex lowercase>"` or explicit `null` | `receipt_hash_to_prev_hash_string` |
 | Ed25519 signature wire form | `"ed25519:"`-prefixed base64 standard-padded `^ed25519:[A-Za-z0-9+/]{86}==$` (96 chars total) per RFC-002 §6 algorithm-prefix amendment (concurred 2026-05-24) | R-2 + RFC-002 §6 |
 | `git_commit` wire form | Bare 40-char lowercase SHA-1 hex | R-4 / RFC-002 v0.1 § 7.2 |
 | `artifact_type` wire form | Kebab-case taxonomy literal (e.g. `"generic-binary"`); RFC-002 v0.1 § 3 closed enum | `#[serde(rename = "...")]` on `ArtifactType` variants |
@@ -118,12 +118,12 @@ cargo run -p witseal-testkit --bin generate_golden_receipt
 - Construct equivalent `ReceiptV0_2` instance in the Python schema.
 - Apply the construction procedure (steps 1-6).
 - Compare own canonical bytes against `rust-golden.canonical` byte-by-byte.
-- File a Python-track concurrence (or divergence) к PdM via Python Dev channel.
+- Report a Python-track match (or divergence) by opening an issue or pull request.
 
 ### TypeScript (cycle 71+ / post M8 ~2026-05-26)
 - Same procedure as Python.
 - Compare own canonical bytes against `rust-golden.canonical` byte-by-byte.
-- File а TypeScript-track concurrence (or divergence) к PdM via TS Dev channel.
+- Report a TypeScript-track match (or divergence) by opening an issue or pull request.
 
 ### Three-way byte-identity gate
 After all three tracks have published their canonical bytes:
@@ -137,11 +137,11 @@ After all three tracks have published their canonical bytes:
 
 1. **Decision A wire-form re-check** — cycle 69's reproduction binary is the first end-to-end byte-identity exercise on sub-3 branch. If anything surfaces (sentinel-hash drift, canonicalization edge-case, signature mismatch), file coordinator-bound surface immediately. Potential B-4-axis reopen.
 
-2. **`finalized_at` precision** — `.000Z` millisecond suffix established as ground truth here. Tracks normalizing к different precision (e.g. plain `Z`, или `.000000Z`) break parity и MUST surface.
+2. **`finalized_at` precision** — `.000Z` millisecond suffix established as ground truth here. Tracks normalizing to different precision (e.g. plain `Z`, or `.000000Z`) break parity and MUST surface.
 
 3. **`Sha256Hash` vs `Sha256DigestField` vs `prev_hash` wire-form confusion** — three different shapes for SHA-256-derived wire-form fields. README invariants summary table is the authoritative reference.
 
-4. **`receipt_id = None` baseline NOT exercised** — baseline uses `Some(...)` for `receipt_id`; the `None`-with-explicit-`null` path (RFC-001 § 7.1 v0.2 discriminated-union strict-on-`Some` complement) requires а separate follow-on fixture. Non-gating.
+4. **`receipt_id = None` baseline NOT exercised** — baseline uses `Some(...)` for `receipt_id`; the `None`-with-explicit-`null` path (RFC-001 § 7.1 v0.2 discriminated-union strict-on-`Some` complement) requires a separate follow-on fixture. Non-gating.
 
 ---
 

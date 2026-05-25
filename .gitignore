@@ -57,3 +57,7 @@ SHA256SUMS
 # Local development artifacts
 evidence.json
 .witseal/
+
+# Internal coordination artifacts — never publish
+coordination/
+coverage-extract.mjs
