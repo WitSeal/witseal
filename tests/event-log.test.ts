@@ -27,7 +27,7 @@ import { finalizeEvent } from '../src/integrity/hash-chain.js';
 import { generateEventId, generateReceiptId, WITSEAL_RUNTIME_VERSION as RUNTIME_VERSION_FOR_DRAFT } from '../src/witness/emit.js';
 import type { WitnessEventDraft } from '../schemas/witness-event.schema.js';
 import { hostname } from 'node:os';
-import { emitWitnessEvent, WITSEAL_RUNTIME_VERSION } from '../src/witness/emit.js';
+import { emitWitnessEvent } from '../src/witness/emit.js';
 import type { ClassifiedIntent } from '../schemas/intent.schema.js';
 import type { PolicyDecision } from '../schemas/policy.schema.js';
 

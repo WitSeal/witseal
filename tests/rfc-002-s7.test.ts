@@ -31,7 +31,6 @@ import {
 } from '../schemas/policy.schema.js';
 import {
   ApprovalPrincipalSchema,
-  ApprovalRecordSchema,
   IdentityOriginSchema,
 } from '../schemas/approval.schema.js';
 import { canonicalize } from '../src/integrity/hash-chain.js';
