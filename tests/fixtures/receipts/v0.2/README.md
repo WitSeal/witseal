@@ -1,6 +1,6 @@
 # v0.2 receipt positive-fixture corpus
 
-Hand-rolled positive fixtures exercising the v0.2 receipt schema (`witseal.receipt.v0.2`) and the R-3 empty-string-sentinel signing procedure. The corpus targets the surface points enumerated in D6 v0.2 § 4.1 / § 6 and in the M8 plan filed at `~/WitSeal/TS Dev/ts-tech-lead-to-pm-m8-start-confirmation-2026-05-23.md` § 2.
+Hand-rolled positive fixtures exercising the v0.2 receipt schema (`witseal.receipt.v0.2`) and the S1 clear-to-defaults signing procedure (`signature = ""` AND `receipt_hash = <64 zeros>` in the pre-image; one pre-image for both signature and hash). The corpus targets the surface points enumerated in D6 v0.2 § 4.1 / § 6 and in the M8 plan filed at `~/WitSeal/TS Dev/ts-tech-lead-to-pm-m8-start-confirmation-2026-05-23.md` § 2.
 
 ## Contents
 
@@ -16,9 +16,9 @@ Hand-rolled positive fixtures exercising the v0.2 receipt schema (`witseal.recei
 ## Verification (any track)
 
 1. Read the receipt JSON.
-2. Rebuild the signing pre-image: take the receipt body, set `signature = ""` (the R-3 empty-string sentinel — do **not** remove the `signature` field), then JCS-canonicalize (RFC 8785). The body must include `receipt_hash` at this point.
+2. Rebuild the signing pre-image (S1 clear-to-defaults): take the receipt body, set `signature = ""` (the empty-string sentinel — do **not** remove the `signature` field) **and** set `receipt_hash = "0000…0000"` (the 64-char all-zeros placeholder — do **not** remove the `receipt_hash` field), then JCS-canonicalize (RFC 8785). This is the **one** pre-image used for both the signature and the hash.
 3. `ed25519_verify(public_key, base64_decode(signature), pre_image)` — must succeed.
-4. Re-derive `receipt_hash`: remove `receipt_hash` from the body (keep `signature = ""`), JCS-canonicalize, SHA-256. Assert equality with the receipt's `receipt_hash`.
+4. Re-derive `receipt_hash = SHA-256(pre_image)` over the **same** canonical bytes from step 2. Assert equality with the receipt's `receipt_hash`.
 
 The TypeScript companion test (`tests/receipt-v0.2-fixtures.test.ts`) performs all four steps for each fixture.
 

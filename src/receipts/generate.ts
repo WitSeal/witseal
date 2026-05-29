@@ -106,6 +106,12 @@ export interface ReceiptV02ExtraInputs {
   artifact_digest: string;
   /** `sha256:` + 64-hex digest of the attestation (RFC-002 §5). */
   attestation_digest: string;
+  /** Closed kebab-case artifact taxonomy literal (RFC-002 v0.1 §3, R-1),
+   *  e.g. `generic-binary`. Mandatory v0.2 wire field. */
+  artifact_type: string;
+  /** Free-form build-context identifier (RFC-002 v0.1 / F-1). Mandatory v0.2
+   *  wire field. */
+  build_id: string;
   /** When `true`, the receipt represents an `execution_lost` outcome (R-5):
    *  `outcome = 'execution_lost'`, `receipt_id = null`, and
    *  `execution_result_hash = null`. The v0.1-typed WitnessEvent cannot carry
@@ -159,6 +165,8 @@ export function generateReceiptV02(
     git_commit: extra.git_commit,
     artifact_digest: extra.artifact_digest,
     attestation_digest: extra.attestation_digest,
+    artifact_type: extra.artifact_type,
+    build_id: extra.build_id,
     ...(extra.sigstore_signature !== undefined
       ? { sigstore_signature: extra.sigstore_signature }
       : {}),

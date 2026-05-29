@@ -9,9 +9,11 @@
   "execution_result_hash": "3333333333333333333333333333333333333333333333333333333333333333",
   "outcome": "allowed_executed",
   "prev_hash": null,
-  "signature": "ed25519:ce5MXsgvc6Y5Yqfltw+77zmzZqH5nJdlnYeTywv7oCFGkF9mbc274Mf9IVfxLzDq5Mgqdf8mSwLFKGvEygOyAQ==",
+  "signature": "ed25519:51g2VbvU+iEKRAJqmxygpn4pvLCcHl1hgc9kLbX5K3g9QitfZ/YDeVRmYIcBQlEjWWJhvl6iCdklqpp+AkIsBQ==",
   "git_commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
   "artifact_digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
   "attestation_digest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
-  "receipt_hash": "f133af2934e7f53675b1a7310131dbb890c44af58e841155086c67f7bdd304a0"
+  "artifact_type": "generic-binary",
+  "build_id": "witseal-fixture-build-0001",
+  "receipt_hash": "23077e7b58c254c910ba236f706c00bb224a171db5eea3ebe99ad052b96fc61d"
 }

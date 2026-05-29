@@ -15,6 +15,9 @@
  *   - `git_commit`           Bare 40-char lowercase SHA-1 hex (no `git:` prefix).
  *   - `artifact_digest`      `sha256:` prefix + 64-hex.
  *   - `attestation_digest`   `sha256:` prefix + 64-hex.
+ *   - `artifact_type`        Closed kebab-case artifact taxonomy literal
+ *                            (RFC-002 v0.1 § 3, R-1); e.g. `generic-binary`.
+ *   - `build_id`             Free-form build-context identifier.
  *   - `prev_hash`            Nullable-mandatory chain-segment linkage:
  *                            `receipt_hash` of the immediately preceding
  *                            receipt in the same segment, or `null` at
@@ -34,6 +37,13 @@
  * closed per ratifications R-1..R-7 + F-1 + R-4-correction + Option B
  * genesis-null. See `ts-tech-lead-to-pm-e3-b4-receipt-v0.2-parity-concurrence-state-2026-05-23.md`
  * §2 for the audited contract surface.
+ *
+ * Schema-alignment (Gap D, RFC-002): `artifact_type` and `build_id` were
+ * added to close the F-1 17-field canon. They were previously absent here
+ * while present in the Rust authority and the golden receipt fixture
+ * (`tests/fixtures/golden-receipt/rust-golden.json`), so the TS schema
+ * validated only 15 of the 17 canonical fields. Both are mandatory wire
+ * fields; this addition is a defect fix, not a canon softening.
  */
 
 import { z } from 'zod';
@@ -41,6 +51,24 @@ import { z } from 'zod';
 const Sha256Hex = z.string().regex(/^[a-f0-9]{64}$/);
 const Sha1HexLower = z.string().regex(/^[a-f0-9]{40}$/);
 const Sha256Prefixed = z.string().regex(/^sha256:[a-f0-9]{64}$/);
+/**
+ * `artifact_type` — closed artifact taxonomy per RFC-002 v0.1 § 3 (R-1).
+ *
+ * Wire form: a kebab-case taxonomy literal (e.g. `generic-binary`). In the
+ * Rust authoritative struct this is the `ArtifactType` enum, whose variants
+ * serialize via `#[serde(rename = "...")]` to lowercase kebab-case strings
+ * (NOT snake_case — `outcome` uses snake_case, `artifact_type` uses
+ * kebab-case; each enum emits per its own scheme).
+ *
+ * The authoritative closed variant set lives in `witseal-core/src/enums.rs`
+ * (not published in this reference repo), so — mirroring how `outcome` models
+ * the `WitnessOutcome` enum as a constrained string rather than hard-coding an
+ * incomplete `z.enum([...])` — this validates the kebab-case SHAPE of the
+ * taxonomy literal. That accepts every present + future Rust variant without
+ * over-narrowing to the single `generic-binary` value observable in this repo
+ * (which would risk a fresh cross-track parity defect on a valid receipt).
+ */
+const ArtifactType = z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
 /**
  * Algorithm-prefixed Ed25519 signature per RFC-002 §6 (post-amendment 2026-05-23).
  *
@@ -97,6 +125,18 @@ export const ExecutionReceiptV02Schema = z.object({
   git_commit: Sha1HexLower,
   artifact_digest: Sha256Prefixed,
   attestation_digest: Sha256Prefixed,
+
+  /** Artifact taxonomy (RFC-002 v0.1 § 3 / F-1, R-1). Closed kebab-case enum
+   *  in the Rust authority; modeled here as the kebab-case taxonomy shape.
+   *  Mandatory wire field (present + non-null in the canonical receipt; not a
+   *  Path-D serialize-skip optional). */
+  artifact_type: ArtifactType,
+
+  /** Build identifier (RFC-002 v0.1 / F-1). Free-form build-context string,
+   *  e.g. `github-actions-<run_id>-<run_attempt>` in CI or
+   *  `local-dev-<user>-<host>-<unix>` for local builds. Mandatory wire field
+   *  (present + non-null in the canonical receipt; not a Path-D optional). */
+  build_id: z.string().min(1),
 
   /** Path D serialize-skip: omit field entirely if absent (do not emit `null`). */
   sigstore_signature: z.string().min(1).optional(),

@@ -9,12 +9,14 @@
   "execution_result_hash": "3333333333333333333333333333333333333333333333333333333333333333",
   "outcome": "allowed_executed",
   "prev_hash": null,
-  "signature": "ed25519:1L7YEeigbY7Zol7Au84xktiFrihlY6kSNINM4I8RdnmcQ5A8op80P9PNu3dWgOXkwgWKwhmNrtyHFguKmMcgDg==",
+  "signature": "ed25519:wloGx8Fl+3RTBnJce65Ici4aexJdfiGomReqSHHkh8FeWpvfTYviX+NpCyrKuYpsgC6KZ/+U9m2LyKyijsUrDw==",
   "git_commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
   "artifact_digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
   "attestation_digest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+  "artifact_type": "generic-binary",
+  "build_id": "witseal-fixture-build-0001",
   "sigstore_signature": "sigstore-fixture-blob-v0.2",
   "classifier_version": "fixture-classifier-1.0",
   "shadow_mode": true,
-  "receipt_hash": "73a9ebb1fb705b4ae518316d084c0eb0e877e1e64d52c594162a8ee5ec42bf32"
+  "receipt_hash": "9cb381a6f2d73e63dcb8b06a0b81fca38d3eb8c8c7c84a344c4705bb2dceecef"
 }

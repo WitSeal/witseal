@@ -81,6 +81,8 @@ function repeatHex(byte: string, len: number): string {
 const COMMON_GIT_COMMIT = repeatHex('a', 40);
 const COMMON_ARTIFACT_DIGEST = 'sha256:' + repeatHex('b', 64);
 const COMMON_ATTESTATION_DIGEST = 'sha256:' + repeatHex('c', 64);
+const COMMON_ARTIFACT_TYPE = 'generic-binary';
+const COMMON_BUILD_ID = 'witseal-fixture-build-0001';
 
 function makeBaseDraft(): ExecutionReceiptV02Draft {
   return {
@@ -98,6 +100,8 @@ function makeBaseDraft(): ExecutionReceiptV02Draft {
     git_commit: COMMON_GIT_COMMIT,
     artifact_digest: COMMON_ARTIFACT_DIGEST,
     attestation_digest: COMMON_ATTESTATION_DIGEST,
+    artifact_type: COMMON_ARTIFACT_TYPE,
+    build_id: COMMON_BUILD_ID,
   };
 }
 
