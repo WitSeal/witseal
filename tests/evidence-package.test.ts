@@ -5,7 +5,7 @@
  * — the module that bundles witness events + receipts + policy packs into
  * an exportable, third-party-verifiable artifact (per ADR-0001 § 3.5).
  *
- * Coverage closed by this slice (m1-e1-coverage-gap-analysis § 3 P1.4):
+ * Coverage closed by this slice:
  *   - schema parse via `EvidencePackageSchema.parse(...)` on every produced
  *     package (the schema is currently 0% covered)
  *   - JSON round-trip: serialize → parse → deep-equal semantics preserved
@@ -26,7 +26,7 @@
  * `finalized_at` timestamp) — instead we assert receipt-vs-event integrity
  * via the existing `verifyReceipt` API.
  *
- * Bridge Proof v0.2 alignment: this round-trip is the foundation for
+ * Cross-track v0.2 alignment: this round-trip is the foundation for
  * the M11 `witseal verify` CLI which (in v0.2) will additionally verify
  * artifact_digest, attestation_digest, and Ed25519 signature. The schema
  * fields exercised here remain stable; v0.2 strictly adds fields.

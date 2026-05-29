@@ -1,55 +1,50 @@
 /**
- * F-1 / B9 — Golden-receipt three-way byte-identity demo.
+ * Golden-receipt three-way byte-identity demo.
  *
  * Reproduces the authoritative Rust artifact
- * (`tests/fixtures/golden-receipt/rust-golden.canonical`, copied from
- * `witseal-rs-3/crates/witseal-testkit/corpus/v0.2/golden_receipt/`) on
- * the TS line and asserts byte-identical canonical wire bytes.
+ * (`tests/fixtures/golden-receipt/rust-golden.canonical`, copied from the
+ * reference Rust testkit corpus) on the TS line and asserts byte-identical
+ * canonical wire bytes.
  *
- * B9 (2026-05-26) adds the true three-way roll-up:
+ * The three-way roll-up:
  *   - `ts-golden.canonical`     — produced by canonicalize(rust-golden.json)
  *   - `python-golden.canonical` — produced by the Python track (confirmed match)
  *   - `rust-golden.canonical`   — Rust authoritative corpus artifact
  * All three are byte-identical: 1050 bytes, SHA-256
  * 8fc29592fd3317e48caccc9b5c64d01cfa32d5e27846c50f233829e1bb17ef1b.
  *
- * Schema-validation note: `rust-golden.json` has 17 fields. As of the Gap-D
- * schema-alignment PR, `schemas/receipt-v0.2.schema.ts` declares all 17
- * (including `artifact_type` and `build_id`). The B9 schema test validates
- * the full 17-field object via `ExecutionReceiptV02Schema.safeParse()` and
- * then canonicalizes the raw object, confirming that the TS JCS canonicalizer
- * handles the full field set correctly. The byte-identity assertions operate
- * on the raw JSON, independent of the schema, so they are unaffected by the
- * schema's field set.
+ * Schema-validation note: `rust-golden.json` has 17 fields, and
+ * `schemas/receipt-v0.2.schema.ts` declares all 17 (including `artifact_type`
+ * and `build_id`). The schema test validates the full 17-field object via
+ * `ExecutionReceiptV02Schema.safeParse()` and then canonicalizes the raw
+ * object, confirming that the TS JCS canonicalizer handles the full field set
+ * correctly. The byte-identity assertions operate on the raw JSON, independent
+ * of the schema, so they are unaffected by the schema's field set.
  *
  * The test is intentionally STANDALONE from the production
  * `src/receipts/sign-v0.2.ts` pipeline. Two reasons:
  *
- *   1. The Rust authoritative struct (`ReceiptV0_2` per
- *      witseal-rs-3/crates/witseal-core/src/receipt.rs) carries fields
- *      `artifact_type` and `build_id`. The TS production
- *      `schemas/receipt-v0.2.schema.ts` now declares them too (Gap-D
- *      schema-alignment PR), but this demo intentionally uses a local
- *      receipt shape rather than the production schema/signing pipeline —
- *      see reason 2.
+ *   1. The authoritative Rust struct carries fields `artifact_type` and
+ *      `build_id`. The TS production `schemas/receipt-v0.2.schema.ts` now
+ *      declares them too, but this demo intentionally uses a local receipt
+ *      shape rather than the production schema/signing pipeline — see reason 2.
  *
  *   2. The Rust S1 clear-defaults construction procedure (per
  *      `inputs.json` `_construction_procedure`) signs canonical bytes
  *      with `signature = ""` AND `receipt_hash` set to the
  *      all-zeros placeholder, whereas the production TS
  *      `signReceiptV02` builds the pre-image by REMOVING the
- *      `receipt_hash` key (D₀ in the existing TSDoc). Both shapes are
+ *      `receipt_hash` key (variant D₀ in the existing TSDoc). Both shapes are
  *      sound; the S1 clear-defaults shape is the one Rust + Python +
- *      TS are aligning on per F-2 / Bridge Proof v0.2 cascade § 2.2.
- *      Migrating the production helper to S1 clear-defaults is a
- *      separate PR; this demo proves the procedure works on TS
- *      without forcing the migration on the same commit.
+ *      TS are aligning on. Migrating the production helper to S1
+ *      clear-defaults is a separate change; this demo proves the procedure
+ *      works on TS without forcing the migration on the same commit.
  *
  * Source-of-truth corpus: `tests/fixtures/golden-receipt/` — copied
- * verbatim from the Rust corpus at cycle 69 publication. Re-sync from
- * the Rust repo if the corpus regenerates.
+ * verbatim from the Rust corpus. Re-sync from the Rust repo if the corpus
+ * regenerates.
  *
- * Acceptance per the 2026-05-26 goal directive:
+ * Acceptance:
  *   - TS canonical bytes === `rust-golden.canonical`, byte for byte
  *   - TS signature       === `rust-golden.sig` contents (after trim)
  *   - Demo is reproducible — run `npx vitest run tests/golden-receipt.test.ts`.
@@ -123,7 +118,7 @@ const SENTINEL_HASHES = {
   policy_decision_hash: sha256Hex('witseal-v0.2-golden-policy-decision'),
   classified_intent_hash: sha256Hex('witseal-v0.2-golden-classified-intent'),
   execution_result_hash: sha256Hex('witseal-v0.2-golden-execution-result'),
-  // The digest fields carry the literal `sha256:` prefix (RFC-002 §5).
+  // The digest fields carry the literal `sha256:` prefix.
   artifact_digest: 'sha256:' + sha256Hex('witseal-v0.2-golden-artifact-digest'),
   attestation_digest:
     'sha256:' + sha256Hex('witseal-v0.2-golden-attestation-digest'),
@@ -202,7 +197,7 @@ function buildBaseReceipt(): GoldenReceiptShape {
 function s1PreImageBytes(receipt: GoldenReceiptShape): Buffer {
   // Step 2 of the construction procedure: serialize per RFC 8785 with
   // signature="" AND receipt_hash=all-zeros. prev_hash=null emits explicit
-  // `null`. Path D optionals are absent from the type so canonicalize
+  // `null`. Serialize-skip optionals are absent from the type so canonicalize
   // doesn't emit them.
   return Buffer.from(canonicalize(receipt), 'utf8');
 }
@@ -237,7 +232,7 @@ function generateGoldenReceiptBytes(): {
 // Tests
 // ---------------------------------------------------------------------------
 
-describe('F-1 — golden-receipt three-way byte-identity demo', () => {
+describe('golden-receipt three-way byte-identity demo', () => {
   const rustCanonicalBytes = readFileSync(
     join(CORPUS_DIR, 'rust-golden.canonical')
   );
@@ -333,8 +328,8 @@ describe('F-1 — golden-receipt three-way byte-identity demo', () => {
     });
   });
 
-  describe('three-way roll-up (B9 — Rust + Python + TS all green)', () => {
-    // B9 (2026-05-26): python-golden.canonical and ts-golden.canonical are
+  describe('three-way roll-up (Rust + Python + TS all green)', () => {
+    // python-golden.canonical and ts-golden.canonical are
     // now committed alongside rust-golden.canonical. All three tracks
     // independently produced byte-identical output from the same input
     // vector. SHA-256 8fc29592...ef1b.
@@ -373,15 +368,15 @@ describe('F-1 — golden-receipt three-way byte-identity demo', () => {
 });
 
 // ---------------------------------------------------------------------------
-// B9 — schema validation + raw-canonicalize of rust-golden.json
+// Schema validation + raw-canonicalize of rust-golden.json
 // ---------------------------------------------------------------------------
 //
 // Validates rust-golden.json against the TS production schema and verifies
 // that `canonicalize(rawJson)` produces the same bytes as rust-golden.canonical.
-// This is separate from the F-1 test above (which constructs the receipt
+// This is separate from the demo test above (which constructs the receipt
 // from scratch). This test LOADS the fixture and canonicalizes it directly.
 
-describe('B9 — schema-validation + raw-canonicalize (rust-golden.json → ts-golden.canonical)', () => {
+describe('schema-validation + raw-canonicalize (rust-golden.json → ts-golden.canonical)', () => {
   const HERE2 = dirname(fileURLToPath(import.meta.url));
   const CORPUS2 = join(HERE2, 'fixtures', 'golden-receipt');
 
@@ -392,7 +387,7 @@ describe('B9 — schema-validation + raw-canonicalize (rust-golden.json → ts-g
   const tsCanonical = readFileSync(join(CORPUS2, 'ts-golden.canonical'));
 
   it('rust-golden.json passes ExecutionReceiptV02Schema validation (all 17 fields)', () => {
-    // Post Gap-D alignment, the schema declares all 17 canonical fields
+    // The schema declares all 17 canonical fields
     // including artifact_type and build_id, so safeParse retains the full
     // object (previously it stripped those 2 as unknown). No coercion or
     // mutation is applied; the canonicalize assertions below run on rawJson.

@@ -1,16 +1,15 @@
 /**
- * v0.2 receipt signing — S1 clear-to-defaults pre-image + RFC-002 §6
- * algorithm-prefixed final value.
+ * v0.2 receipt signing — S1 clear-to-defaults pre-image + algorithm-prefixed
+ * final value.
  *
  * ─── Pre-image construction (S1 clear-to-defaults) ───────────────────────────
  *
- * Per the cross-track S1 construction procedure (F-2 / Bridge Proof v0.2
- * cascade § 2.2, captured in
+ * Per the cross-track S1 construction procedure (captured in
  * `tests/fixtures/golden-receipt/inputs.json` `_construction_procedure`), the
  * signing pre-image is built by CLEARING the two self-referential fields to
  * their defaults and canonicalizing:
  *
- *   - `signature`    = "" (empty-string sentinel, R-3 / F-2)
+ *   - `signature`    = "" (empty-string sentinel)
  *   - `receipt_hash` = the 64-char all-zeros placeholder
  *
  * This is ONE canonical pre-image. Both `receipt_hash` and the Ed25519
@@ -24,7 +23,7 @@
  * is the cross-track binding choice (Rust + Python + TS golden receipt), so
  * the production helper is reconciled onto it here. See
  * `tests/golden-receipt.test.ts` / `tests/golden-receipt-self-check.test.ts`
- * for the three-way byte-identity gate (RFC-002 §7).
+ * for the three-way byte-identity gate.
  *
  * Why CLEAR-to-defaults and not field-removal: under JCS canonicalization a
  * present-but-zeroed `receipt_hash` key and a present-but-empty `signature`
@@ -35,12 +34,12 @@
  * field-removal form would require each track to agree on key absence, which
  * the strongly-typed Rust struct cannot express without a separate draft type.
  *
- * ─── Final wire value (RFC-002 §6 amendment, 2026-05-23) ─────────────────────
+ * ─── Final wire value (algorithm-prefixed) ───────────────────────────────────
  *
  * The FINAL populated `signature` value carries an algorithm prefix:
  * `ed25519:` + base64. The prefix appears ONLY in the final wire value, NOT
  * in the pre-image (the pre-image still uses `signature = ""`). The prefix
- * mirrors the §5 digest prefix and exists for future-algorithm extension
+ * mirrors the digest prefix and exists for future-algorithm extension
  * without a wire break.
  *
  * ─── Signing procedure ───────────────────────────────────────────────────────
@@ -78,7 +77,7 @@ import type {
   ExecutionReceiptV02Draft,
 } from '../../schemas/receipt-v0.2.schema.js';
 
-/** Empty-string sentinel used during signing pre-image construction (R-3 / F-2). */
+/** Empty-string sentinel used during signing pre-image construction. */
 export const SIGNATURE_SENTINEL = '';
 
 /** All-zeros `receipt_hash` placeholder used during S1 clear-to-defaults
@@ -89,9 +88,9 @@ export const SIGNATURE_SENTINEL = '';
 export const RECEIPT_HASH_PLACEHOLDER =
   '0000000000000000000000000000000000000000000000000000000000000000';
 
-/** Algorithm-prefix tag carried on the final populated `signature` value per
- *  RFC-002 §6 amendment (2026-05-23). Schema version 0.2 permits this exact
- *  prefix only; any other tag is a malformed-receipt schema violation. */
+/** Algorithm-prefix tag carried on the final populated `signature` value.
+ *  Schema version 0.2 permits this exact prefix only; any other tag is a
+ *  malformed-receipt schema violation. */
 export const SIGNATURE_ALGORITHM_PREFIX = 'ed25519:';
 
 /**
@@ -111,7 +110,7 @@ export const SIGNATURE_ALGORITHM_PREFIX = 'ed25519:';
 export function signingPreImageBytes(body: Record<string, unknown>): Uint8Array {
   if (body['signature'] !== SIGNATURE_SENTINEL) {
     throw new Error(
-      'signingPreImageBytes: body.signature must be the empty-string sentinel ("") per R-3/F-2'
+      'signingPreImageBytes: body.signature must be the empty-string sentinel ("")'
     );
   }
   const preImage = { ...body, receipt_hash: RECEIPT_HASH_PLACEHOLDER };
@@ -129,7 +128,7 @@ export function signingPreImageBytes(body: Record<string, unknown>): Uint8Array 
 export function computeReceiptHash(draft: ExecutionReceiptV02Draft): string {
   if (draft.signature !== SIGNATURE_SENTINEL) {
     throw new Error(
-      'computeReceiptHash: draft.signature must be the empty-string sentinel ("") per R-3/F-2'
+      'computeReceiptHash: draft.signature must be the empty-string sentinel ("")'
     );
   }
   const preImage = {
@@ -167,7 +166,7 @@ export function signReceiptV02(
   // Step 4: signature = ed25519_sign over the SAME pre-image bytes.
   const key = coercePrivateKey(privateKey);
   const sigBytes = nodeSign(null, preImage, key);
-  // RFC-002 §6 amendment: prepend the algorithm-prefix to the final wire value.
+  // Prepend the algorithm-prefix to the final wire value.
   // The prefix is added AFTER signing; the signed pre-image carries
   // `signature = ""` and `receipt_hash = <zeros>` and is unaffected.
   const signature =
@@ -188,7 +187,7 @@ export function verifyReceiptV02(
 ): { valid: boolean; reason?: string } {
   const { signature, receipt_hash, ...rest } = receipt;
 
-  // RFC-002 §6 amendment: the final wire value MUST be algorithm-prefixed.
+  // The final wire value MUST be algorithm-prefixed.
   // Missing or wrong algorithm-tag → malformed receipt (distinct diagnostic
   // from "invalid signature"); both collapse to { valid: false } here, but
   // the `reason` field preserves the distinction for callers.
@@ -196,7 +195,7 @@ export function verifyReceiptV02(
     return {
       valid: false,
       reason:
-        'malformed signature: missing or unknown algorithm tag (v0.2 requires "ed25519:" prefix per RFC-002 §6)',
+        'malformed signature: missing or unknown algorithm tag (v0.2 requires "ed25519:" prefix)',
     };
   }
   const sigPayload = signature.slice(SIGNATURE_ALGORITHM_PREFIX.length);

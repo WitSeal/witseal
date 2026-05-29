@@ -38,7 +38,7 @@
  * Display dispatches on `schema_version`: v0.1 renders the 9-field receipt;
  * v0.2 renders the full 17-field receipt (adds prev_hash, signature, the
  * build-provenance block — git_commit / artifact_digest / attestation_digest
- * / artifact_type / build_id — plus any populated Path-D optionals).
+ * / artifact_type / build_id — plus any populated serialize-skip optionals).
  */
 
 import { existsSync, readFileSync } from 'node:fs';
@@ -286,7 +286,7 @@ function renderV02(receipt: ExecutionReceiptV02, event: WitnessEvent | undefined
   lines.push('');
   lines.push('  Signature:');
   lines.push(`    ${receipt.signature}`);
-  // Path-D optionals — only shown when present (serialize-skip discipline).
+  // Serialize-skip optionals — only shown when present.
   const optionals: string[] = [];
   if (receipt.sigstore_signature !== undefined) {
     optionals.push(`    sigstore_signature: ${receipt.sigstore_signature}`);

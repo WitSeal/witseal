@@ -15,10 +15,9 @@
  * shape mismatch, hashes line up, and the persisted chain reproduces the
  * in-memory state.
  *
- * M1 gap-analysis (ts-tech-lead-to-pm m1-e1-coverage-gap-analysis-2026-05-19)
- * § 3 P1 — closes "end-to-end pipeline integration" and "receipt-schema
- * parsing" gaps for the allow-path. Deny / approval / file_read fixtures
- * land in subsequent M1.1 sub-runs.
+ * Coverage gap-analysis: closes "end-to-end pipeline integration" and
+ * "receipt-schema parsing" gaps for the allow-path. Deny / approval /
+ * file_read fixtures land in subsequent sub-runs.
  */
 
 import { describe, expect, it, beforeEach, afterEach } from 'vitest';
@@ -230,8 +229,7 @@ describe('pipeline-integration — allow-path shell_command (C0)', () => {
     expect(() => WitnessEventSchema.parse(result.witnessEvent)).not.toThrow();
 
     // Receipt ---------------------------------------------------------------
-    // Canonical schema parse — closes the receipt-schema parsing gap
-    // (m1-e1-coverage-gap-analysis § 3 P1.2).
+    // Canonical schema parse — closes the receipt-schema parsing gap.
     expect(() => ExecutionReceiptSchema.parse(result.receipt)).not.toThrow();
     expect(result.receipt.witness_event_id).toBe(result.witnessEvent.event_id);
     expect(result.receipt.receipt_id).toBe(result.witnessEvent.receipt_id);
@@ -343,7 +341,7 @@ describe('pipeline-integration — allow-path file_write (C1)', () => {
 // Fixture 3 — deny-by-policy path (C2 shell_command rejected by default deny)
 // ---------------------------------------------------------------------------
 //
-// Closes m1-e1-coverage-gap-analysis § 3 P1.1 "deny path" — verifies that a
+// Closes the "deny path" coverage gap — verifies that a
 // classified intent which matches no allow rule:
 //   - never reaches the mediator (execution_result remains null)
 //   - still produces a fully-formed, schema-valid witness event + receipt
@@ -413,7 +411,7 @@ describe('pipeline-integration — deny-by-policy (C2 shell_command)', () => {
 // Fixture 4 — allow-path file_read (C0, non-credential path)
 // ---------------------------------------------------------------------------
 //
-// Closes m1-e1-coverage-gap-analysis § 3 P1 "file_read C0" — exercises the
+// Closes the "file_read C0" coverage gap — exercises the
 // mediateFile read branch end-to-end. Confirms:
 //   - classifier returns C0 for a non-credential read
 //   - the read content surfaces through StreamCapture (head + content_hash)
@@ -473,7 +471,7 @@ describe('pipeline-integration — allow-path file_read (C0)', () => {
 // Fixture 5 — require-approval path (denied_by_approval stub)
 // ---------------------------------------------------------------------------
 //
-// Closes m1-e1-coverage-gap-analysis § 3 P1 "require-approval stub". The
+// Closes the "require-approval stub" coverage gap. The
 // full interactive approval flow is out of M1 scope (lands in M3). This
 // fixture pins the pipeline shape for the rejected-/missing-approval path:
 //
@@ -563,7 +561,7 @@ describe('pipeline-integration — require-approval (denied_by_approval stub)', 
 // Fixture 6 — large-stdout truncation (chain-of-custody preserved)
 // ---------------------------------------------------------------------------
 //
-// Closes m1-e1-coverage-gap-analysis § 3 P1 "large-stdout truncation" — pins
+// Closes the "large-stdout truncation" coverage gap — pins
 // the BoundedStreamingCapture contract (ADR-0005) end-to-end:
 //   - total_bytes equals the underlying file size (>128 KB)
 //   - head_bytes = HEAD_TAIL_BYTES (64 KB), tail_bytes = HEAD_TAIL_BYTES (64 KB)
@@ -651,8 +649,8 @@ describe('pipeline-integration — large-stdout truncation (cat C0, >128 KB)', (
 // Fixture 7 — deny-by-policy file_read (C3, credentials path)
 // ---------------------------------------------------------------------------
 //
-// Closes m1-e1-coverage-gap-analysis § 3 P1 "deny path" parity for file_read
-// (fixture 3 covered shell_command deny). Verifies that:
+// Closes the "deny path" coverage gap (parity for file_read;
+// fixture 3 covered shell_command deny). Verifies that:
 //   - classifier detects C3 for credential-shaped paths (regex match on
 //     `/\.(ssh\/|gnupg\/|aws\/credentials|netrc)`) without the path having to
 //     exist on disk

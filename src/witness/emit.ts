@@ -39,7 +39,7 @@ export interface EmitInput {
   agentIdentifier: string;
   classifierVersion: string;
   /**
-   * RFC-002 §7.2 — structured identity origin for `agentIdentifier`.
+   * Structured identity origin for `agentIdentifier`.
    * When set, propagated into `WitnessEvent.identity_origin` using the
    * same omit-when-absent discipline as other optional wire fields.
    */
@@ -88,7 +88,7 @@ function buildBaseDraft(
     previous_event_hash: head,
     originating_node: hostname() || 'local',
     agent_identifier: input.agentIdentifier,
-    // RFC-002 §7.2: structured identity origin. Omit-when-absent to preserve
+    // Structured identity origin. Omit-when-absent to preserve
     // JCS byte-identity with implementations that do not emit the field.
     ...(input.identityOrigin !== undefined
       ? { identity_origin: input.identityOrigin }
@@ -99,7 +99,7 @@ function buildBaseDraft(
     execution_result: input.executionResult,
     outcome: input.outcome,
     receipt_id: generateReceiptId(),
-    // P0-1 / RFC-001 §6.3a/§9.2: link the second-phase event to its
+    // Link the second-phase event to its
     // matching `intent_recorded`. Use conditional spread so the field is
     // omitted entirely (not serialized as null) when absent — preserves
     // JCS byte-identity with Rust's serde skip_serializing_if pattern.
@@ -119,7 +119,7 @@ function buildBaseDraft(
 }
 
 /**
- * P0-1 / RFC-001 §6.3a — Phase A: emit `intent_recorded` BEFORE the
+ * Phase A: emit `intent_recorded` BEFORE the
  * execution attempt. The witness chain records the action's intent + policy
  * decision so a crash mid-execution leaves a recoverable trace
  * (`execution_lost` on next startup).
@@ -148,7 +148,7 @@ export async function emitIntentRecorded(
 }
 
 /**
- * P0-1 / RFC-001 §6.3a — Phase B: emit `execution_complete` AFTER the
+ * Phase B: emit `execution_complete` AFTER the
  * execution attempt returns. References the matching `intent_recorded`
  * event via `intent_recorded_event_id`.
  *

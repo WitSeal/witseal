@@ -720,5 +720,4 @@ exact versions is `package.json` together with the lockfile.
 Long-term language-layer architecture: TS surface / Rust trust core /
 Python SDK. Rust is the hardened parallel track — hardened
 execution, sandboxing, cryptographic witness engine. Python is the
-SDK / verifier line. The full model and its staged evolution are the
-subject of a separate design note.
+SDK / verifier line.

@@ -6,7 +6,7 @@
  * cache is stale, missing, or corrupt). Includes the integrity-error throw
  * path when persisted events do not form a valid chain.
  *
- * Companion to M1 gap-analysis § 3 P2.7 (witness event-log branch gaps).
+ * Covers witness event-log branch gaps.
  */
 
 import { describe, expect, it, beforeEach, afterEach } from 'vitest';

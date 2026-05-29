@@ -1,5 +1,5 @@
 /**
- * RFC-002 §7 — schema-additions lockstep test suite.
+ * Schema additions §7 — schema-additions lockstep test suite.
  *
  * §7.1 placement guard:
  *   `no_policy_configured` is a valid WitnessOutcome but MUST NOT be a
@@ -13,7 +13,7 @@
  *   Optional, non-nullable. Omitted-when-absent (JCS byte-identity preserved).
  *
  * §7.3 operation_id:
- *   Confirmatory — field already shipped (P1-8). Validates it is still
+ *   Confirmatory — field already shipped. Validates it is still
  *   present and optional on WitnessEventSchema.
  */
 
@@ -39,7 +39,7 @@ import { canonicalize } from '../src/integrity/hash-chain.js';
 // §7.1 — no_policy_configured placement guard
 // ---------------------------------------------------------------------------
 
-describe('RFC-002 §7.1 — no_policy_configured placement guard', () => {
+describe('Schema additions §7.1 — no_policy_configured placement guard', () => {
   it('WitnessOutcomeSchema accepts no_policy_configured', () => {
     expect(() => WitnessOutcomeSchema.parse('no_policy_configured')).not.toThrow();
     expect(WitnessOutcomeSchema.parse('no_policy_configured')).toBe('no_policy_configured');
@@ -97,7 +97,7 @@ describe('RFC-002 §7.1 — no_policy_configured placement guard', () => {
 // §7.2 — identity_origin schema contract
 // ---------------------------------------------------------------------------
 
-describe('RFC-002 §7.2 — IdentityOriginSchema contract', () => {
+describe('Schema additions §7.2 — IdentityOriginSchema contract', () => {
   it('accepts configured and fallback', () => {
     expect(IdentityOriginSchema.parse('configured')).toBe('configured');
     expect(IdentityOriginSchema.parse('fallback')).toBe('fallback');
@@ -110,7 +110,7 @@ describe('RFC-002 §7.2 — IdentityOriginSchema contract', () => {
   });
 });
 
-describe('RFC-002 §7.2 — ApprovalPrincipalSchema identity_origin', () => {
+describe('Schema additions §7.2 — ApprovalPrincipalSchema identity_origin', () => {
   it('accepts principal without identity_origin (optional, backward-compat)', () => {
     const result = ApprovalPrincipalSchema.safeParse({
       type: 'ci',
@@ -148,7 +148,7 @@ describe('RFC-002 §7.2 — ApprovalPrincipalSchema identity_origin', () => {
   });
 });
 
-describe('RFC-002 §7.2 — WitnessEventSchema identity_origin', () => {
+describe('Schema additions §7.2 — WitnessEventSchema identity_origin', () => {
   // Minimal valid witness event fixture for schema validation.
   function makeEventPayload(extra: Record<string, unknown> = {}): Record<string, unknown> {
     const base = {
@@ -236,8 +236,8 @@ describe('RFC-002 §7.2 — WitnessEventSchema identity_origin', () => {
 // §7.2 — JCS byte-identity for identity_origin field
 // ---------------------------------------------------------------------------
 
-describe('RFC-002 §7.2 — JCS byte-identity for identity_origin', () => {
-  it('event without identity_origin has identical canonical bytes to pre-§7.2 representation', () => {
+describe('Schema additions §7.2 — JCS byte-identity for identity_origin', () => {
+  it('event without identity_origin has identical canonical bytes to the earlier representation', () => {
     // Two events with the same fields, one with identity_origin=undefined
     // (correctly omitted) and one without the key at all, must produce
     // identical canonical bytes. This confirms the omit-when-absent
@@ -273,7 +273,7 @@ describe('RFC-002 §7.2 — JCS byte-identity for identity_origin', () => {
 // §7.3 — operation_id confirmatory
 // ---------------------------------------------------------------------------
 
-describe('RFC-002 §7.3 — operation_id confirmatory (already shipped P1-8)', () => {
+describe('Schema additions §7.3 — operation_id confirmatory (already shipped)', () => {
   it('WitnessEventSchema has operation_id as optional, non-nullable string field', () => {
     const shape = WitnessEventSchema.shape;
     // Confirm the field exists on the schema.

@@ -59,8 +59,7 @@ export const WitnessOutcomeSchema = z.enum([
   'denied_by_approval',
   'denied_by_classification_failure',
   'no_policy_configured',
-  // P0-1 (runtime-boundary audit 2026-05-25) + RFC-001 §6.3a/§9.2:
-  // two-phase commit so the chain records the action BEFORE execution
+  // Two-phase commit so the chain records the action BEFORE execution
   // attempts and can recover from a crash mid-flight.
   'pending',          // emitted as `intent_recorded` (Phase A), execution_result=null
   'execution_lost',   // emitted on next startup when a `pending` tail has no successor
@@ -108,7 +107,7 @@ export const WitnessEventSchema = z.object({
   agent_identifier: z.string().min(1),
 
   /**
-   * RFC-002 §7.2 — structured identity origin for `agent_identifier`.
+   * Structured identity origin for `agent_identifier`.
    *
    * `'configured'`  — the identifier was explicitly supplied by the operator
    *                   or agent integration (e.g. via `--agent`).
@@ -116,7 +115,7 @@ export const WitnessEventSchema = z.object({
    *                   configured agent identity was available.
    *
    * Wire-format: optional, non-nullable. Omitted when not set so JCS
-   * canonical bytes are unchanged for events that predate §7.2 or that
+   * canonical bytes are unchanged for events that predate the field or that
    * carry a fully-configured identity where the origin is unambiguous.
    */
   identity_origin: IdentityOriginSchema.optional(),
@@ -140,7 +139,7 @@ export const WitnessEventSchema = z.object({
   receipt_id: z.string().regex(/^rcpt_[0-9a-zA-Z]{20,}$/),
 
   /**
-   * P0-1 / RFC-001 §6.3a/§9.2 — two-phase commit linkage.
+   * Two-phase commit linkage.
    *
    * Populated only on `execution_complete`-style events (the second phase
    * of an exec) and on `execution_lost` recovery events. References the

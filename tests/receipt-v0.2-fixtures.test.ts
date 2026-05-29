@@ -3,7 +3,7 @@
  *
  * Reads the static JSON fixtures committed under
  * `tests/fixtures/receipts/v0.2/`, parses each against
- * `ExecutionReceiptV02Schema`, and verifies the R-3 signature + self-hash
+ * `ExecutionReceiptV02Schema`, and verifies the signature + self-hash
  * via `verifyReceiptV02`, using the committed raw Ed25519 public key.
  *
  * The fixtures are the source-of-truth artifact; the regenerator
@@ -63,11 +63,11 @@ describe('v0.2 positive fixture corpus', () => {
       expect(receipt.schema_version).toBe('witseal.receipt.v0.2');
     });
 
-    it('carries prev_hash = null at chain-segment genesis (Option B)', () => {
+    it('carries prev_hash = null at chain-segment genesis (genesis-null)', () => {
       expect(receipt.prev_hash).toBeNull();
     });
 
-    it('omits all Path-D optionals (serialize-skip)', () => {
+    it('omits all serialize-skip optionals', () => {
       expect('sigstore_signature' in receipt).toBe(false);
       expect('classifier_version' in receipt).toBe(false);
       expect('shadow_mode' in receipt).toBe(false);
@@ -95,7 +95,7 @@ describe('v0.2 positive fixture corpus', () => {
       expect(receipt.prev_hash).toBe(genesis.receipt_hash);
     });
 
-    it('omits all Path-D optionals (serialize-skip)', () => {
+    it('omits all serialize-skip optionals', () => {
       expect('sigstore_signature' in receipt).toBe(false);
       expect('classifier_version' in receipt).toBe(false);
       expect('shadow_mode' in receipt).toBe(false);
@@ -113,7 +113,7 @@ describe('v0.2 positive fixture corpus', () => {
       expect(receipt.schema_version).toBe('witseal.receipt.v0.2');
     });
 
-    it('carries receipt_id = null (Path B nullable-mandatory for R-5)', () => {
+    it('carries receipt_id = null (nullable-mandatory for execution_lost)', () => {
       expect(receipt.receipt_id).toBeNull();
     });
 
@@ -137,7 +137,7 @@ describe('v0.2 positive fixture corpus', () => {
       expect(receipt.schema_version).toBe('witseal.receipt.v0.2');
     });
 
-    it('carries all three Path-D optionals', () => {
+    it('carries all three serialize-skip optionals', () => {
       expect(receipt.sigstore_signature).toBe('sigstore-fixture-blob-v0.2');
       expect(receipt.classifier_version).toBe('fixture-classifier-1.0');
       expect(receipt.shadow_mode).toBe(true);

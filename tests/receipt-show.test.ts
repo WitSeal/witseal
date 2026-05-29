@@ -1,9 +1,9 @@
 /**
- * D1 — `witseal receipt show <id>` (src/cli/receipt.ts).
+ * `witseal receipt show <id>` (src/cli/receipt.ts).
  *
- * `receipt show` is the human-readable PRESENTATION of a receipt:
- * noun+verb grammar, like `events list` / `evidence export`). It answers
- * "What happened?" — it does NOT verify (that is `witseal verify` / D2) and
+ * `receipt show` is the human-readable PRESENTATION of a receipt
+ * (noun+verb grammar, like `events list` / `evidence export`). It answers
+ * "What happened?" — it does NOT verify (that is `witseal verify`) and
  * is NOT forensics (`inspect`, reserved, out of 0.1.0).
  *
  * Coverage:

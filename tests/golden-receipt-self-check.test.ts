@@ -178,7 +178,7 @@ function buildPreImageReceipt(): GoldenReceiptShape {
     git_commit: '0000000000000000000000000000000000000000',
     outcome: 'allowed_executed',
     policy_decision_hash: SENTINELS.policy_decision_hash,
-    prev_hash: null,                  // emits explicit null (Decision A invariant)
+    prev_hash: null,                  // emits explicit null (wire-format invariant)
     receipt_hash: HASH_ZERO,          // S1 zero-placeholder
     receipt_id: 'rcpt_golden00000000000000001',
     signature: SIG_SENTINEL,          // S1 empty-string sentinel
@@ -202,7 +202,7 @@ function s1Generate(): {
   const draft = buildPreImageReceipt();
 
   // Step 2: canonicalize pre-image (RFC 8785 — sorted keys, no whitespace,
-  // prev_hash=null emits explicit `null`, Path D optionals absent from type).
+  // prev_hash=null emits explicit `null`, serialize-skip optionals absent from type).
   const preImageBytes = Buffer.from(canonicalize(draft), 'utf8');
 
   // Step 3: receipt_hash = SHA-256(pre-image bytes), bare 64-hex.

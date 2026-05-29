@@ -1,7 +1,7 @@
 /**
  * Failure mode tests for the safety-critical components.
  *
- * Per a third-party audit note §2:
+ * Per a third-party security audit §2:
  *   "A governance system's correctness under failure is more important than
  *    its correctness on happy paths."
  *
@@ -12,7 +12,7 @@
  *   - Policy engine: malformed pack → throws (caller decides what to do),
  *                    missing file → throws ENOENT,
  *                    no packs loaded → default 'allow' (current behavior;
- *                    see CODE_SYNC #9 — runtime warning required)
+ *                    a runtime warning is required here)
  *
  * Pipeline-level failure modes (classifier throw → denial event, malformed
  * policy file → fail-closed denial, missing data dir → prominent warning)
@@ -301,8 +301,8 @@ describe('PolicyEngine — evaluation invariants under degenerate inputs', () =>
     };
   }
 
-  it('with NO packs loaded, evaluates to "allow" (CODE_SYNC #9 — needs runtime warning)', () => {
-    // Documents current behavior. Per CODE_SYNC #9, this should also produce
+  it('with NO packs loaded, evaluates to "allow" (needs runtime warning)', () => {
+    // Documents current behavior. This should also produce
     // a prominent warning at policy-evaluation time so misconfigured
     // deployments do not silently permit everything. The warning is
     // a separate work item.
@@ -449,7 +449,7 @@ describe('PolicyEngine — evaluation invariants under degenerate inputs', () =>
 // EXEC PIPELINE GAPS (NOT YET TESTABLE)
 // ---------------------------------------------------------------------------
 //
-// The following failure modes from the external audit note §2 are NOT yet testable at
+// The following failure modes from the third-party audit §2 are NOT yet testable at
 // integration level because src/cli/exec.ts does not currently wrap the
 // failure paths in protective error handling. Implementing the safety
 // behavior is required before tests can be written. These gaps should be
@@ -470,7 +470,7 @@ describe('PolicyEngine — evaluation invariants under degenerate inputs', () =>
 // 3. Policy directory missing → silent default-allow
 //    Current: src/cli/exec.ts:54 guards with `existsSync(policyDir)`. Missing
 //    directory results in zero packs loaded → default 'allow' fires silently.
-//    Required (CODE_SYNC #9): prominent runtime warning before evaluation.
+//    Required: prominent runtime warning before evaluation.
 //
 // 4. Chain advance fails (e.g., disk full) → read-only mode on next startup
 //    Current: not implemented.
@@ -481,19 +481,19 @@ describe('PolicyEngine — evaluation invariants under degenerate inputs', () =>
 //    Current: src/integrity/lock.ts uses fs.flockSync if available (Node 22+
 //    on a recent version), else advisory-only warning. macOS Node 22.22.2
 //    appears to lack flockSync (stabilized in Node 24), so concurrent writes
-//    are not protected. See CODE_SYNC #8.
+//    are not protected.
 //    Required: real OS-level exclusive lock OR documented Node version floor.
 //
 // 6. Receipt generated but chain advance crashes → unsealed state recoverable
 //    Current: chain advance + receipt are tightly coupled in emit path; partial
 //    failure not modeled.
-//    Required: RFC-001 two-phase commit semantics (Phase 2 work).
+//    Required: two-phase commit semantics (Phase 2 work).
 //
 // 7. Approval times out → ApprovalRecord records 'timed_out' outcome
 //    Coverage status: src/cli/approval.ts is the home for this; needs its own
-//    test file. Tracked under CODE_SYNC #1 (untested approval module).
+//    test file (the approval module is currently untested).
 //
-// These gaps are surfaced to PM separately for prioritization. Items 1-3 are
+// These gaps are tracked separately for prioritization. Items 1-3 are
 // the highest-impact for Phase 1 closure and warrant tightening exec.ts
 // regardless of whether the integration tests land in this stream or a
 // follow-up.
