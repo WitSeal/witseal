@@ -1,11 +1,11 @@
 /**
  * `witseal receipt show <id>` — display a single execution receipt.
  *
- * Grammar: noun + verb (`receipt show`), mirroring `events list`
- * and `evidence export`. `show` answers "What happened?" — it renders the
+ * Noun-plus-verb grammar (`receipt show`), mirroring `events list` and
+ * `evidence export`. `show` answers "What happened?" — it renders the
  * receipt's fields for a human. It does NOT verify (VALID/INVALID is
- * `witseal verify`) and is NOT forensics (`inspect` is reserved, out of
- * 0.1.0).
+ * `witseal verify`) and is NOT forensics (`inspect` is a reserved verb,
+ * out of scope for 0.1.0).
  *
  * ─── Where a receipt comes from ──────────────────────────────────────────────
  *
