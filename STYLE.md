@@ -189,10 +189,25 @@ witseal classify <intent>
 witseal evaluate <intent>
 witseal exec <command>          # primary command
 witseal witness list
-witseal receipt show <id>
+witseal receipt show <id>       # primary display command — "what happened?"
 witseal replay <receipt-id>
-witseal verify <evidence-package>
+witseal verify <evidence-package>   # truth judgement — VALID / INVALID
 ```
+
+Three commands answer three distinct questions; none takes on another's role
+(noun-plus-verb grammar; one responsibility per command):
+
+| Command | Question | Role |
+|---|---|---|
+| `receipt show` | "What happened?" | present a `receipt` artifact to a human |
+| `verify` | "Can this be trusted?" | truth judgement — `VALID` / `INVALID` |
+| `inspect` | "Why did it happen this way? What is inside the evidence?" | expert forensic analysis |
+
+`inspect` is a **reserved** top-level verb for a debug / evidence-forensic mode
+(e.g. `inspect receipt.json`, `inspect trace.json`, `inspect evidence/`). It is
+**out of scope for `0.1.0`** — the name is reserved now; the forensic layer is a
+later-maturity surface (v0.3–v1.0). Do not overload `receipt show` (display) or
+`verify` (judgement) with forensic responsibilities.
 
 **Schema names are versioned canonical types:**
 
