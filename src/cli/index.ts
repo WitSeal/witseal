@@ -133,11 +133,30 @@ evidence
   .option('--out <file>', 'Output file path (default: stdout)')
   .option('--start <seq>', 'Start sequence (inclusive)')
   .option('--end <seq>', 'End sequence (inclusive)')
+  .option(
+    '--receipt-version <v>',
+    'Receipt schema version: v0.1 (default) or v0.2 (signed)',
+    'v0.1'
+  )
+  .option('--signing-key <path|hex>', 'Ed25519 signing key (PEM/DER path or 64-char raw-seed hex); required for v0.2')
+  .option('--git-commit <sha1>', 'v0.2 build provenance: bare 40-hex git commit')
+  .option('--artifact-digest <sha256>', 'v0.2 build provenance: sha256:<hex> artifact digest')
+  .option('--attestation-digest <sha256>', 'v0.2 build provenance: sha256:<hex> attestation digest')
+  .option('--artifact-type <type>', 'v0.2 build provenance: kebab-case artifact type')
+  .option('--build-id <id>', 'v0.2 build provenance: free-form build identifier')
   .action(async (opts) => {
+    const receiptVersion = normalizeReceiptVersion(opts.receiptVersion as string);
     const exitCode = await runEvidenceExport({
       ...(opts.out ? { outPath: opts.out as string } : {}),
       ...(opts.start ? { startSequence: parseInt(opts.start, 10) } : {}),
       ...(opts.end ? { endSequence: parseInt(opts.end, 10) } : {}),
+      receiptVersion,
+      ...(opts.signingKey ? { signingKeyPath: opts.signingKey as string } : {}),
+      ...(opts.gitCommit ? { gitCommit: opts.gitCommit as string } : {}),
+      ...(opts.artifactDigest ? { artifactDigest: opts.artifactDigest as string } : {}),
+      ...(opts.attestationDigest ? { attestationDigest: opts.attestationDigest as string } : {}),
+      ...(opts.artifactType ? { artifactType: opts.artifactType as string } : {}),
+      ...(opts.buildId ? { buildId: opts.buildId as string } : {}),
       dataDir: program.opts()['dataDir'] as string,
       segmentId: program.opts()['segment'] as string,
     });
@@ -151,4 +170,19 @@ program.parseAsync(process.argv).catch((err) => {
 
 function defaultDataDir(): string {
   return process.env['WITSEAL_DATA_DIR'] ?? `${process.env['HOME'] ?? '.'}/.witseal`;
+}
+
+/**
+ * Map the `--receipt-version` flag (accepting `v0.1`/`v0.2` shorthand or the
+ * full `witseal.receipt.vX.Y` literal) to the canonical schema-version string.
+ * Unknown values fall back to v0.1 (the backward-compatible default).
+ */
+function normalizeReceiptVersion(
+  v: string
+): 'witseal.receipt.v0.1' | 'witseal.receipt.v0.2' {
+  const norm = v.trim().toLowerCase();
+  if (norm === 'v0.2' || norm === '0.2' || norm === 'witseal.receipt.v0.2') {
+    return 'witseal.receipt.v0.2';
+  }
+  return 'witseal.receipt.v0.1';
 }
