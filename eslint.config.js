@@ -41,6 +41,9 @@ export default [
       // no-unused-vars is handled by the TS-aware rule; disable the core one
       // to avoid duplicate / false positives on type-only constructs.
       'no-unused-vars': 'off',
+      // Underscore prefix marks an intentionally-unused binding (e.g. a
+      // callback parameter kept for signature shape). Standard ts-eslint idiom.
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
       // Core no-undef is turned off for TS per typescript-eslint guidance:
       // without type information it false-positives on ambient type globals
       // (e.g. the `NodeJS` namespace). TypeScript itself enforces undefined

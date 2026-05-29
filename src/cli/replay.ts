@@ -10,6 +10,7 @@
 import { EventLog } from '../witness/event-log.js';
 import { verifyEventHash } from '../integrity/hash-chain.js';
 import { generateReceipt, verifyReceipt } from '../receipts/generate.js';
+import type { WitnessEvent } from '../../schemas/witness-event.schema.js';
 
 export interface ReplayOptions {
   identifier: string;
@@ -88,7 +89,7 @@ export async function runReplay(opts: ReplayOptions): Promise<number> {
   return 0;
 }
 
-function findEvent(events: ReturnType<typeof identityType>['events'][number][], id: string): typeof events[number] | undefined {
+function findEvent(events: WitnessEvent[], id: string): WitnessEvent | undefined {
   // Try sequence number first
   const asNum = parseInt(id, 10);
   if (Number.isFinite(asNum) && String(asNum) === id) {
@@ -103,9 +104,6 @@ function findEvent(events: ReturnType<typeof identityType>['events'][number][], 
   if (matches.length === 1) return matches[0];
   return undefined;
 }
-
-// Type identity helper to avoid deep import of WitnessEvent
-function identityType() { return { events: [] as Array<import('../../schemas/witness-event.schema.js').WitnessEvent> }; }
 
 function describeIntent(intent: import('../../schemas/intent.schema.js').Intent): string {
   switch (intent.action_type) {
