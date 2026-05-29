@@ -304,7 +304,7 @@ describe('mediateFile — file_write edge cases (round-out)', () => {
 
   it('accepts string content (UTF-8 encoded) for file_write', async () => {
     const path = join(workDir, 'utf8.txt');
-    const content = 'привет';
+    const content = 'café ☕ über';
     const bytes = Buffer.from(content, 'utf8');
     const result = await mediateFile(
       {

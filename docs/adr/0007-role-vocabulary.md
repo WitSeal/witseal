@@ -2,7 +2,7 @@
 
 - **Status:** accepted (2026-05-11)
 - **Date:** 2026-05-11
-- **Deciders:** Mikhail Sergeev
+- **Deciders:** WitSeal maintainers
 - **Affects:** `docs/model.md`, `STYLE.md`, schemas, code identifiers, future RFCs
 
 ---

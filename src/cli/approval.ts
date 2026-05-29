@@ -54,10 +54,11 @@ function obtainViaCI(
   const matchedRuleId = decision.matched_rule?.rule_id;
   const allowed = matchedRuleId ? allowList.includes(matchedRuleId) : false;
 
-  // RFC-002 §7.2 (replaces P1-7 fallback: prefix): when WITSEAL_CI_PRINCIPAL
-  // is unset or empty, the principal carries identity_origin='fallback' on a
-  // structured field rather than a `fallback:` string prefix. Evidence consumers
-  // check `principal.identity_origin === 'fallback'` rather than a string scan.
+  // Structured identity origin (replaces an earlier `fallback:` string prefix):
+  // when WITSEAL_CI_PRINCIPAL is unset or empty, the principal carries
+  // identity_origin='fallback' on a structured field rather than a `fallback:`
+  // string prefix. Evidence consumers check
+  // `principal.identity_origin === 'fallback'` rather than a string scan.
   // Production CI integrations SHOULD set WITSEAL_CI_PRINCIPAL.
   const configuredCiPrincipal = process.env['WITSEAL_CI_PRINCIPAL'];
   const ciIsConfigured = configuredCiPrincipal != null && configuredCiPrincipal.length > 0;
@@ -110,11 +111,11 @@ function obtainViaTTY(
 
   const outcome = readApprovalChar(timeoutS);
 
-  // RFC-002 §7.2 (replaces P1-7 fallback: prefix): when neither $USER nor
-  // $LOGNAME is set, the principal carries identity_origin='fallback' on a
-  // structured field rather than a `fallback:` string prefix. Evidence
-  // consumers check `principal.identity_origin` for the signal rather than
-  // scanning the identifier string.
+  // Structured identity origin (replaces an earlier `fallback:` string prefix):
+  // when neither $USER nor $LOGNAME is set, the principal carries
+  // identity_origin='fallback' on a structured field rather than a `fallback:`
+  // string prefix. Evidence consumers check `principal.identity_origin` for the
+  // signal rather than scanning the identifier string.
   const userEnv = process.env['USER'] ?? process.env['LOGNAME'];
   const humanIsConfigured = userEnv != null && userEnv.length > 0;
   const humanIdentifier = humanIsConfigured ? userEnv : 'no-user-env';

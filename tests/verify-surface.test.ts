@@ -1,5 +1,5 @@
 /**
- * D2 — unified, version-discriminating verify surface.
+ * Unified, version-discriminating verify surface.
  *
  * Tests `verifyArtifact` (src/verify/verify.ts): the single entry point that
  * classifies an artifact by schema_version and returns one VALID / INVALID

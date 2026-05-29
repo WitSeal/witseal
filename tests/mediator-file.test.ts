@@ -315,7 +315,7 @@ describe('mediateFile — file_write failure modes', () => {
 
   it('accepts a non-Buffer Uint8Array content payload', async () => {
     // Closes mediator.ts normalizeContent Uint8Array branch (line 417):
-    // Buffer.isBuffer(u8) is false для plain Uint8Array, typeof === 'object'
+    // Buffer.isBuffer(u8) is false for plain Uint8Array, typeof === 'object'
     // skips the string branch, so Buffer.from(content) is the path taken.
     const path = join(workDir, 'u8.bin');
     const u8 = new Uint8Array([0x10, 0x20, 0x30, 0xff]);

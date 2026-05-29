@@ -1,10 +1,10 @@
 /**
  * P0-1 — pre-execution evidence + execution_lost recovery.
  *
- * Runtime-boundary audit 2026-05-25 finding TS-P0-1: prior pipeline emitted
+ * A runtime-boundary audit found that the prior pipeline emitted
  * a single witness event AFTER mediateShell returned. A crash between the
  * spawn and the post-exec emit left no chain entry for an action that
- * actually ran. The two-phase fix (RFC-001 §6.3a/§9.2) emits
+ * actually ran. The two-phase fix emits
  * `intent_recorded` (outcome=pending) BEFORE the mediator runs and
  * `execution_complete` AFTER; an unpaired `pending` at the chain tail is
  * recovered as `execution_lost` on the next runExec invocation.
@@ -222,7 +222,7 @@ describe('runExec — spawn errors are recorded under the two-phase split', () =
 // Recovery: unpaired pending tail → execution_lost on next runExec
 // ---------------------------------------------------------------------------
 
-describe('runExec — execution_lost recovery (P0-1 / RFC-001 §9.2)', () => {
+describe('runExec — execution_lost recovery (P0-1)', () => {
   function makeClassifiedIntent(): ClassifiedIntent {
     return {
       schema_version: 'witseal.intent.v0.1',

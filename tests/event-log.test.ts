@@ -6,7 +6,7 @@
  * cache is stale, missing, or corrupt). Includes the integrity-error throw
  * path when persisted events do not form a valid chain.
  *
- * Companion to M1 gap-analysis § 3 P2.7 (witness event-log branch gaps).
+ * Covers witness event-log branch gaps.
  */
 
 import { describe, expect, it, beforeEach, afterEach } from 'vitest';
@@ -216,7 +216,7 @@ describe('EventLog — head cache edge cases', () => {
   it('readEvents skips blank/whitespace-only lines without error', async () => {
     // Closes event-log.ts:121 — the `if (!trimmed) continue;` branch inside
     // the readline loop. Build a valid 2-event chain, then splice in blank
-    // и whitespace-only lines without disturbing event order.
+    // and whitespace-only lines without disturbing event order.
     const emitted = await emitN(eventLog, 2);
     const original = readFileSync(logPath, 'utf8');
     const lines = original.split('\n').filter((l) => l.trim());

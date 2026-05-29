@@ -2,10 +2,10 @@
  * M1.3 — Evidence package round-trip test.
  *
  * Exercises `exportEvidencePackage` end-to-end against `src/evidence/package.ts`
- * — the module that бундлирует witness events + receipts + policy packs into
+ * — the module that bundles witness events + receipts + policy packs into
  * an exportable, third-party-verifiable artifact (per ADR-0001 § 3.5).
  *
- * Coverage closed by this slice (m1-e1-coverage-gap-analysis § 3 P1.4):
+ * Coverage closed by this slice:
  *   - schema parse via `EvidencePackageSchema.parse(...)` on every produced
  *     package (the schema is currently 0% covered)
  *   - JSON round-trip: serialize → parse → deep-equal semantics preserved
@@ -13,8 +13,8 @@
  *     and to actual predecessor event_hash (when range starts mid-chain)
  *   - `chain_head_after_range` matches event_hash of last in-range event
  *   - range slicing: full-chain default, head-only slice, tail-only slice,
- *     middle slice (all три boundary configurations)
- *   - receipts paired 1:1 with events by witness_event_id и by hash linkage
+ *     middle slice (all three boundary configurations)
+ *   - receipts paired 1:1 with events by witness_event_id and by hash linkage
  *   - chain reconstruction from package alone verifies via
  *     `verifyChain(events, chain_head_before_range)`
  *   - error paths: empty chain throws; out-of-range slice throws
@@ -26,7 +26,7 @@
  * `finalized_at` timestamp) — instead we assert receipt-vs-event integrity
  * via the existing `verifyReceipt` API.
  *
- * Bridge Proof v0.2 alignment: this round-trip is the foundation для
+ * Cross-track v0.2 alignment: this round-trip is the foundation for
  * the M11 `witseal verify` CLI which (in v0.2) will additionally verify
  * artifact_digest, attestation_digest, and Ed25519 signature. The schema
  * fields exercised here remain stable; v0.2 strictly adds fields.
@@ -77,7 +77,7 @@ const ALLOW_INFORMATIONAL_PACK: PolicyPack = PolicyPackSchema.parse({
   pack_id: 'evidence-package-test-allow',
   version: '0.1.0',
   description:
-    'Allow C0 shell + C1 file_write для evidence package round-trip test.',
+    'Allow C0 shell + C1 file_write for evidence package round-trip test.',
   rules: [
     {
       id: 'allow-c0-shell',
@@ -98,7 +98,7 @@ const ALLOW_INFORMATIONAL_PACK: PolicyPack = PolicyPackSchema.parse({
 // ---------------------------------------------------------------------------
 // Pipeline runner — produces a real WitnessEvent persisted to the log.
 // Mirrors pipeline-integration.test.ts shape (kept local to avoid an extra
-// shared-helper file для one more test; if a third test needs it we'll
+// shared-helper file for one more test; if a third test needs it we'll
 // extract).
 // ---------------------------------------------------------------------------
 
@@ -231,13 +231,13 @@ describe('exportEvidencePackage — full-chain export', () => {
     expect(pkg.events).toHaveLength(3);
     expect(pkg.receipts).toHaveLength(3);
 
-    // Events appear in sequence order и match the live chain identity-wise.
+    // Events appear in sequence order and match the live chain identity-wise.
     for (let i = 0; i < 3; i++) {
       expect(pkg.events[i]!.event_hash).toBe(events[i]!.event_hash);
       expect(pkg.events[i]!.sequence).toBe(i);
     }
 
-    // Each receipt is paired 1:1 with its event by witness_event_id, и
+    // Each receipt is paired 1:1 with its event by witness_event_id, and
     // verifyReceipt agrees end-to-end.
     for (let i = 0; i < 3; i++) {
       const rcpt = pkg.receipts[i]!;
@@ -342,7 +342,7 @@ describe('exportEvidencePackage — range slicing', () => {
   it('exports a mid-chain slice with chain_head_before_range = predecessor event_hash', async () => {
     const events = await buildChain(5, engine, eventLog, workDir);
 
-    // Slice [1, 3] — three events, skipping the genesis event и one tail event.
+    // Slice [1, 3] — three events, skipping the genesis event and one tail event.
     const pkg = await exportEvidencePackage(
       eventLog,
       [ALLOW_INFORMATIONAL_PACK],
@@ -379,7 +379,7 @@ describe('exportEvidencePackage — range slicing', () => {
     expect(result.valid).toBe(true);
     expect(result.chainHeadAfter).toBe(pkg.chain_head_after_range);
 
-    // Sanity: if a third party tampers с chain_head_before_range, verify
+    // Sanity: if a third party tampers with chain_head_before_range, verify
     // fails at index 0 (the slice no longer links to the claimed predecessor).
     const badAnchor = 'f'.repeat(64);
     const bad = verifyChain(pkg.events, badAnchor);
@@ -402,7 +402,7 @@ describe('exportEvidencePackage — error paths', () => {
   it('throws when range contains no events', async () => {
     await buildChain(2, engine, eventLog, workDir);
 
-    // Range [5, 10] — chain only has seq 0 и 1, no events match.
+    // Range [5, 10] — chain only has seq 0 and 1, no events match.
     await expect(
       exportEvidencePackage(
         eventLog,

@@ -62,7 +62,7 @@ export interface EvidenceExportV02Options {
   artifactType: string;
   /** Free-form build-context identifier. */
   buildId: string;
-  /** Path-D serialize-skip optionals — omitted from the receipt when absent. */
+  /** Serialize-skip optionals — omitted from the receipt when absent. */
   sigstoreSignature?: string;
   classifierVersion?: string;
   shadowMode?: boolean;
@@ -162,7 +162,7 @@ export async function exportEvidencePackage(
 /**
  * Generate v0.2 receipts for the in-range events, signing each and chaining
  * them via `prev_hash`. The first receipt in the exported range carries
- * `prev_hash = null` (Option B genesis-of-range); each subsequent receipt
+ * `prev_hash = null` (genesis-of-range); each subsequent receipt
  * carries the predecessor receipt's `receipt_hash`. Build provenance and the
  * signing key come from `opts`.
  */

@@ -14,20 +14,19 @@
  * each JSON and re-verifying the signature against the committed public
  * key).
  *
- * Surface coverage (per the M8 plan in
- * `ts-tech-lead-to-pm-m8-start-confirmation-2026-05-23.md` § 2):
+ * Surface coverage:
  *
  *   01-genesis-allowed-executed     (a) prev_hash = null at genesis
- *                                   (d) Path-D optionals omitted
+ *                                   (d) serialize-skip optionals omitted
  *   02-chained-allowed-executed     (b) prev_hash = receipt_hash of #01
- *                                   (d) Path-D optionals omitted
- *   03-execution-lost               (c) receipt_id = null + R-5 outcome
+ *                                   (d) serialize-skip optionals omitted
+ *   03-execution-lost               (c) receipt_id = null + execution_lost outcome
  *                                       + execution_result_hash = null
  *   04-path-d-optionals-populated   (e) sigstore_signature + classifier_version
  *                                       + shadow_mode all carried through
  *
- * Cross-track use: any track (Rust, Python) that implements RFC-002
- * canonicalization, the R-3 empty-string-sentinel signing procedure, and
+ * Cross-track use: any track (Rust, Python) that implements the same
+ * canonicalization, the empty-string-sentinel signing procedure, and
  * the v0.2 zod-equivalent schema can verify each fixture by:
  *
  *   1. Reading the JSON.
@@ -116,12 +115,12 @@ function main(): void {
   const { privateKey, publicKeyHex } = loadKeyPair();
   console.log(`Ed25519 public key (raw 32-byte hex): ${publicKeyHex}`);
 
-  // 01 — Genesis, allowed_executed, Path-D optionals omitted.
+  // 01 — Genesis, allowed_executed, serialize-skip optionals omitted.
   const draft01 = makeBaseDraft();
   const receipt01 = signReceiptV02(draft01, privateKey);
   writeJson('01-genesis-allowed-executed.json', receipt01);
 
-  // 02 — Chained, allowed_executed, Path-D optionals omitted.
+  // 02 — Chained, allowed_executed, serialize-skip optionals omitted.
   //      prev_hash points at the receipt_hash of #01; receipt_id and
   //      witness_event_id advance one step within the same chain segment.
   const draft02: ExecutionReceiptV02Draft = {
@@ -137,8 +136,8 @@ function main(): void {
   const receipt02 = signReceiptV02(draft02, privateKey);
   writeJson('02-chained-allowed-executed.json', receipt02);
 
-  // 03 — execution_lost (R-5): receipt_id = null, outcome = execution_lost,
-  //      execution_result_hash = null. Path-D optionals omitted. Genesis.
+  // 03 — execution_lost: receipt_id = null, outcome = execution_lost,
+  //      execution_result_hash = null. Serialize-skip optionals omitted. Genesis.
   const draft03: ExecutionReceiptV02Draft = {
     ...makeBaseDraft(),
     receipt_id: null,
@@ -151,7 +150,7 @@ function main(): void {
   const receipt03 = signReceiptV02(draft03, privateKey);
   writeJson('03-execution-lost.json', receipt03);
 
-  // 04 — Path-D optionals populated: sigstore_signature + classifier_version
+  // 04 — Serialize-skip optionals populated: sigstore_signature + classifier_version
   //      + shadow_mode all present. Genesis, allowed_executed.
   const draft04: ExecutionReceiptV02Draft = {
     ...makeBaseDraft(),

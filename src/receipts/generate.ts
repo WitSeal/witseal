@@ -6,10 +6,10 @@
  * hash-addressable: receipt_hash is computed via canonicalize + sha256
  * over all fields except receipt_hash itself.
  *
- * v0.2 adds: signature (R-3 empty-string-sentinel), prev_hash (Option B
- * nullable-mandatory), git_commit / artifact_digest / attestation_digest
- * (build provenance), receipt_id Path-B nullable (null for execution_lost
- * per R-5), and Path-D serialize-skip optionals. v0.2 generation is
+ * v0.2 adds: signature (empty-string-sentinel), prev_hash (nullable-mandatory
+ * with genesis-null), git_commit / artifact_digest / attestation_digest
+ * (build provenance), receipt_id nullable (null for the execution_lost
+ * outcome), and serialize-skip optionals. v0.2 generation is
  * routed through `signReceiptV02` (see `sign-v0.2.ts`).
  */
 
@@ -26,8 +26,8 @@ import type {
 import type { WitnessEvent } from '../../schemas/witness-event.schema.js';
 import { SIGNATURE_SENTINEL, signReceiptV02 } from './sign-v0.2.js';
 
-/** Outcome marker for the v0.2 `execution_lost` flow (R-5). When set as the
- *  receipt's outcome, `receipt_id` is `null` (Path B nullable-mandatory). The
+/** Outcome marker for the v0.2 `execution_lost` flow. When set as the
+ *  receipt's outcome, `receipt_id` is `null` (nullable-mandatory). The
  *  v0.1 `WitnessOutcomeSchema` enum does NOT include this value; extending
  *  v0.1 is a cross-track schema decision and is out of scope for v0.2
  *  receipt generation. */
@@ -92,33 +92,32 @@ export function verifyReceipt(
 /**
  * Extra v0.2 inputs that the witness event does NOT carry: build provenance
  * (git_commit / artifact_digest / attestation_digest), chain-segment linkage
- * (prev_hash), and Path-D serialize-skip optionals.
+ * (prev_hash), and serialize-skip optionals.
  */
 export interface ReceiptV02ExtraInputs {
   /** Receipt-level chain-segment linkage. `null` at chain-segment genesis
-   *  (Option B founder-ratified); otherwise the predecessor receipt's
+   *  (genesis-null convention); otherwise the predecessor receipt's
    *  `receipt_hash`. */
   prev_hash: string | null;
-  /** Bare 40-char lowercase SHA-1 hex of the build commit (no `git:` prefix
-   *  per RFC-002 §7.2). */
+  /** Bare 40-char lowercase SHA-1 hex of the build commit (no `git:` prefix). */
   git_commit: string;
-  /** `sha256:` + 64-hex digest of the build artifact (RFC-002 §5). */
+  /** `sha256:` + 64-hex digest of the build artifact. */
   artifact_digest: string;
-  /** `sha256:` + 64-hex digest of the attestation (RFC-002 §5). */
+  /** `sha256:` + 64-hex digest of the attestation. */
   attestation_digest: string;
-  /** Closed kebab-case artifact taxonomy literal (RFC-002 v0.1 §3, R-1),
+  /** Closed kebab-case artifact taxonomy literal,
    *  e.g. `generic-binary`. Mandatory v0.2 wire field. */
   artifact_type: string;
-  /** Free-form build-context identifier (RFC-002 v0.1 / F-1). Mandatory v0.2
+  /** Free-form build-context identifier. Mandatory v0.2
    *  wire field. */
   build_id: string;
-  /** When `true`, the receipt represents an `execution_lost` outcome (R-5):
+  /** When `true`, the receipt represents an `execution_lost` outcome:
    *  `outcome = 'execution_lost'`, `receipt_id = null`, and
    *  `execution_result_hash = null`. The v0.1-typed WitnessEvent cannot carry
    *  this outcome directly (its enum lacks the value), so callers signal it
    *  explicitly. */
   executionLost?: boolean;
-  /** Path-D serialize-skip optionals — omit when absent. */
+  /** Serialize-skip optionals — omit when absent. */
   sigstore_signature?: string;
   classifier_version?: string;
   shadow_mode?: boolean;
@@ -129,10 +128,10 @@ export interface ReceiptV02ExtraInputs {
 
 /**
  * Generate a v0.2 receipt from a witness event plus the v0.2-only inputs
- * the event does not carry, sign per the R-3 empty-string-sentinel procedure,
+ * the event does not carry, sign per the empty-string-sentinel procedure,
  * and return the finalized receipt.
  *
- * For `execution_lost` (R-5), pass `extra.executionLost = true`; the function
+ * For `execution_lost`, pass `extra.executionLost = true`; the function
  * then sets `outcome = 'execution_lost'`, `receipt_id = null`, and
  * `execution_result_hash = null` regardless of `event.execution_result`.
  */

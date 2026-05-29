@@ -1,11 +1,11 @@
 /**
- * RFC-002 §7.2 — Identity origin (structured identity_origin field).
+ * Identity origin (structured identity_origin field).
  *
- * Runtime-boundary audit 2026-05-25 finding TS-P1-7 established that
- * default identifiers must be distinguishable from configured ones.
- * The initial fix (PR #20) used a `fallback:` string prefix. RFC-002 §7.2
- * supersedes the prefix convention with a structured `identity_origin`
- * field (`'configured' | 'fallback'`), keeping identifiers clean.
+ * A runtime-boundary audit established that default identifiers must be
+ * distinguishable from configured ones. The initial fix used a `fallback:`
+ * string prefix; the structured `identity_origin` field
+ * (`'configured' | 'fallback'`) supersedes the prefix convention, keeping
+ * identifiers clean.
  *
  * This file tests the §7.2 implementation:
  *   - WitnessEvent.identity_origin set when identityOrigin is passed
@@ -71,7 +71,7 @@ afterEach(() => {
   rmSync(dataDir, { recursive: true, force: true });
 });
 
-describe('RFC-002 §7.2 — agent identity_origin on witness event', () => {
+describe('Identity origin §7.2 — agent identity_origin on witness event', () => {
   it('sets identity_origin=fallback when identityOrigin option is fallback', async () => {
     writeAllowPack();
     const out = silenceOutput();
@@ -153,7 +153,7 @@ describe('RFC-002 §7.2 — agent identity_origin on witness event', () => {
   });
 });
 
-describe('RFC-002 §7.2 — approval CI principal identity_origin', () => {
+describe('Identity origin §7.2 — approval CI principal identity_origin', () => {
   let userSnap: string | undefined;
   let logSnap: string | undefined;
   let nonInteractiveSnap: string | undefined;

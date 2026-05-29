@@ -89,7 +89,7 @@ describe('canonicalize', () => {
 
   it('rejects unsupported value types', () => {
     // typeof undefined / symbol / function / bigint all fall through the
-    // supported-type ladder и hit the trailing throw at the end of canonicalize().
+    // supported-type ladder and hit the trailing throw at the end of canonicalize().
     expect(() => canonicalize(undefined)).toThrow(/unsupported value type undefined/);
     expect(() => canonicalize(Symbol('s'))).toThrow(/unsupported value type symbol/);
     expect(() => canonicalize(() => 1)).toThrow(/unsupported value type function/);
@@ -97,7 +97,7 @@ describe('canonicalize', () => {
   });
 
   it('canonicalizes floats and large integers via the float path', () => {
-    // Non-integer и integers с absolute value >= Number.MAX_SAFE_INTEGER
+    // Non-integer and integers with absolute value >= Number.MAX_SAFE_INTEGER
     // exercise the `String(n)` fallback in canonicalizeNumber (lines 75-76).
     expect(canonicalize(1.5)).toBe('1.5');
     expect(canonicalize(-0.25)).toBe('-0.25');
@@ -226,7 +226,7 @@ describe('verifyChain', () => {
     // The loop never executes (events.length === 0), so prevHash stays at
     // the passed-in head — which is non-null. Sanity check that the
     // function still omits chainHeadAfter (it only emits one when the loop
-    // ran и moved prevHash forward; current implementation emits it whenever
+    // ran and moved prevHash forward; current implementation emits it whenever
     // prevHash !== null, so this documents the current behaviour explicitly).
     const knownHead = 'a'.repeat(64);
     const result = verifyChain([], knownHead);

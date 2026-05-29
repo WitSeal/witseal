@@ -1,7 +1,7 @@
 /**
  * Recovery — emit `execution_lost` for an abandoned `pending` tail event.
  *
- * P0-1 / RFC-001 §6.3a / §9.2: the runtime's two-phase commit writes an
+ * The runtime's two-phase commit writes an
  * `intent_recorded` (outcome=`pending`) event BEFORE invoking the mediator
  * and an `execution_complete` event AFTER the mediator returns. A crash
  * between those phases leaves a `pending` event at the chain tail with no
@@ -12,9 +12,7 @@
  * Design choice: the `execution_lost` event is SELF-CONTAINED — it copies
  * `classified_intent`, `policy_decision`, `approval`, and `versions` from
  * the abandoned `intent_recorded`. This keeps each chain entry
- * independently verifiable without a sequence-index lookup (matches the TS
- * Tech Lead position from the RFC-001 impact assessment §7.3, ratified
- * cross-track on 2026-05-23).
+ * independently verifiable without a sequence-index lookup.
  *
  * Concurrency: the detection AND the emit run under one exclusive critical
  * section (EventLog.appendDraftEvent acquires the chain lock). Two
@@ -99,7 +97,7 @@ function buildExecutionLostDraft(
     // recovery is not necessarily the same as the original — but the
     // abandoned action's identity is what the chain needs to record.
     agent_identifier: abandoned.agent_identifier,
-    // RFC-002 §7.2: propagate identity_origin from the abandoned event
+    // Propagate identity_origin from the abandoned event
     // if present; omit-when-absent to preserve JCS byte-identity.
     ...(abandoned.identity_origin !== undefined
       ? { identity_origin: abandoned.identity_origin }

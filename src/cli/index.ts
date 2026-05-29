@@ -44,8 +44,8 @@ program
   .argument('<command>', 'Executable to run')
   .argument('[args...]', 'Arguments to pass')
   .action(async (command: string, args: string[], opts, cmd) => {
-    // RFC-002 §7.2: detect whether --agent was explicitly set by the
-    // operator or is the CLI default. commander.getOptionValueSource()
+    // Structured identity origin: detect whether --agent was explicitly set by
+    // the operator or is the CLI default. commander.getOptionValueSource()
     // returns 'default' when the option was not provided on the command
     // line; 'cli' (or 'env') when it was. This drives identity_origin
     // in the witness event so evidence consumers can distinguish a

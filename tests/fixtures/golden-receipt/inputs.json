@@ -1,18 +1,16 @@
 {
   "_metadata": {
-    "purpose": "Golden-receipt fixed-input-vector for RFC-001 v0.2 cross-track byte-identity demonstration (D6 § 8.1 conformance deliverable)",
+    "purpose": "Golden-receipt fixed-input-vector for v0.2 cross-track byte-identity demonstration (cross-track conformance deliverable)",
     "schema_version": "witseal.receipt.v0.2",
-    "spec_source": "RFC-001 v0.2 receipt schema; PdM relay 2026-05-22 e3 B-4-concurrence; coordinator cycle-67 input-vector ask; sub-3 cycle-68 publication.",
-    "track_owner": "rust-sub-3",
+    "spec_source": "v0.2 receipt schema; cross-track input-vector specification.",
+    "track_owner": "rust",
     "consumers": ["rust", "python", "typescript"],
     "corpus_path_from_repo_root": "crates/witseal-testkit/corpus/v0.2/golden_receipt/",
-    "do_not_use_in_production": true,
-    "publication_cycle": 68,
-    "publication_date": "2026-05-23"
+    "do_not_use_in_production": true
   },
 
   "receipt_inputs": {
-    "_note": "Fixed scalar field values that are direct literal inputs to the ReceiptV0_2 constructor. Hash-typed fields (policy_decision_hash, classified_intent_hash, execution_result_hash, artifact_digest, attestation_digest) are derived deterministically per _sentinel_seeds rules below; their resolved wire-form values land cycle 69 alongside rust-golden.json. signature и receipt_hash are derived at sign-step / hash-step per _construction_procedure below.",
+    "_note": "Fixed scalar field values that are direct literal inputs to the receipt constructor. Hash-typed fields (policy_decision_hash, classified_intent_hash, execution_result_hash, artifact_digest, attestation_digest) are derived deterministically per _sentinel_seeds rules below; their resolved wire-form values are persisted alongside rust-golden.json. signature and receipt_hash are derived at sign-step / hash-step per _construction_procedure below.",
 
     "schema_version": "witseal.receipt.v0.2",
     "receipt_id": "rcpt_golden00000000000000001",
@@ -36,7 +34,7 @@
   },
 
   "_sentinel_seeds": {
-    "_note": "Each hash-typed receipt input is derived deterministically by SHA-256 over the UTF-8 byte sequence of the documented seed string. This rule MUST produce byte-identical results across all three tracks (rust, python, typescript). Cross-track parity testing begins by independently re-deriving these values and comparing к the cycle-69 rust-golden.json source of truth.",
+    "_note": "Each hash-typed receipt input is derived deterministically by SHA-256 over the UTF-8 byte sequence of the documented seed string. This rule MUST produce byte-identical results across all three tracks (rust, python, typescript). Cross-track parity testing begins by independently re-deriving these values and comparing to the rust-golden.json source of truth.",
 
     "policy_decision_hash": {
       "seed": "witseal-v0.2-golden-policy-decision",
@@ -60,54 +58,54 @@
       "seed": "witseal-v0.2-golden-artifact-digest",
       "encoding": "utf-8",
       "hash": "sha256",
-      "wire_form": "\"sha256:<64-hex>\" (Sha256DigestField, prefixed) per R-1"
+      "wire_form": "\"sha256:<64-hex>\" (Sha256DigestField, prefixed)"
     },
     "attestation_digest": {
       "seed": "witseal-v0.2-golden-attestation-digest",
       "encoding": "utf-8",
       "hash": "sha256",
-      "wire_form": "\"sha256:<64-hex>\" (Sha256DigestField, prefixed) per R-1"
+      "wire_form": "\"sha256:<64-hex>\" (Sha256DigestField, prefixed)"
     }
   },
 
-  "_path_d_optional_fields": {
-    "_note": "Per coordinator cycle-67 § 3.1 + PdM relay § 4: Path D forward-compat optional fields are OMITTED from baseline. They MUST NOT appear in canonical wire bytes due к #[serde(skip_serializing_if = \"Option::is_none\")]. Cross-track tracks MUST honor this same skip-when-None rule.",
+  "_serialize_skip_optional_fields": {
+    "_note": "Forward-compat optional fields are OMITTED from baseline. They MUST NOT appear in canonical wire bytes due to #[serde(skip_serializing_if = \"Option::is_none\")]. Every track MUST honor this same skip-when-None rule.",
     "sigstore_signature": "OMITTED",
     "classifier_version": "OMITTED",
     "shadow_mode": "OMITTED"
   },
 
   "_explicit_null_fields": {
-    "_note": "Fields that MUST serialize as explicit JSON null (Path B per Decision A wire-format invariant), not be skipped. Verified by witseal-core unit test `receipt_v0_2_emits_explicit_null_for_receipt_id_and_prev_hash` (crates/witseal-core/src/receipt.rs).",
-    "receipt_id_when_none": "would emit explicit `null` — baseline uses Some(...), so this rule is not exercised by this baseline",
+    "_note": "Fields that MUST serialize as explicit JSON null (the nullable-mandatory wire-format invariant), not be skipped. Verified by a unit test in the reference Rust implementation.",
+    "receipt_id_when_none": "would emit explicit `null` — baseline uses a populated value, so this rule is not exercised by this baseline",
     "prev_hash_when_none": "MUST emit explicit `null` — baseline IS chain-genesis (prev_hash = None), so this rule IS exercised"
   },
 
   "_construction_procedure": {
-    "_note": "S1 clear-defaults procedure per F-2 / Bridge Proof v0.2 cascade § 2.2. Each track follows this exact sequence to compute signature и receipt_hash.",
+    "_note": "S1 clear-defaults procedure. Each track follows this exact sequence to compute signature and receipt_hash.",
 
-    "step_1_construct": "Build ReceiptV0_2 struct: load all literal fields from receipt_inputs above; derive sentinel-hash fields per _sentinel_seeds; set signature = \"\" (empty-string sentinel per F-2); set receipt_hash = Sha256Hash::zero() (32 zero bytes); prev_hash = None.",
+    "step_1_construct": "Build the receipt struct: load all literal fields from receipt_inputs above; derive sentinel-hash fields per _sentinel_seeds; set signature = \"\" (empty-string sentinel); set receipt_hash = 32 zero bytes; prev_hash = None.",
 
-    "step_2_canonicalize_for_hash": "Serialize per RFC 8785 (sorted keys, no whitespace, deterministic). Omit Path D optional fields entirely. Emit explicit `null` for prev_hash. The resulting canonical bytes are the input to the receipt-hash compute step.",
+    "step_2_canonicalize_for_hash": "Serialize per RFC 8785 (sorted keys, no whitespace, deterministic). Omit serialize-skip optional fields entirely. Emit explicit `null` for prev_hash. The resulting canonical bytes are the input to the receipt-hash compute step.",
 
-    "step_3_compute_receipt_hash": "receipt_hash = SHA-256(canonical_bytes_from_step_2). Stored on the receipt struct as Sha256Hash (raw [u8; 32]); wire-form bare 64-hex lowercase.",
+    "step_3_compute_receipt_hash": "receipt_hash = SHA-256(canonical_bytes_from_step_2). Stored on the receipt struct as a raw 32-byte hash; wire-form bare 64-hex lowercase.",
 
     "step_4_compute_signature": "signature = Ed25519_sign(signing_key, canonical_bytes_from_step_2). NOTE: the message-bytes signed are the canonical bytes WITH signature=\"\" AND receipt_hash=zero (i.e. the same bytes as step 2/3 input, not the post-hash bytes). Wire-form base64 standard-padded matching ^[A-Za-z0-9+/]{86}==$.",
 
-    "step_5_finalize_for_wire": "Populate signature и receipt_hash on the receipt struct; re-canonicalize per RFC 8785. The resulting bytes are the final canonical wire-form receipt и the source-of-truth для cross-track byte-identity comparison. Persisted к rust-golden.json (cycle 69, pretty-printed JSON view) and the canonical-bytes blob к rust-golden.canonical (cycle 69, raw bytes).",
+    "step_5_finalize_for_wire": "Populate signature and receipt_hash on the receipt struct; re-canonicalize per RFC 8785. The resulting bytes are the final canonical wire-form receipt and the source-of-truth for cross-track byte-identity comparison. Persisted to rust-golden.json (pretty-printed JSON view) and the canonical-bytes blob to rust-golden.canonical (raw bytes).",
 
-    "step_6_optional_verify": "Independently re-derive: re-canonicalize the final receipt with signature=\"\" и receipt_hash=Sha256Hash::zero(); assert SHA-256 equals the stored receipt_hash; assert Ed25519_verify(public_key, those_canonical_bytes, signature) returns true."
+    "step_6_optional_verify": "Independently re-derive: re-canonicalize the final receipt with signature=\"\" and receipt_hash=32 zero bytes; assert SHA-256 equals the stored receipt_hash; assert Ed25519_verify(public_key, those_canonical_bytes, signature) returns true."
   },
 
   "_invariant_axes_under_test": {
     "rfc_8785_canonicalization": "Byte-identical JSON canonicalization across tracks (sorted keys, no whitespace, escape rules per RFC 8785).",
-    "skip_when_none_for_path_d": "#[serde(skip_serializing_if = \"Option::is_none\")] semantics for sigstore_signature, classifier_version, shadow_mode (Path D forward-compat) — MUST NOT emit the key.",
-    "explicit_null_for_prev_hash": "prev_hash = None MUST emit explicit `null`, not be skipped (Decision A invariant).",
-    "explicit_null_for_receipt_id_when_none": "receipt_id = None MUST emit explicit `null` (Path B per RFC-001 § 7.1 v0.2 discriminated-union strict-on-Some path). Not exercised by this baseline (uses Some); follow-on extension fixture suggested.",
-    "sha256_hash_wire_form": "Sha256Hash fields (policy_decision_hash, classified_intent_hash, execution_result_hash, receipt_hash) MUST be bare 64-hex lowercase. Sha256DigestField fields (artifact_digest, attestation_digest) AND prev_hash MUST carry the literal `\"sha256:\"` prefix.",
-    "ed25519_signature_wire_form": "signature MUST be base64 standard-padded (regex ^[A-Za-z0-9+/]{86}==$ per R-2 / RFC-002 v0.1 § 6).",
-    "git_commit_wire_form": "git_commit MUST be bare 40-character lowercase SHA-1 hex (regex ^[a-f0-9]{40}$ per R-4 / RFC-002 v0.1 § 7.2). Baseline uses 40 zero characters.",
-    "artifact_type_wire_form": "ArtifactType is a closed taxonomy per RFC-002 v0.1 § 3; the GenericBinary variant serializes as the literal kebab-case string `\"generic-binary\"` (NOT `\"generic_binary\"`). Witseal-rs ratification: `#[serde(rename = \"generic-binary\")]` on `ArtifactType::GenericBinary` (witseal-core/src/enums.rs). Outcome (`WitnessOutcome`) uses snake_case via `#[serde(rename_all = \"snake_case\")]` — distinct from ArtifactType's kebab-case rename; tracks MUST emit each enum по its own scheme.",
-    "finalized_at_precision": "Baseline uses `\"2026-05-26T10:00:00.000Z\"` — RFC 3339 UTC with millisecond `.000Z` suffix (sub-3 convention per receipt.rs:172 sample). Tracks normalizing к different precision MUST surface the divergence (potential B-4-axis reopen)."
+    "skip_when_none_for_serialize_skip_optionals": "#[serde(skip_serializing_if = \"Option::is_none\")] semantics for sigstore_signature, classifier_version, shadow_mode (forward-compat optionals) — MUST NOT emit the key.",
+    "explicit_null_for_prev_hash": "prev_hash = None MUST emit explicit `null`, not be skipped.",
+    "explicit_null_for_receipt_id_when_none": "receipt_id = None MUST emit explicit `null` (nullable-mandatory). Not exercised by this baseline (uses a populated value); follow-on extension fixture suggested.",
+    "sha256_hash_wire_form": "Bare-hash fields (policy_decision_hash, classified_intent_hash, execution_result_hash, receipt_hash) MUST be bare 64-hex lowercase. Prefixed-digest fields (artifact_digest, attestation_digest) AND prev_hash MUST carry the literal `\"sha256:\"` prefix.",
+    "ed25519_signature_wire_form": "signature MUST be base64 standard-padded (regex ^[A-Za-z0-9+/]{86}==$).",
+    "git_commit_wire_form": "git_commit MUST be bare 40-character lowercase SHA-1 hex (regex ^[a-f0-9]{40}$). Baseline uses 40 zero characters.",
+    "artifact_type_wire_form": "artifact_type is a closed taxonomy; the generic-binary variant serializes as the literal kebab-case string `\"generic-binary\"` (NOT `\"generic_binary\"`). In the reference Rust implementation this is `#[serde(rename = \"generic-binary\")]` on the enum variant. outcome (WitnessOutcome) uses snake_case via `#[serde(rename_all = \"snake_case\")]` — distinct from artifact_type's kebab-case rename; tracks MUST emit each enum by its own scheme.",
+    "finalized_at_precision": "Baseline uses `\"2026-05-26T10:00:00.000Z\"` — RFC 3339 UTC with millisecond `.000Z` suffix. Tracks normalizing to different precision MUST surface the divergence."
   }
 }

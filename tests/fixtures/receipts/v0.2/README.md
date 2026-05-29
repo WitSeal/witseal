@@ -1,15 +1,15 @@
 # v0.2 receipt positive-fixture corpus
 
-Hand-rolled positive fixtures exercising the v0.2 receipt schema (`witseal.receipt.v0.2`) and the S1 clear-to-defaults signing procedure (`signature = ""` AND `receipt_hash = <64 zeros>` in the pre-image; one pre-image for both signature and hash). The corpus targets the surface points enumerated in D6 v0.2 § 4.1 / § 6 and in the M8 plan filed at `~/WitSeal/TS Dev/ts-tech-lead-to-pm-m8-start-confirmation-2026-05-23.md` § 2.
+Hand-rolled positive fixtures exercising the v0.2 receipt schema (`witseal.receipt.v0.2`) and the S1 clear-to-defaults signing procedure (`signature = ""` AND `receipt_hash = <64 zeros>` in the pre-image; one pre-image for both signature and hash). The corpus targets the v0.2 receipt surface points: chain-segment linkage, the execution_lost outcome, and serialize-skip optionals.
 
 ## Contents
 
 | File | Surface coverage |
 |---|---|
-| `01-genesis-allowed-executed.json` | `prev_hash = null` at chain-segment genesis (Option B); Path-D optionals omitted (serialize-skip); `outcome = allowed_executed` |
-| `02-chained-allowed-executed.json` | `prev_hash = receipt_hash` of fixture #01 (chained linkage); Path-D optionals omitted |
-| `03-execution-lost.json` | R-5 `outcome = execution_lost`; `receipt_id = null` (Path B); `execution_result_hash = null` |
-| `04-path-d-optionals-populated.json` | All three Path-D optionals carried through (`sigstore_signature`, `classifier_version`, `shadow_mode`); `outcome = allowed_executed` |
+| `01-genesis-allowed-executed.json` | `prev_hash = null` at chain-segment genesis (genesis-null); serialize-skip optionals omitted; `outcome = allowed_executed` |
+| `02-chained-allowed-executed.json` | `prev_hash = receipt_hash` of fixture #01 (chained linkage); serialize-skip optionals omitted |
+| `03-execution-lost.json` | `outcome = execution_lost`; `receipt_id = null` (nullable-mandatory); `execution_result_hash = null` |
+| `04-path-d-optionals-populated.json` | All three serialize-skip optionals carried through (`sigstore_signature`, `classifier_version`, `shadow_mode`); `outcome = allowed_executed` |
 | `ed25519-publickey.hex` | Raw 32-byte Ed25519 public key, hex-encoded, single line (verification key for all fixtures) |
 | `regenerate.ts` | Source-of-truth regenerator. Run with `npx tsx tests/fixtures/receipts/v0.2/regenerate.ts` from repo root. Output is deterministic. |
 
@@ -31,4 +31,4 @@ The TypeScript companion test (`tests/receipt-v0.2-fixtures.test.ts`) performs a
 
 ## Cross-track use
 
-These fixtures are TS-authored. They do **not** yet constitute the M8 item #5 golden-receipt (the three-way byte-identity reference per D6 v0.2 § 8.1). That artifact requires the Rust sub-3 fixed-input-vector to be published first and the three tracks (TS, Rust, Python) to converge on byte-identical output from identical inputs. This corpus is a **positive correctness witness for TS**; cross-track tracks can use it to validate their verifier paths but should not treat the byte form as the binding cross-track reference until the golden-receipt lands.
+These fixtures are TS-authored. They do **not** by themselves constitute the three-way byte-identity golden-receipt reference. That artifact requires the authoritative Rust fixed-input-vector to be published first and the three tracks (TS, Rust, Python) to converge on byte-identical output from identical inputs. This corpus is a **positive correctness witness for TS**; cross-track tracks can use it to validate their verifier paths but should not treat the byte form as the binding cross-track reference until the golden-receipt lands.

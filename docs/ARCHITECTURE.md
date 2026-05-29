@@ -718,7 +718,6 @@ exact versions is `package.json` together with the lockfile.
 | Tests | vitest |
 
 Long-term language-layer architecture: TS surface / Rust trust core /
-Python SDK. Rust is the hardened parallel track (DR-0008) — hardened
+Python SDK. Rust is the hardened parallel track — hardened
 execution, sandboxing, cryptographic witness engine. Python is the
-SDK / verifier line. The full model and its staged evolution are the
-subject of DR-0018.
+SDK / verifier line.

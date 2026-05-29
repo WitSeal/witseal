@@ -14,10 +14,10 @@
  *     `heldByAncestor` recursive shortcut path via the `WITSEAL_LOCK_HELD_BY_PID`
  *     environment variable.
  *   - The native-flockSync branch is exercised via `vi.mock('node:fs', …)`
- *     with a factory that wraps the real `node:fs` namespace и exposes a
+ *     with a factory that wraps the real `node:fs` namespace and exposes a
  *     mutable `flockSync` shim + `LOCK_*` constants. On Node 22.22.2 the real
  *     namespace lacks `flockSync` (stabilized in Node 24), so this is the only
- *     way to cover lock.ts lines 138–151 без version-gating the test. The
+ *     way to cover lock.ts lines 138–151 without version-gating the test. The
  *     mediator / event-log integration tests already exercise the lockless
  *     fallback; this file fills the native-branch gap.
  *
@@ -29,11 +29,11 @@
  *     between retries)
  *   - shared-lock variant of timeout + EAGAIN-retry
  *   - `withExclusive` releases lock even when the wrapped fn throws
- *   - ancestor shortcut: env var pointing к current pid → acquire becomes
+ *   - ancestor shortcut: env var pointing to current pid → acquire becomes
  *     a no-op; release is also a no-op (outer holder is responsible)
  *   - malformed env var (non-numeric / NaN) → shortcut declines, falls through
  *     to normal acquire
- *   - non-ancestor pid in env var → `isAncestorPid` walks the ps tree и
+ *   - non-ancestor pid in env var → `isAncestorPid` walks the ps tree and
  *     returns false → acquire takes normal path
  *
  * Process invariants enforced:

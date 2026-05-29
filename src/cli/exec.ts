@@ -47,7 +47,7 @@ export interface ExecOptions {
   args: string[];
   agentId: string;
   /**
-   * RFC-002 §7.2 — structured identity origin for `agentId`.
+   * Structured identity origin for `agentId`.
    * `'configured'` when the agent ID was explicitly supplied by the
    * operator; `'fallback'` when the CLI used its default value.
    * Optional — omitted when unknown or not applicable.
@@ -60,10 +60,10 @@ export interface ExecOptions {
 }
 
 export async function runExec(opts: ExecOptions): Promise<number> {
-  // 0. P0-1 recovery: if a prior invocation crashed between intent_recorded
+  // 0. Recovery: if a prior invocation crashed between intent_recorded
   //    and execution_complete, the chain tail is an unpaired `pending`.
   //    Emit `execution_lost` before any new work so the chain captures
-  //    what was abandoned (RFC-001 §9.2). The check is cheap on healthy
+  //    what was abandoned. The check is cheap on healthy
   //    chains (returns null after a single tail read).
   {
     const recoveryLog = new EventLog({ root: opts.dataDir, segmentId: opts.segmentId });
@@ -199,7 +199,7 @@ export async function runExec(opts: ExecOptions): Promise<number> {
     return 100;
   }
 
-  // 6a. P0-1 / RFC-001 §6.3a — Phase A: emit `intent_recorded` BEFORE the
+  // 6a. Phase A: emit `intent_recorded` BEFORE the
   //     mediator runs. A crash between this emit and the post-execution
   //     emit leaves an unpaired `pending` event at the chain tail that
   //     the next runExec invocation recovers as `execution_lost`.
@@ -228,7 +228,7 @@ export async function runExec(opts: ExecOptions): Promise<number> {
     ? 'no_policy_configured'
     : computeOutcome(decision.outcome, approval !== null, execResult);
 
-  // 8. P0-1 / RFC-001 §6.3a — Phase B: emit `execution_complete` AFTER
+  // 8. Phase B: emit `execution_complete` AFTER
   //    the mediator returns, referencing the Phase A intent_recorded so
   //    the pair is independently navigable from receipt → event →
   //    intent_recorded_event_id.

@@ -1,15 +1,15 @@
 /**
- * Tests for v0.2 receipt schema + R-3 signing helper + generate dispatch.
+ * Tests for v0.2 receipt schema + signing helper + generate dispatch.
  *
  * Coverage:
  *   - Schema parsing (positive + negative on each new v0.2 field)
- *   - R-3 empty-string-sentinel invariant (sign pre-image, computeReceiptHash)
+ *   - Empty-string-sentinel invariant (sign pre-image, computeReceiptHash)
  *   - Round-trip sign → verify
  *   - Tamper detection on each integrity-bearing field
  *   - prev_hash genesis-null and chained linkage
- *   - generateReceiptV02 happy path + execution_lost (R-5)
+ *   - generateReceiptV02 happy path + execution_lost
  *   - generateReceiptByVersion dispatch (v0.1, v0.2, error paths)
- *   - Path-D serialize-skip optionals
+ *   - Serialize-skip optionals
  */
 
 import { describe, expect, it } from 'vitest';
@@ -125,7 +125,7 @@ function makeExtras(
   };
 }
 
-describe('R-3 empty-string-sentinel invariant', () => {
+describe('empty-string-sentinel invariant', () => {
   it('SIGNATURE_SENTINEL is the empty string', () => {
     expect(SIGNATURE_SENTINEL).toBe('');
   });
@@ -159,7 +159,7 @@ describe('sign / verify round-trip', () => {
     const receipt = signReceiptV02(draft, privateKey);
 
     expect(receipt.receipt_hash).toMatch(/^[a-f0-9]{64}$/);
-    // RFC-002 §6 amendment: algorithm-prefixed signature.
+    // Algorithm-prefixed signature.
     expect(receipt.signature).toMatch(/^ed25519:[A-Za-z0-9+/]{86}==$/);
     expect(receipt.signature.length).toBe(96);
 
@@ -175,7 +175,7 @@ describe('sign / verify round-trip', () => {
   it('accepts a 32-byte raw Ed25519 seed as private key material', () => {
     const seed = randomBytes(32);
     const receipt = signReceiptV02(makeDraft(), seed);
-    // RFC-002 §6 amendment: algorithm-prefixed signature.
+    // Algorithm-prefixed signature.
     expect(receipt.signature).toMatch(/^ed25519:[A-Za-z0-9+/]{86}==$/);
   });
 
@@ -247,7 +247,7 @@ describe('tamper detection', () => {
 });
 
 describe('prev_hash chain linkage', () => {
-  it('genesis receipts carry prev_hash = null (Option B)', () => {
+  it('genesis receipts carry prev_hash = null (genesis-null)', () => {
     const { privateKey, publicKey } = makeKeyPair();
     const receipt = signReceiptV02(makeDraft({ prev_hash: null }), privateKey);
     expect(receipt.prev_hash).toBeNull();
@@ -277,7 +277,7 @@ describe('schema validation — negative cases', () => {
     expect(() => ExecutionReceiptV02Schema.parse(bad)).toThrow();
   });
 
-  it('rejects git_commit with "git:" prefix (RFC-002 §7.2 bare 40-hex)', () => {
+  it('rejects git_commit with "git:" prefix (bare 40-hex required)', () => {
     const receipt = signReceiptV02(makeDraft(), makeKeyPair().privateKey);
     const bad = { ...receipt, git_commit: 'git:' + '0'.repeat(40) };
     expect(() => ExecutionReceiptV02Schema.parse(bad)).toThrow();
@@ -339,7 +339,7 @@ describe('generateReceiptV02 from witness event', () => {
     expect(verifyReceiptV02(receipt, publicKey).valid).toBe(true);
   });
 
-  it('Path-D optionals omitted when absent (serialize-skip)', () => {
+  it('serialize-skip optionals omitted when absent', () => {
     const { privateKey } = makeKeyPair();
     const receipt = generateReceiptV02(
       makeWitnessEvent(),
@@ -351,7 +351,7 @@ describe('generateReceiptV02 from witness event', () => {
     expect('shadow_mode' in receipt).toBe(false);
   });
 
-  it('Path-D optionals carried through when provided', () => {
+  it('serialize-skip optionals carried through when provided', () => {
     const { privateKey, publicKey } = makeKeyPair();
     const receipt = generateReceiptV02(
       makeWitnessEvent(),
@@ -403,7 +403,7 @@ describe('generateReceiptByVersion dispatch', () => {
   });
 });
 
-describe('signature format invariant — RFC-002 §6 algorithm-prefixed', () => {
+describe('signature format invariant — algorithm-prefixed', () => {
   it('produces ed25519:-prefixed base64 std-padded signatures (96 chars) across many keys', () => {
     const re = /^ed25519:[A-Za-z0-9+/]{86}==$/;
     for (let i = 0; i < 8; i++) {

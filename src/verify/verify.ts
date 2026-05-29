@@ -1,5 +1,5 @@
 /**
- * D2 — unified, version-discriminating verification surface.
+ * Unified, version-discriminating verification surface.
  *
  * One entry point that, given a parsed JSON object, determines what it is
  * (a v0.1 receipt, a v0.2 receipt, or an evidence package) and runs the

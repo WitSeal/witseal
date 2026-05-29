@@ -15,10 +15,9 @@
  * shape mismatch, hashes line up, and the persisted chain reproduces the
  * in-memory state.
  *
- * M1 gap-analysis (ts-tech-lead-to-pm m1-e1-coverage-gap-analysis-2026-05-19)
- * § 3 P1 — closes "end-to-end pipeline integration" and "receipt-schema
- * parsing" gaps for the allow-path. Deny / approval / file_read fixtures
- * land in subsequent M1.1 sub-runs.
+ * Coverage gap-analysis: closes "end-to-end pipeline integration" and
+ * "receipt-schema parsing" gaps for the allow-path. Deny / approval /
+ * file_read fixtures land in subsequent sub-runs.
  */
 
 import { describe, expect, it, beforeEach, afterEach } from 'vitest';
@@ -230,8 +229,7 @@ describe('pipeline-integration — allow-path shell_command (C0)', () => {
     expect(() => WitnessEventSchema.parse(result.witnessEvent)).not.toThrow();
 
     // Receipt ---------------------------------------------------------------
-    // Canonical schema parse — closes the receipt-schema parsing gap
-    // (m1-e1-coverage-gap-analysis § 3 P1.2).
+    // Canonical schema parse — closes the receipt-schema parsing gap.
     expect(() => ExecutionReceiptSchema.parse(result.receipt)).not.toThrow();
     expect(result.receipt.witness_event_id).toBe(result.witnessEvent.event_id);
     expect(result.receipt.receipt_id).toBe(result.witnessEvent.receipt_id);
@@ -343,7 +341,7 @@ describe('pipeline-integration — allow-path file_write (C1)', () => {
 // Fixture 3 — deny-by-policy path (C2 shell_command rejected by default deny)
 // ---------------------------------------------------------------------------
 //
-// Closes m1-e1-coverage-gap-analysis § 3 P1.1 "deny path" — verifies that a
+// Closes the "deny path" coverage gap — verifies that a
 // classified intent which matches no allow rule:
 //   - never reaches the mediator (execution_result remains null)
 //   - still produces a fully-formed, schema-valid witness event + receipt
@@ -413,11 +411,11 @@ describe('pipeline-integration — deny-by-policy (C2 shell_command)', () => {
 // Fixture 4 — allow-path file_read (C0, non-credential path)
 // ---------------------------------------------------------------------------
 //
-// Closes m1-e1-coverage-gap-analysis § 3 P1 "file_read C0" — exercises the
+// Closes the "file_read C0" coverage gap — exercises the
 // mediateFile read branch end-to-end. Confirms:
 //   - classifier returns C0 for a non-credential read
 //   - the read content surfaces through StreamCapture (head + content_hash)
-//   - receipt is schema-valid и hash-cross-references match
+//   - receipt is schema-valid and hash-cross-references match
 
 describe('pipeline-integration — allow-path file_read (C0)', () => {
   it('returns captured content and a schema-valid receipt', async () => {
@@ -473,14 +471,14 @@ describe('pipeline-integration — allow-path file_read (C0)', () => {
 // Fixture 5 — require-approval path (denied_by_approval stub)
 // ---------------------------------------------------------------------------
 //
-// Closes m1-e1-coverage-gap-analysis § 3 P1 "require-approval stub". The
-// full interactive approval flow is out of M1 scope (lands в M3). This
+// Closes the "require-approval stub" coverage gap. The
+// full interactive approval flow is out of M1 scope (lands in M3). This
 // fixture pins the pipeline shape for the rejected-/missing-approval path:
 //
 //   - Rule matched with decision='require-approval'
 //   - No approval was supplied (approval=null), no mediation occurred
 //     (execution_result=null), outcome='denied_by_approval'
-//   - Receipt schema-valid с null exec hash
+//   - Receipt schema-valid with null exec hash
 //
 // Intent: `printf "%s\n" hi` — classifier C0 (informational). A dedicated
 // pack maps C0 printf to require-approval so that the require-approval
@@ -563,7 +561,7 @@ describe('pipeline-integration — require-approval (denied_by_approval stub)', 
 // Fixture 6 — large-stdout truncation (chain-of-custody preserved)
 // ---------------------------------------------------------------------------
 //
-// Closes m1-e1-coverage-gap-analysis § 3 P1 "large-stdout truncation" — pins
+// Closes the "large-stdout truncation" coverage gap — pins
 // the BoundedStreamingCapture contract (ADR-0005) end-to-end:
 //   - total_bytes equals the underlying file size (>128 KB)
 //   - head_bytes = HEAD_TAIL_BYTES (64 KB), tail_bytes = HEAD_TAIL_BYTES (64 KB)
@@ -571,13 +569,13 @@ describe('pipeline-integration — require-approval (denied_by_approval stub)', 
 //   - content_hash matches sha256 of the full underlying content
 //     (so verifiable replay against the source artifact remains possible
 //     even though only the head/tail are surfaced)
-//   - witness event + receipt remain schema-valid и hash-aligned
+//   - witness event + receipt remain schema-valid and hash-aligned
 
 describe('pipeline-integration — large-stdout truncation (cat C0, >128 KB)', () => {
-  it('captures bounded head/tail с truncated=true и full-content hash', async () => {
+  it('captures bounded head/tail with truncated=true and full-content hash', async () => {
     // Build a deterministic >128 KB payload. The BoundedStreamingCapture
     // head+tail budget is 64 KB + 64 KB. Use 256 KB so truncation is
-    // unambiguous и tail does not overlap head.
+    // unambiguous and tail does not overlap head.
     const HEAD_TAIL_BYTES = 64 * 1024;
     const PAYLOAD_BYTES = 256 * 1024;
     const payload = Buffer.alloc(PAYLOAD_BYTES);
@@ -618,7 +616,7 @@ describe('pipeline-integration — large-stdout truncation (cat C0, >128 KB)', (
     expect(Buffer.byteLength(stdout.head!, 'utf8')).toBe(HEAD_TAIL_BYTES);
     expect(Buffer.byteLength(stdout.tail!, 'utf8')).toBe(HEAD_TAIL_BYTES);
 
-    // head should be the first HEAD_TAIL_BYTES bytes of the payload, и
+    // head should be the first HEAD_TAIL_BYTES bytes of the payload, and
     // tail should be the last HEAD_TAIL_BYTES bytes — verify byte-exact.
     expect(stdout.head).toBe(
       payload.subarray(0, HEAD_TAIL_BYTES).toString('utf8')
@@ -651,20 +649,20 @@ describe('pipeline-integration — large-stdout truncation (cat C0, >128 KB)', (
 // Fixture 7 — deny-by-policy file_read (C3, credentials path)
 // ---------------------------------------------------------------------------
 //
-// Closes m1-e1-coverage-gap-analysis § 3 P1 "deny path" parity for file_read
-// (fixture 3 covered shell_command deny). Verifies that:
+// Closes the "deny path" coverage gap (parity for file_read;
+// fixture 3 covered shell_command deny). Verifies that:
 //   - classifier detects C3 for credential-shaped paths (regex match on
 //     `/\.(ssh\/|gnupg\/|aws\/credentials|netrc)`) without the path having to
 //     exist on disk
 //   - no allow rule in ALLOW_INFORMATIONAL_PACK matches → default_decision='deny'
 //   - mediateFileRead is never called (execution_result=null)
-//   - witness event и receipt remain schema-valid с null exec hash
+//   - witness event and receipt remain schema-valid with null exec hash
 //
 // Intent: read `${workDir}/.ssh/id_rsa` — credentials-like path; classifier
-// regex matches; file existence не нужно потому что policy denies first.
+// regex matches; file existence is not needed because policy denies first.
 
 describe('pipeline-integration — deny-by-policy file_read (C3 credentials path)', () => {
-  it('classifies C3, denies before mediator, emits schema-valid receipt с null exec hash', async () => {
+  it('classifies C3, denies before mediator, emits schema-valid receipt with null exec hash', async () => {
     const intent: Intent = {
       action_type: 'file_read',
       path: join(workDir, '.ssh', 'id_rsa'),

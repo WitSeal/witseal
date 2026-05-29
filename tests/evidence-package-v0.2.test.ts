@@ -12,7 +12,7 @@
  *   - v0.2 opt-in produces receipts that all carry schema_version v0.2 and
  *     verify under the export signing key (signature + self-hash).
  *   - prev_hash chaining across the exported range: first = null
- *     (Option B genesis-of-range), each subsequent = predecessor receipt_hash.
+ *     (genesis-of-range), each subsequent = predecessor receipt_hash.
  *   - the package wire discriminant stays witseal.evidence-package.v0.1
  *     (only the receipt element schema is versioned independently).
  *   - 1:1 event↔receipt pairing by witness_event_id is preserved.
