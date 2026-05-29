@@ -13,23 +13,25 @@
  * All three are byte-identical: 1050 bytes, SHA-256
  * 8fc29592fd3317e48caccc9b5c64d01cfa32d5e27846c50f233829e1bb17ef1b.
  *
- * Schema-validation note: `rust-golden.json` has 17 fields including
- * `artifact_type` and `build_id` that the TS production
- * `schemas/receipt-v0.2.schema.ts` does not yet declare (schema-alignment
- * is a separate PR). The B9 schema test validates the 15 known fields via
- * `ExecutionReceiptV02Schema.safeParse()` and then canonicalizes the raw
- * 17-field object, confirming that the TS JCS canonicalizer handles the
- * full field set correctly regardless of the schema gap.
+ * Schema-validation note: `rust-golden.json` has 17 fields. As of the Gap-D
+ * schema-alignment PR, `schemas/receipt-v0.2.schema.ts` declares all 17
+ * (including `artifact_type` and `build_id`). The B9 schema test validates
+ * the full 17-field object via `ExecutionReceiptV02Schema.safeParse()` and
+ * then canonicalizes the raw object, confirming that the TS JCS canonicalizer
+ * handles the full field set correctly. The byte-identity assertions operate
+ * on the raw JSON, independent of the schema, so they are unaffected by the
+ * schema's field set.
  *
  * The test is intentionally STANDALONE from the production
  * `src/receipts/sign-v0.2.ts` pipeline. Two reasons:
  *
  *   1. The Rust authoritative struct (`ReceiptV0_2` per
  *      witseal-rs-3/crates/witseal-core/src/receipt.rs) carries fields
- *      `artifact_type` and `build_id` that the TS production
- *      `schemas/receipt-v0.2.schema.ts` does not yet declare (those
- *      land in a subsequent schema-alignment PR, separate from this
- *      F-1 demonstration scope).
+ *      `artifact_type` and `build_id`. The TS production
+ *      `schemas/receipt-v0.2.schema.ts` now declares them too (Gap-D
+ *      schema-alignment PR), but this demo intentionally uses a local
+ *      receipt shape rather than the production schema/signing pipeline —
+ *      see reason 2.
  *
  *   2. The Rust S1 clear-defaults construction procedure (per
  *      `inputs.json` `_construction_procedure`) signs canonical bytes
@@ -389,10 +391,11 @@ describe('B9 — schema-validation + raw-canonicalize (rust-golden.json → ts-g
   const rustCanonical = readFileSync(join(CORPUS2, 'rust-golden.canonical'));
   const tsCanonical = readFileSync(join(CORPUS2, 'ts-golden.canonical'));
 
-  it('rust-golden.json passes ExecutionReceiptV02Schema validation (known 15 fields)', () => {
-    // The schema does not yet declare artifact_type or build_id (schema-alignment
-    // is a separate PR). It validates the 15 fields it knows about; zod strips
-    // the 2 unknown fields in parse mode. No coercion or mutation is applied.
+  it('rust-golden.json passes ExecutionReceiptV02Schema validation (all 17 fields)', () => {
+    // Post Gap-D alignment, the schema declares all 17 canonical fields
+    // including artifact_type and build_id, so safeParse retains the full
+    // object (previously it stripped those 2 as unknown). No coercion or
+    // mutation is applied; the canonicalize assertions below run on rawJson.
     const result = ExecutionReceiptV02Schema.safeParse(rawJson);
     expect(result.success).toBe(true);
     if (!result.success) {

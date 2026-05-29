@@ -57,6 +57,8 @@ function makeDraft(
     git_commit: '0'.repeat(40),
     artifact_digest: 'sha256:' + 'd'.repeat(64),
     attestation_digest: 'sha256:' + 'e'.repeat(64),
+    artifact_type: 'generic-binary',
+    build_id: 'witseal-test-build-0001',
     ...overrides,
   };
 }
@@ -116,6 +118,8 @@ function makeExtras(
     git_commit: '0'.repeat(40),
     artifact_digest: 'sha256:' + 'd'.repeat(64),
     attestation_digest: 'sha256:' + 'e'.repeat(64),
+    artifact_type: 'generic-binary',
+    build_id: 'witseal-test-build-0001',
     finalized_at: '2026-05-22T12:00:00Z',
     ...overrides,
   };
