@@ -8,13 +8,13 @@
  *   witseal replay <event-id|seq>          — replay a single action's evidence
  *   witseal events list                    — list witness events
  *   witseal events show <event-id>         — show one event
- *   witseal receipt show <receipt-id>      — show one receipt
+ *   witseal receipt show <id>              — show one receipt (v0.1/v0.2)
  *   witseal policy add <path>              — add a policy pack to the active set
  *   witseal policy list                    — list active policy packs
  *   witseal evidence export [--out <file>] — export an evidence package
  *
- * Phase 1 v0.1: exec, verify, events list, evidence export are functional.
- * The remainder are stubs that surface "not yet implemented in v0.1".
+ * Phase 1 v0.1: exec, verify, events list, evidence export, receipt show are
+ * functional. The remainder are stubs that surface "not yet implemented in v0.1".
  */
 
 import { Command } from 'commander';
@@ -23,6 +23,7 @@ import { runVerify } from './verify.js';
 import { runReplay } from './replay.js';
 import { runEventsList } from './events.js';
 import { runEvidenceExport } from './evidence.js';
+import { runReceiptShow } from './receipt.js';
 import { runPolicyAdd, runPolicyList } from './policy.js';
 
 const program = new Command();
@@ -98,6 +99,24 @@ events
     const exitCode = await runEventsList({
       limit: parseInt(opts.limit, 10) || 20,
       decision: opts.decision as string | undefined,
+      dataDir: program.opts()['dataDir'] as string,
+      segmentId: program.opts()['segment'] as string,
+    });
+    process.exit(exitCode);
+  });
+
+const receipt = program.command('receipt').description('Inspect execution receipts');
+receipt
+  .command('show')
+  .description('Show a single execution receipt (v0.1 or v0.2)')
+  .argument('<id>', 'Receipt id (rcpt_…), witness event id (evt_…), sequence, or unique prefix')
+  .option('--from <package>', 'Read the receipt from an exported evidence package JSON (supports v0.2 receipts)')
+  .option('--json', 'Emit the raw receipt JSON instead of the human-readable view')
+  .action(async (id: string, opts) => {
+    const exitCode = await runReceiptShow({
+      identifier: id,
+      ...(opts.from ? { fromPackage: opts.from as string } : {}),
+      ...(opts.json ? { json: true } : {}),
       dataDir: program.opts()['dataDir'] as string,
       segmentId: program.opts()['segment'] as string,
     });
