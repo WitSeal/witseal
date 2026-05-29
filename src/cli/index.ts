@@ -66,11 +66,15 @@ program
 
 program
   .command('verify')
-  .description('Verify the integrity of the chain')
-  .action(async () => {
+  .description('Verify the live chain, or a receipt / evidence-package file')
+  .argument('[file]', 'Receipt or evidence-package JSON to verify (default: live chain)')
+  .option('--public-key <path|hex>', 'Ed25519 public key (PEM/DER path or 64-char raw hex); required for v0.2 receipt verification')
+  .action(async (file: string | undefined, opts) => {
     const exitCode = await runVerify({
       dataDir: program.opts()['dataDir'] as string,
       segmentId: program.opts()['segment'] as string,
+      ...(file ? { artifactPath: file } : {}),
+      ...(opts.publicKey ? { publicKeyPath: opts.publicKey as string } : {}),
     });
     process.exit(exitCode);
   });
