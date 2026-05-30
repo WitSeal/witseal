@@ -1,0 +1,22 @@
+{
+  "schema_version": "witseal.receipt.v0.2",
+  "receipt_id": "rcpt_fixture0000000000004",
+  "witness_event_id": "evt_fixture00000000000004",
+  "chain_segment_id": "fixture-segment-1",
+  "finalized_at": "2026-05-22T12:00:03Z",
+  "policy_decision_hash": "1111111111111111111111111111111111111111111111111111111111111111",
+  "classified_intent_hash": "2222222222222222222222222222222222222222222222222222222222222222",
+  "execution_result_hash": "3333333333333333333333333333333333333333333333333333333333333333",
+  "outcome": "allowed_executed",
+  "prev_hash": null,
+  "signature": "ed25519:wloGx8Fl+3RTBnJce65Ici4aexJdfiGomReqSHHkh8FeWpvfTYviX+NpCyrKuYpsgC6KZ/+U9m2LyKyijsUrDw==",
+  "git_commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "artifact_digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "attestation_digest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+  "artifact_type": "generic-binary",
+  "build_id": "witseal-fixture-build-0001",
+  "sigstore_signature": "sigstore-fixture-blob-v0.2",
+  "classifier_version": "fixture-classifier-1.0",
+  "shadow_mode": true,
+  "receipt_hash": "9cb381a6f2d73e63dcb8b06a0b81fca38d3eb8c8c7c84a344c4705bb2dceecef"
+}
