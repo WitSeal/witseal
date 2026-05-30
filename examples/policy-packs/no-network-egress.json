@@ -1,0 +1,45 @@
+{
+  "schema_version": "witseal.policy.v0.1",
+  "pack_id": "no-network-egress",
+  "version": "1.0.0",
+  "description": "Requires explicit human approval for any shell command that performs network egress (curl, wget, nc, ssh, package installs, container pushes).",
+  "rules": [
+    {
+      "id": "approval-network-tools",
+      "match": {
+        "any_of": [
+          { "command_matches": "^(curl|wget|nc|ncat|socat|httpie)\\s" },
+          { "command_matches": "\\b(ssh|scp|rsync|sftp)\\s" }
+        ]
+      },
+      "decision": "require-approval",
+      "reason": "Network egress utility requires human approval"
+    },
+    {
+      "id": "approval-package-install",
+      "match": {
+        "any_of": [
+          { "command_matches": "^(npm|pnpm|yarn)\\s+(install|add|i)\\b" },
+          { "command_matches": "^(pip|pip3|pipx)\\s+install\\b" },
+          { "command_matches": "^(gem|cargo|go)\\s+(install|get)\\b" },
+          { "command_matches": "^(apt|apt-get|yum|dnf|brew)\\s+(install|add)\\b" }
+        ]
+      },
+      "decision": "require-approval",
+      "reason": "Package install fetches code from a remote registry; requires approval"
+    },
+    {
+      "id": "approval-git-push",
+      "match": { "command_matches": "^git\\s+push\\b" },
+      "decision": "require-approval",
+      "reason": "git push publishes to a remote; requires approval"
+    },
+    {
+      "id": "approval-docker-push",
+      "match": { "command_matches": "^docker\\s+(push|run\\s+--network)" },
+      "decision": "require-approval",
+      "reason": "Container registry interaction requires approval"
+    }
+  ],
+  "default_decision": "allow"
+}

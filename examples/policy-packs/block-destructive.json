@@ -1,0 +1,45 @@
+{
+  "schema_version": "witseal.policy.v0.1",
+  "pack_id": "block-destructive",
+  "version": "1.0.0",
+  "description": "Hard-denies destructive shell commands: rm -rf on absolute paths, disk-level utilities, sudo, system shutdown, fork bombs.",
+  "rules": [
+    {
+      "id": "deny-rm-rf-absolute",
+      "match": { "command_matches": "^rm\\s+(-[rRf]+\\s+)+(/|\\$HOME|~)" },
+      "decision": "deny",
+      "reason": "rm -rf on absolute paths is denied without exception"
+    },
+    {
+      "id": "deny-disk-utilities",
+      "match": { "command_matches": "\\b(dd|mkfs(\\.[a-z0-9]+)?|fdisk|parted|wipefs)\\s" },
+      "decision": "deny",
+      "reason": "Disk-level destructive utility is denied"
+    },
+    {
+      "id": "deny-sudo",
+      "match": { "command_matches": "^sudo\\s" },
+      "decision": "deny",
+      "reason": "sudo (privilege escalation) is denied"
+    },
+    {
+      "id": "deny-shutdown",
+      "match": { "command_matches": "^(shutdown|reboot|halt|poweroff)\\b" },
+      "decision": "deny",
+      "reason": "System shutdown command is denied"
+    },
+    {
+      "id": "deny-fork-bomb",
+      "match": { "command_matches": ":\\(\\)\\s*\\{" },
+      "decision": "deny",
+      "reason": "Fork bomb pattern detected"
+    },
+    {
+      "id": "deny-firewall-mod",
+      "match": { "command_matches": "\\b(iptables|nft|ufw)\\s" },
+      "decision": "deny",
+      "reason": "Firewall modification is denied"
+    }
+  ],
+  "default_decision": "allow"
+}
