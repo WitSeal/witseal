@@ -118,13 +118,13 @@ For each threat, this section states the Phase 1 posture: **mitigated**, **parti
 
 **Description:** Two `witseal exec` invocations run simultaneously, race on the chain head, produce a corrupted log.
 
-**Posture:** **Mitigated where `fs.flockSync` is available (Node 24+); fail-closed by default elsewhere (P0-3 — runtime-boundary audit 2026-05-25).**
+**Posture:** **Mitigated on all supported runtimes.** Node 24+ uses native `fs.flockSync`; Node 20–23 uses an equivalent fail-closed lockfile shim (ADR-0006). Both enforce single-writer-per-segment.
 
-- **Native path (Node 24+):** ADR-0006 (concurrency model) — single-writer-per-chain enforced by `fs.flockSync`. Concurrent invocations queue. Recursive invocation (WitSeal calling WitSeal) is handled via `WITSEAL_LOCK_HELD_BY_PID`.
-- **Fallback (Node 22 LTS and older without `fs.flockSync`):** `ChainLock` refuses to acquire any lock and throws `ChainLockUnavailableError`. The runtime fails closed — no witness event can be emitted on this runtime by default. This is the production-grade behavior since the 2026-05-25 P0-3 remediation; the prior silent advisory-only return was a known gap and is no longer permitted.
-- **Operator-explicit advisory-only mode:** setting `WITSEAL_UNSAFE_LOCKLESS=1` opts in to advisory-only acquire on runtimes without native `flockSync`. The first acquire emits a visible `WARNING` to stderr naming the env var and the multi-writer risk. This mode is for single-process dev/test only; cross-process write integrity is the operator's responsibility under it. See `src/integrity/lock.ts` (`ENV_UNSAFE_LOCKLESS`, `ChainLockUnavailableError`) and `tests/integrity-lock.test.ts` ("ChainLock — lockless fail-closed default (P0-3)").
+- **Native path (Node 24+):** single-writer-per-chain enforced by `fs.flockSync`; the OS auto-releases the lock on process exit (even `SIGKILL`). Recursive invocation (WitSeal calling WitSeal) is handled via `WITSEAL_LOCK_HELD_BY_PID`.
+- **Lockfile shim (Node 20–23 — the correct default):** an atomic `O_CREAT|O_EXCL` lockfile holding `{pid, startTime}` provides the same mutual exclusion. A held lock is stolen ONLY when the holder is *provably dead* (no such pid, or a reused pid whose process start-time differs from the recorded one); any uncertainty fails closed — never two writers. A crashed holder leaves an orphaned lockfile (no OS auto-release); it is cleared by `witseal unlock`, which applies the same provably-dead test. See `src/integrity/lock.ts`, `tests/integrity-lock.test.ts`, and `tests/lock-concurrency.test.ts` (cross-process: zero-lost-update concurrency, crash recovery, live-holder no-steal, real-event chain integrity).
+- **Operator-explicit advisory-only mode:** `WITSEAL_UNSAFE_LOCKLESS=1` opts OUT of locking entirely (advisory) for read-only or networked data dirs accepted at the operator's risk. The first acquire emits a visible `WARNING` to stderr. This is NO LONGER required for normal operation on Node 20–23 — the shim is the correct default; the opt-out only disables it.
 
-**Residual:** an operator who sets `WITSEAL_UNSAFE_LOCKLESS=1` in a multi-writer deployment is unprotected against this threat — the env var is the evidence chain entry for the opt-in. Phase 2+ will provide a portable advisory-lock shim for pre-Node-24 runtimes so the opt-in becomes unnecessary.
+**Residual:** the flock and lockfile backends do not coordinate, so concurrent writers to one segment must run under the same Node major (documented limitation, ADR-0006) — the same class of constraint as networked filesystems. An operator who sets `WITSEAL_UNSAFE_LOCKLESS=1` in a multi-writer deployment is unprotected against this threat; the env var is the evidence-chain entry for that opt-out.
 
 ### T12. Crash mid-append
 

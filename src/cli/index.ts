@@ -12,9 +12,11 @@
  *   witseal policy add <path>              — add a policy pack to the active set
  *   witseal policy list                    — list active policy packs
  *   witseal evidence export [--out <file>] — export an evidence package
+ *   witseal unlock                         — remove an orphaned chain lock (crash recovery)
  *
- * Phase 1 v0.1: exec, verify, events list, evidence export, receipt show are
- * functional. The remainder are stubs that surface "not yet implemented in v0.1".
+ * Phase 1 v0.1: exec, verify, events list, evidence export, receipt show, and
+ * unlock are functional. The remainder are stubs that surface "not yet
+ * implemented in v0.1".
  */
 
 import { Command } from 'commander';
@@ -25,6 +27,7 @@ import { runEventsList } from './events.js';
 import { runEvidenceExport } from './evidence.js';
 import { runReceiptShow } from './receipt.js';
 import { runPolicyAdd, runPolicyList } from './policy.js';
+import { runUnlock } from './unlock.js';
 
 const program = new Command();
 
@@ -87,6 +90,17 @@ program
   .action(async (id: string) => {
     const exitCode = await runReplay({
       identifier: id,
+      dataDir: program.opts()['dataDir'] as string,
+      segmentId: program.opts()['segment'] as string,
+    });
+    process.exit(exitCode);
+  });
+
+program
+  .command('unlock')
+  .description('Remove an orphaned chain lock left by a crashed process (only if its holder is dead)')
+  .action(async () => {
+    const exitCode = runUnlock({
       dataDir: program.opts()['dataDir'] as string,
       segmentId: program.opts()['segment'] as string,
     });

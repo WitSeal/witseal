@@ -74,7 +74,8 @@ vi.mock('node:fs', async () => {
   };
 });
 
-import { mkdtempSync, rmSync, existsSync, statSync } from 'node:fs';
+import { mkdtempSync, rmSync, existsSync, statSync, writeFileSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -357,25 +358,24 @@ describe('ChainLock — withExclusive + env-holder interaction', () => {
 });
 
 // ---------------------------------------------------------------------------
-// P0-3 — lockless fail-closed default (no flockSync, no opt-in env var)
+// Lockfile shim — correct default on runtimes without fs.flockSync (Node <24)
 // ---------------------------------------------------------------------------
 //
-// Runtime-boundary audit 2026-05-25 finding TS-P0-3: when `fs.flockSync` is
-// unavailable AND the operator has not opted in via WITSEAL_UNSAFE_LOCKLESS=1,
-// acquire must throw `ChainLockUnavailableError` rather than silently return
-// success. These tests delete the env var that `tests/setup.ts` sets by
-// default and verify the production fail-closed path.
+// Replaces the former fail-closed-without-flock default. Instead of refusing,
+// ChainLock acquires a real exclusive lock via an O_EXCL lockfile holding
+// {pid, startTime}. Mutual exclusion is preserved (T11); a held lock is stolen
+// ONLY when the holder is provably dead (no such pid, or a reused pid whose
+// process start-time differs from the recorded one). Any uncertainty →
+// fail-closed (never steal, never two writers). WITSEAL_UNSAFE_LOCKLESS=1
+// remains an explicit advisory opt-out (no locking). On Node 22.x the real
+// namespace lacks flockSync, so these exercise the shim directly.
 
-describe('ChainLock — lockless fail-closed default (P0-3)', () => {
+describe('ChainLock — lockfile shim (Node <24 default)', () => {
   let unsafeSnap: string | undefined;
 
   beforeEach(() => {
-    // tests/setup.ts sets WITSEAL_UNSAFE_LOCKLESS=1 by default for the suite
-    // (so unrelated tests using EventLog on Node 22 don't trip the new
-    // fail-closed). This block needs the production default — explicitly
-    // remove the opt-in and restore after each case.
     unsafeSnap = process.env[ENV_UNSAFE_LOCKLESS];
-    delete process.env[ENV_UNSAFE_LOCKLESS];
+    delete process.env[ENV_UNSAFE_LOCKLESS]; // shim is the default; no opt-out
   });
 
   afterEach(() => {
@@ -383,63 +383,133 @@ describe('ChainLock — lockless fail-closed default (P0-3)', () => {
     else process.env[ENV_UNSAFE_LOCKLESS] = unsafeSnap;
   });
 
-  it('acquireExclusive throws ChainLockUnavailableError when flockSync is missing', () => {
-    // No flockSync stub installed — real namespace lacks flockSync on Node 22.
-    const lock = new ChainLock(freshLockPath());
-    expect(() => lock.acquireExclusive()).toThrow(ChainLockUnavailableError);
-  });
+  const shimPathOf = (lockPath: string): string =>
+    lockPath.endsWith('.lock')
+      ? `${lockPath.slice(0, -'.lock'.length)}.lockfile`
+      : `${lockPath}.lockfile`;
 
-  it('acquireShared throws ChainLockUnavailableError when flockSync is missing', () => {
-    const lock = new ChainLock(freshLockPath());
-    expect(() => lock.acquireShared()).toThrow(ChainLockUnavailableError);
-  });
-
-  it('withExclusive throws before invoking the wrapped fn', () => {
-    const lock = new ChainLock(freshLockPath());
-    let invoked = false;
-    expect(() =>
-      lock.withExclusive(() => {
-        invoked = true;
-        return 'never-reached';
-      })
-    ).toThrow(ChainLockUnavailableError);
-    expect(invoked).toBe(false);
-  });
-
-  it('error message names the lock path and points at the env var escape hatch', () => {
-    const lockPath = freshLockPath('audit.lock');
+  it('acquires a real exclusive lock without any opt-in flag (creates + removes the lockfile)', () => {
+    const lockPath = freshLockPath();
     const lock = new ChainLock(lockPath);
-    try {
-      lock.acquireExclusive();
-      throw new Error('should have thrown');
-    } catch (e: unknown) {
-      expect(e).toBeInstanceOf(ChainLockUnavailableError);
-      const msg = (e as Error).message;
-      expect(msg).toContain(lockPath);
-      expect(msg).toContain(ENV_UNSAFE_LOCKLESS);
-      expect(msg).toContain('T11');
-    }
+    const handle = lock.acquireExclusive();
+    expect(existsSync(shimPathOf(lockPath))).toBe(true); // a real lockfile on disk
+    handle.release();
+    expect(existsSync(shimPathOf(lockPath))).toBe(false); // removed on release
   });
 
-  it('opt-in via WITSEAL_UNSAFE_LOCKLESS=1 restores advisory-only acquire', () => {
-    process.env[ENV_UNSAFE_LOCKLESS] = '1';
+  it('acquireShared also acquires via the shim without throwing', () => {
     const lock = new ChainLock(freshLockPath());
-    // Should NOT throw; returns a release handle (advisory-only mode).
-    const handle = lock.acquireExclusive();
+    const handle = lock.acquireShared();
     expect(typeof handle.release).toBe('function');
     expect(() => handle.release()).not.toThrow();
   });
 
-  it('opt-in with a value other than "1" does not unlock the fallback', () => {
-    process.env[ENV_UNSAFE_LOCKLESS] = 'true';
+  it('withExclusive runs the wrapped fn (no longer fail-closed)', () => {
     const lock = new ChainLock(freshLockPath());
-    expect(() => lock.acquireExclusive()).toThrow(ChainLockUnavailableError);
+    let invoked = false;
+    const r = lock.withExclusive(() => {
+      invoked = true;
+      return 7;
+    });
+    expect(invoked).toBe(true);
+    expect(r).toBe(7);
+  });
 
-    process.env[ENV_UNSAFE_LOCKLESS] = '0';
-    expect(() => lock.acquireExclusive()).toThrow(ChainLockUnavailableError);
+  it('MUTUAL EXCLUSION: does not displace a live holder — second acquirer times out', () => {
+    const lockPath = freshLockPath();
+    const lock = new ChainLock(lockPath);
+    const h1 = lock.acquireExclusive();
+    // Simulate a *different* process by clearing the re-entrancy marker; the
+    // lockfile records THIS (live) pid, which must NOT be stolen.
+    delete process.env[ENV_LOCK_HOLDER];
+    const lock2 = new ChainLock(lockPath);
+    expect(() => lock2.acquireExclusive(200)).toThrow(/timeout/);
+    h1.release();
+    // Free again after release.
+    const h3 = new ChainLock(lockPath).acquireExclusive(200);
+    expect(() => h3.release()).not.toThrow();
+  });
 
-    process.env[ENV_UNSAFE_LOCKLESS] = '';
-    expect(() => lock.acquireExclusive()).toThrow(ChainLockUnavailableError);
+  it('STEALS a provably-dead holder (no such pid) and acquires', () => {
+    const lockPath = freshLockPath();
+    new ChainLock(lockPath); // create parent dir
+    const dead = spawnSync(process.execPath, ['-e', 'process.exit(0)']);
+    writeFileSync(
+      shimPathOf(lockPath),
+      JSON.stringify({ pid: dead.pid, startTime: 'gone' })
+    );
+    const handle = new ChainLock(lockPath).acquireExclusive(1_000);
+    expect(typeof handle.release).toBe('function'); // acquired by stealing the dead lock
+    handle.release();
+  });
+
+  it('PID-REUSE: a live pid with a mismatched start-time is treated as dead → steals', () => {
+    const lockPath = freshLockPath();
+    new ChainLock(lockPath);
+    // Our own (live) pid, but a start-time that cannot match what the runtime
+    // reports → the original holder of this pid is gone; the pid was reused.
+    writeFileSync(
+      shimPathOf(lockPath),
+      JSON.stringify({ pid: process.pid, startTime: 'NOT-A-REAL-START-TIME' })
+    );
+    const handle = new ChainLock(lockPath).acquireExclusive(1_000);
+    expect(typeof handle.release).toBe('function');
+    handle.release();
+  });
+
+  it('NO-STEAL on uncertainty: an unparseable/empty lockfile is never stolen', () => {
+    const lockPath = freshLockPath();
+    new ChainLock(lockPath);
+    writeFileSync(shimPathOf(lockPath), ''); // empty → holder unknown → fail-closed
+    expect(() => new ChainLock(lockPath).acquireExclusive(200)).toThrow(/timeout/);
+  });
+
+  it('advisory opt-out (WITSEAL_UNSAFE_LOCKLESS=1): no lockfile, no locking', () => {
+    process.env[ENV_UNSAFE_LOCKLESS] = '1';
+    const lockPath = freshLockPath();
+    const handle = new ChainLock(lockPath).acquireExclusive();
+    expect(existsSync(shimPathOf(lockPath))).toBe(false); // advisory: no real lock taken
+    expect(() => handle.release()).not.toThrow();
+  });
+
+  it('only the exact value "1" enables the advisory opt-out; other values use the shim', () => {
+    const lockPath = freshLockPath();
+    for (const v of ['true', '0', '']) {
+      process.env[ENV_UNSAFE_LOCKLESS] = v;
+      const h = new ChainLock(lockPath).acquireExclusive(1_000);
+      expect(existsSync(shimPathOf(lockPath))).toBe(true); // shim active → real lockfile
+      h.release();
+    }
+  });
+
+  it('forceUnlockIfDead removes an orphaned (dead-holder) lockfile', () => {
+    const lockPath = freshLockPath();
+    const lock = new ChainLock(lockPath);
+    const dead = spawnSync(process.execPath, ['-e', 'process.exit(0)']);
+    writeFileSync(
+      shimPathOf(lockPath),
+      JSON.stringify({ pid: dead.pid, startTime: 'gone' })
+    );
+    const r = lock.forceUnlockIfDead();
+    expect(r.status).toBe('removed');
+    expect(existsSync(shimPathOf(lockPath))).toBe(false);
+  });
+
+  it('forceUnlockIfDead refuses to remove a live-holder lockfile', () => {
+    const lockPath = freshLockPath();
+    const lock = new ChainLock(lockPath);
+    const h = lock.acquireExclusive();
+    delete process.env[ENV_LOCK_HOLDER]; // simulate another process inspecting
+    const r = lock.forceUnlockIfDead();
+    expect(r.status).toBe('held'); // live self → not removed
+    expect(existsSync(shimPathOf(lockPath))).toBe(true);
+    process.env[ENV_LOCK_HOLDER] = String(process.pid); // restore for release
+    h.release();
+  });
+
+  it('forceUnlockIfDead on an absent lockfile reports absent', () => {
+    const r = new ChainLock(freshLockPath()).forceUnlockIfDead();
+    expect(r.status).toBe('absent');
   });
 
   it('exports ENV_UNSAFE_LOCKLESS as the canonical env-var name', () => {
