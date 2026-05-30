@@ -1,0 +1,21 @@
+WitSeal
+Copyright 2026 WitSeal contributors
+
+Licensed under the Apache License, Version 2.0 (the "License");
+see LICENSE for the full text.
+
+This product includes software developed by:
+
+- commander.js (MIT) — https://github.com/tj/commander.js
+- zod (MIT) — https://github.com/colinhacks/zod
+
+Development dependencies (not redistributed in releases):
+
+- TypeScript (Apache 2.0) — https://www.typescriptlang.org
+- Vitest (MIT) — https://vitest.dev
+- ESLint (MIT) — https://eslint.org
+- Prettier (MIT) — https://prettier.io
+- tsx (MIT) — https://github.com/privatenumber/tsx
+
+Full dependency manifest: see package.json and package-lock.json.
+SBOM (CycloneDX) is published with each release.
