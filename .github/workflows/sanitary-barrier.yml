@@ -1,0 +1,49 @@
+# Sanitary barrier — CI gate for the public witseal repository.
+#
+# PREPARED (NOT ACTIVE). Activation = merge this file as
+# `.github/workflows/sanitary-barrier.yml` into witseal AFTER the A2 history
+# rewrite (force-push), so the barrier stands on already-clean history.
+#
+# Fails any PR/push to main that introduces:
+#   - Cyrillic (U+0400–U+04FF) anywhere in tracked files, or
+#   - a denylist marker (internal paths/roles/artifacts/provenance codes:
+#     <internal-code-mnemonics>
+#     <internal-platform-anchor>).
+# By-design NOT flagged: public ADR-NNNN, RFC-001/002, IETF RFC 8785, and the
+# "TL;DR" idiom. `\bDR-[0-9]` excludes ADR- (no word boundary after the A on GNU grep).
+#
+# <internal-policy-anchor>. Self-excludes this workflow
+# file so its own denylist pattern is not a false positive.
+name: Sanitary barrier
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+jobs:
+  sanitary:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: No Cyrillic in tracked files
+        run: |
+          set -euo pipefail
+          # GNU grep -P on ubuntu supports \x{...} code-point ranges.
+          if git ls-files -z \
+            | grep -zZv '^\.github/workflows/sanitary-barrier\.yml$' \
+            | xargs -0 grep -lIP '[\x{0400}-\x{04FF}]' 2>/dev/null; then
+            echo "::error::Cyrillic found in tracked files (see paths above)"
+            exit 1
+          fi
+          echo "No Cyrillic. OK."
+      - name: Denylist (internal paths / roles / artifacts)
+        run: |
+          set -euo pipefail
+          PAT='<scrubbed: see vars.SANITARY_DENYLIST>'
+          if git ls-files -z \
+            | grep -zZv '^\.github/workflows/sanitary-barrier\.yml$' \
+            | xargs -0 grep -lIE "$PAT" 2>/dev/null; then
+            echo "::error::Denylist marker found in tracked files (see paths above)"
+            exit 1
+          fi
+          echo "No denylist markers. OK."
