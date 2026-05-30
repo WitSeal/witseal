@@ -28,13 +28,14 @@ import { runEvidenceExport } from './evidence.js';
 import { runReceiptShow } from './receipt.js';
 import { runPolicyAdd, runPolicyList } from './policy.js';
 import { runUnlock } from './unlock.js';
+import { WITSEAL_VERSION } from '../version.js';
 
 const program = new Command();
 
 program
   .name('witseal')
   .description('Witnessed execution runtime for AI agents')
-  .version('0.1.0-pre')
+  .version(WITSEAL_VERSION)
   .option('--data-dir <path>', 'WitSeal data directory', defaultDataDir())
   .option('--segment <id>', 'Chain segment ID', 'default');
 

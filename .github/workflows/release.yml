@@ -18,7 +18,7 @@ jobs:
       digests: ${{ steps.hash.outputs.digests }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Node 22
         uses: actions/setup-node@v6
@@ -128,13 +128,17 @@ jobs:
       contents: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Download signed artifacts
         uses: actions/download-artifact@v4
         with:
           name: release-signed
           path: release/
+
+      - name: Resolve npm version (strip the leading "v" from the release tag)
+        id: npmver
+        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -164,7 +168,7 @@ jobs:
             The package is also published to npm with SLSA provenance:
 
             ```bash
-            npm install -g @witseal/cli@${{ github.ref_name }}
+            npm install -g @witseal/cli@${{ steps.npmver.outputs.version }}
             ```
 
             See [SECURITY.md](SECURITY.md) for the full verification policy.
