@@ -1,0 +1,75 @@
+name: ✨ Feature request
+description: Propose a new feature or enhancement.
+labels: ["enhancement", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before opening a feature request:
+
+        - For changes to **schemas, cryptographic primitives, or CLI surface**:
+          open an [RFC](https://github.com/WitSeal/witseal/blob/main/docs/RFCS.md) instead.
+        - For new **adapter integrations**:
+          see [src/adapters/README.md](https://github.com/WitSeal/witseal/blob/main/src/adapters/README.md)
+          and use this template if you'd like to contribute one.
+        - For new **policy packs**:
+          consider opening a PR directly to `examples/policy-packs/`.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What workflow or use case is currently hard or impossible?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed-solution
+    attributes:
+      label: Proposed solution
+      description: |
+        How would you address it? CLI changes, schema additions, new commands,
+        new adapters — be specific about user-facing behavior.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: What else did you consider, and why is the proposed solution better?
+
+  - type: dropdown
+    id: phase
+    attributes:
+      label: Phase fit
+      description: Which Phase do you think this belongs in? (See README for phase descriptions.)
+      options:
+        - Phase 1 — Witnessed CLI runtime (current)
+        - Phase 2 — Risk & policy hardening
+        - Phase 3 — OpenCode / agent integration
+        - Phase 4 — MCP runtime layer
+        - Phase 5 — Integrity hardening
+        - Phase 6 — Remote witnessed execution
+        - Phase 7 — Ecosystem expansion
+        - Not sure
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional context
+      description: Links, references to similar features in other projects, prior art.
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Confirmation
+      options:
+        - label: I have read [CONTRIBUTING.md](https://github.com/WitSeal/witseal/blob/main/CONTRIBUTING.md)
+          required: true
+        - label: This is **not** a request for MCP runtime, PAI-Kernel integration, or items explicitly listed as out-of-scope in CONTRIBUTING.md
+          required: true
+        - label: I have searched existing issues and this is not a duplicate
+          required: true

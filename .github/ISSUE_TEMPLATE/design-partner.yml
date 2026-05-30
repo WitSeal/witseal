@@ -1,0 +1,102 @@
+name: 🤝 Design partner inquiry
+description: For teams interested in piloting WitSeal in their environment.
+labels: ["design-partner"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for your interest. WitSeal Phase 1 is recruiting 5 design
+        partners running AI coding agents in production-relevant workflows.
+
+        Design partners get:
+
+        - Direct access to the founder for prioritization
+        - Early visibility into roadmap and architectural decisions
+        - First opportunity to influence schema stabilization
+        - Public co-marketing (with explicit consent only)
+
+        We commit to:
+
+        - Weekly check-ins for the first 90 days
+        - Concrete bug fixes and feature additions based on your real usage
+        - Honest reporting of limitations relative to your use case
+        - Free use throughout Phase 1 and Phase 2
+
+  - type: input
+    id: org
+    attributes:
+      label: Organization
+      description: Company, team, or open-source project name.
+    validations:
+      required: true
+
+  - type: input
+    id: role
+    attributes:
+      label: Your role
+      placeholder: "Staff SRE, Director of Platform Engineering, OSS maintainer, etc."
+    validations:
+      required: true
+
+  - type: textarea
+    id: agent-context
+    attributes:
+      label: Agent context
+      description: |
+        Which AI coding agents do you currently run? In what workflows
+        (development, CI, autonomous deployment, etc.)? Roughly how often
+        do they take destructive or production-affecting actions?
+    validations:
+      required: true
+
+  - type: textarea
+    id: pain
+    attributes:
+      label: Current pain
+      description: |
+        What problem are you hoping WitSeal solves? Be concrete — "auditability"
+        is too vague; "I cannot prove to my CISO that the agent didn't run
+        rm -rf during the deploy" is what we want to hear.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: timeline
+    attributes:
+      label: Pilot timeline
+      description: When could you realistically start a pilot?
+      options:
+        - Already piloting (running WitSeal somewhere)
+        - This month
+        - Next 1-2 months
+        - Next 3-6 months
+        - Exploring; no firm timeline
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-success-looks-like
+    attributes:
+      label: What does a successful 90-day pilot look like for you?
+      description: |
+        Concrete signals you'd point to in a retrospective ("we generated
+        N receipts", "we caught X attempted action", "we had zero false
+        denies in production").
+
+  - type: input
+    id: contact
+    attributes:
+      label: Best contact (email or other)
+      description: We will reach out directly. Public issue thread will not be used for follow-up.
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Confirmation
+      options:
+        - label: I am authorized to discuss tooling adoption on behalf of my organization
+          required: true
+        - label: I understand the issue is public; I should not include confidential or proprietary details here
+          required: true

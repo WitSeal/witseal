@@ -1,0 +1,49 @@
+# Sanitary barrier — CI gate for the public witseal repository.
+#
+# PREPARED (NOT ACTIVE). Activation = merge this file as
+# `.github/workflows/sanitary-barrier.yml` into witseal AFTER the A2 history
+# rewrite (force-push), so the barrier stands on already-clean history.
+#
+# Fails any PR/push to main that introduces:
+#   - Cyrillic (U+0400–U+04FF) anywhere in tracked files, or
+#   - a denylist marker (internal paths/roles/artifacts/provenance codes:
+#     F-/R- interpretations, Bridge Proof, B9/B-N task codes, internal DR-NNNN,
+#     RUST-N, the witseal-rs-3 local path).
+# By-design NOT flagged: public ADR-NNNN, RFC-001/002, IETF RFC 8785, and the
+# "TL;DR" idiom. `\bDR-[0-9]` excludes ADR- (no word boundary after the A on GNU grep).
+#
+# Anchored to DR-0020 (history-rewrite policy). Self-excludes this workflow
+# file so its own denylist pattern is not a false positive.
+name: Sanitary barrier
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+jobs:
+  sanitary:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: No Cyrillic in tracked files
+        run: |
+          set -euo pipefail
+          # GNU grep -P on ubuntu supports \x{...} code-point ranges.
+          if git ls-files -z \
+            | grep -zZv '^\.github/workflows/sanitary-barrier\.yml$' \
+            | xargs -0 grep -lIP '[\x{0400}-\x{04FF}]' 2>/dev/null; then
+            echo "::error::Cyrillic found in tracked files (see paths above)"
+            exit 1
+          fi
+          echo "No Cyrillic. OK."
+      - name: Denylist (internal paths / roles / artifacts)
+        run: |
+          set -euo pipefail
+          PAT='/Users/pai|~/WitSeal|witseal-rs-3|\bPdM\b|\bPjM\b|Tech Lead|founder-verified|founder-ratified|PRIVATE repo|system prompt|deferred tools|coordinator cycle|\bF-[0-9]|\bR-[0-9]|Bridge Proof|\bB9\b|\bB-[0-9]|\bDR-[0-9]|RUST-[0-9]'
+          if git ls-files -z \
+            | grep -zZv '^\.github/workflows/sanitary-barrier\.yml$' \
+            | xargs -0 grep -lIE "$PAT" 2>/dev/null; then
+            echo "::error::Denylist marker found in tracked files (see paths above)"
+            exit 1
+          fi
+          echo "No denylist markers. OK."
