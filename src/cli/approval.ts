@@ -1,0 +1,229 @@
+/**
+ * Approval prompt UX.
+ *
+ * See ADR-0004 for design rationale.
+ *
+ * Modes:
+ *   - TTY (default when stderr.isTTY): prompt on stderr, read from /dev/tty
+ *   - CI (when stderr is non-TTY or WITSEAL_NON_INTERACTIVE=1): auto-deny by default,
+ *     allow-list via WITSEAL_AUTO_APPROVE=<rule_id1,rule_id2,...>
+ *   - Callback (WITSEAL_APPROVAL_MODE=callback): write request file, poll for response file
+ */
+
+import { closeSync, existsSync, openSync, readSync } from 'node:fs';
+import { generateApprovalId } from '../witness/emit.js';
+import type { ApprovalRecord, ApprovalOutcome } from '../../schemas/approval.schema.js';
+import type { ClassifiedIntent } from '../../schemas/intent.schema.js';
+import type { PolicyDecision } from '../../schemas/policy.schema.js';
+
+const DEFAULT_TIMEOUT_S = 60;
+
+export async function obtainApproval(
+  intent: ClassifiedIntent,
+  decision: PolicyDecision
+): Promise<ApprovalRecord> {
+  const timeoutS = parseInt(process.env['WITSEAL_APPROVAL_TIMEOUT'] ?? `${DEFAULT_TIMEOUT_S}`, 10) || DEFAULT_TIMEOUT_S;
+  const promptedAt = new Date();
+  const approvalId = generateApprovalId();
+
+  const isInteractive = process.stderr.isTTY && !process.env['WITSEAL_NON_INTERACTIVE'];
+
+  if (process.env['WITSEAL_APPROVAL_MODE'] === 'callback') {
+    return obtainViaCallback(intent, decision, approvalId, promptedAt, timeoutS);
+  }
+
+  if (!isInteractive) {
+    return obtainViaCI(intent, decision, approvalId, promptedAt, timeoutS);
+  }
+
+  return obtainViaTTY(intent, decision, approvalId, promptedAt, timeoutS);
+}
+
+function obtainViaCI(
+  intent: ClassifiedIntent,
+  decision: PolicyDecision,
+  approvalId: string,
+  promptedAt: Date,
+  timeoutS: number
+): ApprovalRecord {
+  const allowList = (process.env['WITSEAL_AUTO_APPROVE'] ?? '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  const matchedRuleId = decision.matched_rule?.rule_id;
+  const allowed = matchedRuleId ? allowList.includes(matchedRuleId) : false;
+
+  // Structured identity origin (replaces an earlier `fallback:` string prefix):
+  // when WITSEAL_CI_PRINCIPAL is unset or empty, the principal carries
+  // identity_origin='fallback' on a structured field rather than a `fallback:`
+  // string prefix. Evidence consumers check
+  // `principal.identity_origin === 'fallback'` rather than a string scan.
+  // Production CI integrations SHOULD set WITSEAL_CI_PRINCIPAL.
+  const configuredCiPrincipal = process.env['WITSEAL_CI_PRINCIPAL'];
+  const ciIsConfigured = configuredCiPrincipal != null && configuredCiPrincipal.length > 0;
+  const ciIdentifier = ciIsConfigured ? configuredCiPrincipal : 'ci-default';
+  return {
+    schema_version: 'witseal.approval.v0.1',
+    approval_id: approvalId,
+    intent_id: intent.intent_id,
+    prompted_at: toIsoZ(promptedAt),
+    resolved_at: toIsoZ(new Date()),
+    outcome: allowed ? 'approved' : 'rejected',
+    principal: {
+      type: 'ci',
+      identifier: ciIdentifier,
+      identity_origin: ciIsConfigured ? 'configured' : 'fallback',
+    },
+    timeout_seconds: timeoutS,
+    ...(allowed
+      ? { reason: `auto-approved by WITSEAL_AUTO_APPROVE allow-list (rule: ${matchedRuleId})` }
+      : { reason: 'CI context with no matching auto-approve allow-list entry' }),
+  };
+}
+
+/**
+ * Phase 1 TTY approval flow.
+ *
+ * P1-6 (runtime-boundary audit 2026-05-25): the `timeoutS` value is
+ * recorded in the resulting `ApprovalRecord.timeout_seconds` field but is
+ * NOT enforced as an OS-level deadline. `readApprovalChar` uses a blocking
+ * `readSync('/dev/tty')` and the runtime cannot interrupt that syscall
+ * portably without raw-mode + select/poll wiring that Phase 1 defers.
+ *
+ * Public claim discipline: "silence is not consent in CI" is accurate
+ * (the CI/non-interactive path resolves synchronously). The claim
+ * "approval timeout is enforced for TTY" is INACCURATE for Phase 1 and
+ * must not appear in public artifacts (README, landing, CHANGELOG, PR
+ * descriptions) per the 2026-05-25 claim-discipline list. The rendered
+ * prompt also flags the limitation inline so operators are not misled.
+ *
+ * Threat-model T7 documents the residual and the Phase 2 plan.
+ */
+function obtainViaTTY(
+  intent: ClassifiedIntent,
+  decision: PolicyDecision,
+  approvalId: string,
+  promptedAt: Date,
+  timeoutS: number
+): ApprovalRecord {
+  renderPrompt(intent, decision, timeoutS);
+
+  const outcome = readApprovalChar(timeoutS);
+
+  // Structured identity origin (replaces an earlier `fallback:` string prefix):
+  // when neither $USER nor $LOGNAME is set, the principal carries
+  // identity_origin='fallback' on a structured field rather than a `fallback:`
+  // string prefix. Evidence consumers check `principal.identity_origin` for the
+  // signal rather than scanning the identifier string.
+  const userEnv = process.env['USER'] ?? process.env['LOGNAME'];
+  const humanIsConfigured = userEnv != null && userEnv.length > 0;
+  const humanIdentifier = humanIsConfigured ? userEnv : 'no-user-env';
+  return {
+    schema_version: 'witseal.approval.v0.1',
+    approval_id: approvalId,
+    intent_id: intent.intent_id,
+    prompted_at: toIsoZ(promptedAt),
+    resolved_at: toIsoZ(new Date()),
+    outcome,
+    principal: {
+      type: 'human',
+      identifier: humanIdentifier,
+      identity_origin: humanIsConfigured ? 'configured' : 'fallback',
+    },
+    timeout_seconds: timeoutS,
+  };
+}
+
+function obtainViaCallback(
+  intent: ClassifiedIntent,
+  _decision: PolicyDecision,
+  approvalId: string,
+  promptedAt: Date,
+  timeoutS: number
+): ApprovalRecord {
+  // Phase 1 v0.1: callback mode is sketched; full implementation deferred.
+  // Returns timed_out immediately with a clear message.
+  process.stderr.write(
+    'witseal: WITSEAL_APPROVAL_MODE=callback is not yet implemented in v0.1.\n'
+  );
+  return {
+    schema_version: 'witseal.approval.v0.1',
+    approval_id: approvalId,
+    intent_id: intent.intent_id,
+    prompted_at: toIsoZ(promptedAt),
+    resolved_at: toIsoZ(new Date()),
+    outcome: 'timed_out',
+    principal: {
+      type: 'ci',
+      identifier: 'callback-not-implemented',
+    },
+    timeout_seconds: timeoutS,
+    reason: 'callback mode not implemented in v0.1; treating as timeout',
+  };
+}
+
+function renderPrompt(intent: ClassifiedIntent, decision: PolicyDecision, timeoutS: number): void {
+  const out = process.stderr;
+  out.write('\n');
+  out.write('⚠ WitSeal approval required\n');
+  out.write('─────────────────────────────────────────\n');
+  if (intent.intent.action_type === 'shell_command') {
+    const cmd = intent.intent;
+    out.write(`Action:    shell_command\n`);
+    out.write(`Command:   ${cmd.executable} ${cmd.args.join(' ')}\n`);
+    out.write(`Cwd:       ${cmd.cwd}\n`);
+  } else if (intent.intent.action_type === 'file_write') {
+    out.write(`Action:    file_write\n`);
+    out.write(`Path:      ${intent.intent.path}\n`);
+    out.write(`Mode:      ${intent.intent.mode}\n`);
+  } else {
+    out.write(`Action:    ${intent.intent.action_type}\n`);
+  }
+  out.write(`Risk:      ${intent.risk_class}\n`);
+  if (decision.matched_rule) {
+    out.write(`Policy:    ${decision.matched_rule.rule_id} (${decision.matched_rule.pack_id})\n`);
+  }
+  out.write(`Reason:    ${decision.reason}\n`);
+  // P1-6: TTY mode does not enforce timeout in Phase 1 — make the
+  // limitation visible in the prompt itself so operators do not assume
+  // auto-rejection.
+  out.write(`Timeout:   ${timeoutS}s (no timer in TTY mode — Ctrl+C to cancel)\n`);
+  out.write('─────────────────────────────────────────\n');
+  out.write('Approve? [y/N]: ');
+}
+
+function readApprovalChar(timeoutS: number): ApprovalOutcome {
+  // Open /dev/tty directly — bypasses stdin redirection (ADR-0004).
+  if (!existsSync('/dev/tty')) {
+    process.stderr.write('\n(no /dev/tty available; treating as rejected)\n');
+    return 'rejected';
+  }
+
+  const fd = openSync('/dev/tty', 'r');
+  try {
+    const buf = Buffer.alloc(1);
+    // P1-6 (runtime-boundary audit 2026-05-25): synchronous blocking read.
+    // The `timeoutS` parameter is recorded in the resulting ApprovalRecord
+    // but NOT enforced here — interrupting a Node-level readSync of a tty
+    // fd without raw-mode + select/poll is non-portable. Phase 2 will
+    // switch to a select()-based wait. The rendered prompt flags the
+    // limitation inline so operators are not misled.
+    void timeoutS;
+    const bytes = readSync(fd, buf, 0, 1, null);
+    if (bytes === 0) {
+      process.stderr.write('\n');
+      return 'rejected';
+    }
+    const ch = buf.toString('utf8');
+    process.stderr.write('\n');
+    if (ch === 'y' || ch === 'Y') return 'approved';
+    return 'rejected';
+  } finally {
+    closeSync(fd);
+  }
+}
+
+function toIsoZ(date: Date): string {
+  return date.toISOString().replace(/\.\d{3}Z$/, 'Z');
+}
