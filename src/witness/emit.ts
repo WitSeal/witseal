@@ -20,6 +20,7 @@
  */
 
 import { hostname } from 'node:os';
+import { WITSEAL_VERSION } from '../version.js';
 import type { EventLog } from './event-log.js';
 import type { WitnessEvent, WitnessEventDraft, WitnessOutcome } from '../../schemas/witness-event.schema.js';
 import type { ClassifiedIntent } from '../../schemas/intent.schema.js';
@@ -27,7 +28,9 @@ import type { PolicyDecision } from '../../schemas/policy.schema.js';
 import type { ApprovalRecord } from '../../schemas/approval.schema.js';
 import type { ExecutionResult } from '../../schemas/execution-result.schema.js';
 
-export const WITSEAL_RUNTIME_VERSION = '0.1.0-pre';
+/** Runtime version stamped into `versions.witseal_runtime`. Tracks
+ *  package.json via the single source of truth (no hardcoded literal). */
+export const WITSEAL_RUNTIME_VERSION = WITSEAL_VERSION;
 export const WITNESS_SCHEMA_VERSION = 'witseal.witness.v0.1' as const;
 
 export interface EmitInput {
