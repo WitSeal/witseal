@@ -1,6 +1,6 @@
 {
   "name": "@witseal/cli",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A witnessed execution runtime for AI agents.",
   "keywords": [
     "witnessed-execution",
@@ -10,8 +10,8 @@
     "operational-trust",
     "trust-runtime"
   ],
-  "homepage": "https://github.com/witseal/witseal",
-  "bugs": "https://github.com/witseal/witseal/issues",
+  "homepage": "https://github.com/WitSeal/witseal",
+  "bugs": "https://github.com/WitSeal/witseal/issues",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/WitSeal/witseal.git"
@@ -22,7 +22,7 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
-    "witseal": "./dist/src/cli/index.js"
+    "witseal": "dist/src/cli/index.js"
   },
   "files": [
     "dist/",
