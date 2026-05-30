@@ -1,0 +1,63 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build output
+dist/
+build/
+*.tsbuildinfo
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/launch.json
+*.swp
+*.swo
+*~
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Env files (never commit secrets)
+.env
+.env.local
+.env.*.local
+
+# WitSeal local data (developer-machine state)
+.witseal/
+*.witseal-state
+
+# Sigstore signing artifacts (generated during release)
+*.sig
+*.crt
+*.intoto.jsonl
+*.cdx.json
+SHA256SUMS
+# Allow fixture .sig files that ship under tests/fixtures/ (cross-track
+# golden-receipt corpora etc.); they are not release artifacts but pinned
+# byte-identity reference data.
+!tests/fixtures/**/*.sig
+
+# Release artifacts (built by CI)
+/release/
+*.tar.gz
+*.zip
+
+# Local development artifacts
+evidence.json
+.witseal/
+
+# Internal coordination artifacts — never publish
+coordination/
+coverage-extract.mjs
