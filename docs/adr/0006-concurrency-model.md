@@ -166,3 +166,52 @@ The concurrency model has property-based tests in `tests/concurrency.test.ts`:
 - Reader-during-write: 50 concurrent readers + 1 writer; verify readers see consistent prefix
 
 These tests run in CI on every PR.
+
+## Update — 2026-05-29: lockfile shim for runtimes without `fs.flockSync`
+
+`fs.flockSync` stabilized only in Node 24. On Node 20–23 the flock backend is
+unavailable. The original fail-closed-without-flock behavior (refuse unless
+`WITSEAL_UNSAFE_LOCKLESS=1`) made `witseal exec` unusable out of the box on the
+current Node 22 LTS, and the only escape *disabled* the integrity guarantee — a
+poor default for a trust runtime whose `engines` declares `>=20`.
+
+A second **correct** backend now serves those runtimes: an atomic
+`O_CREAT | O_EXCL` lockfile holding `{pid, startTime}`. It is the default on
+Node <24 — real mutual exclusion, not advisory tolerance.
+
+This revisits, and adopts, the "Lockfile" alternative previously rejected above.
+The rejection was of a *naive* lockfile whose only staleness check was a bare
+PID (racy: PIDs are reused). The shim closes that gap:
+
+- **Mutual exclusion** is the atomic exclusive create — the same single-writer
+  guarantee as flock during normal operation (T11 holds).
+- **Stale recovery is fail-closed.** A waiter steals a held lockfile ONLY if the
+  holder is *provably dead*: the recorded pid no longer exists, OR it exists but
+  its process start-time differs from the recorded one (PID reuse). On ANY
+  uncertainty (unreadable/empty lockfile, start-time unobtainable) it does NOT
+  steal. It never permits two concurrent writers.
+- **`pid + start-time`** defeats PID reuse — the precise failure mode that made
+  the naive lockfile racy.
+
+Tradeoff vs flock: flock's lifetime is OS-managed (auto-released on process
+exit, even `SIGKILL`), so it never leaves a stale lock. The shim has no
+auto-release, so a crashed holder leaves a lockfile behind. Recovery is
+therefore heuristic-but-safe (the provably-dead test) plus an explicit
+`witseal unlock` command (same test) for the rare case a waiter must clear a
+genuinely-dead holder. Integrity is never traded for convenience: the worst
+case is a refusal, never a wrongful steal.
+
+`WITSEAL_UNSAFE_LOCKLESS=1` remains only as an explicit operator opt-OUT
+(advisory, no locking) for read-only or networked data dirs where a lockfile
+cannot/should not be created. It is no longer required for normal operation on
+Node 20–23.
+
+**Limitation:** the flock and lockfile backends do not coordinate. Concurrent
+writers to ONE segment must run under the same Node major (same backend) — the
+same class of constraint as the networked-filesystem caveat above.
+
+Implementation: `src/integrity/lock.ts`. Cross-process tests:
+`tests/lock-concurrency.test.ts` (N×M increments with zero lost updates; crash
+recovery via SIGKILL + steal; live-holder no-steal; N×M real witness events with
+contiguous sequence and a valid hash chain). Decision-logic unit tests:
+`tests/integrity-lock.test.ts`.
