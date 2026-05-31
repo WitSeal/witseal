@@ -15,6 +15,7 @@ import { existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { classify, CLASSIFIER_VERSION } from '../risk/classifier.js';
 import { PolicyEngine } from '../policy/engine.js';
+import { applyConstraint, type ExecutionMode } from '../policy/enforcement.js';
 import { EventLog } from '../witness/event-log.js';
 import {
   emitExecutionComplete,
@@ -42,6 +43,11 @@ export const ENV_UNSAFE_ALLOW_NO_POLICY = 'WITSEAL_UNSAFE_ALLOW_NO_POLICY';
  *  no-policy fail-closed). Distinct from any plausible subprocess exit code. */
 const EXIT_DENIED = 100;
 
+/** Exit code for a recognized but unavailable execution mode (`--mode witness`
+ *  before the cross-track receipt change lands). Distinct from denial (100) and
+ *  from success (0): the action was neither denied nor run. */
+const EXIT_MODE_UNAVAILABLE = 2;
+
 export interface ExecOptions {
   command: string;
   args: string[];
@@ -57,9 +63,33 @@ export interface ExecOptions {
   timeoutMs: number;
   dataDir: string;
   segmentId: string;
+  /**
+   * Execution mode. Default `gate` (deny-by-default). `witness` is recognized
+   * but not yet available — it requires a cross-track receipt change pending a
+   * wire-format RFC; `runExec` returns a clear unavailability error for it
+   * rather than executing an action the policy would deny.
+   */
+  mode?: ExecutionMode;
 }
 
 export async function runExec(opts: ExecOptions): Promise<number> {
+  // Mode routing (clean-seam product boundary). Default Gate (deny-by-default).
+  // Witness Mode is recognized but HELD: it would execute an action the policy
+  // would deny and record a distinct `witnessed_executed` outcome — a
+  // cross-track witness-event change pending a wire-format RFC. Until that
+  // lands, refuse Witness Mode with a clear unavailability error; never fall
+  // back to Gate silently, and never execute a would-be-denied action.
+  const mode: ExecutionMode = opts.mode ?? 'gate';
+  if (mode === 'witness') {
+    process.stderr.write(
+      `witseal: --mode witness is not available in this build. Witness Mode ` +
+        `records and executes an action the policy would deny; that requires a ` +
+        `cross-track receipt change still pending a wire-format RFC. Use the ` +
+        `default Gate Mode (deny-by-default).\n`
+    );
+    return EXIT_MODE_UNAVAILABLE;
+  }
+
   // 0. Recovery: if a prior invocation crashed between intent_recorded
   //    and execution_complete, the chain tail is an unpaired `pending`.
   //    Emit `execution_lost` before any new work so the chain captures
@@ -179,8 +209,11 @@ export async function runExec(opts: ExecOptions): Promise<number> {
     }
   }
 
-  // 5. Denied by policy
-  if (decision.outcome === 'deny') {
+  // 5. Constraint contour (clean-seam product boundary): does the policy
+  //    decision block execution under this mode? Gate Mode blocks a `deny`;
+  //    Witness Mode never blocks (and is held above until the cross-track RFC).
+  const constraint = applyConstraint(decision, mode);
+  if (constraint.block) {
     const eventLog = new EventLog({ root: opts.dataDir, segmentId: opts.segmentId });
     const event = await emitWitnessEvent(eventLog, {
       classifiedIntent,
