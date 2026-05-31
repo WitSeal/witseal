@@ -1,13 +1,50 @@
 # WitSeal Claim Boundary
 
 Status: Phase 1 public claim boundary
-Verified against: `@witseal/cli@0.1.1`
+Verified against: `@witseal/cli@0.1.2`
 
 WitSeal Phase 1 makes a narrow claim: the CLI can mediate actions through a
 policy pack, record witness events and execution receipts, export an evidence
 package, and verify evidence continuity inside the limits below.
 
 Anything outside this document is not a Phase 1 public claim.
+
+## Execution Modes (Gate and Witness)
+
+WitSeal Phase 1 runs in two execution modes selected per invocation with
+`--mode`. **Gate is the default.**
+
+**Gate Mode (default, deny-by-default).** WitSeal sits in the action's critical
+path. A policy decision of `deny` blocks execution: the action does not run, and
+the denial is recorded as execution evidence. This is the deny-by-default
+posture.
+
+**Witness Mode (explicit, non-default).** WitSeal sits beside the action path
+and does not block. The policy decision is still computed and recorded as
+evidence — including a `deny` decision and its policy context — but it is not
+enforced, and the action executes. The resulting receipt records both the policy
+decision and the fact of execution, under a distinct outcome
+(`witnessed_executed`) that is never confused with a blocked `denied_by_policy`
+action.
+
+Witness Mode is an explicit operator choice. It does not weaken the default:
+with no `--mode`, WitSeal is Gate, deny-by-default.
+
+**The constraint is by policy decision, not authorship.** WitSeal evaluates and
+records against the active policy; it does not author the policy or the authority
+behind an action. In both modes WitSeal produces evidence; only Gate Mode
+applies the constraint.
+
+**Phase 1 boundary (unchanged) — WitSeal does not claim:** sandboxing or
+kernel-level containment; prompt-injection defense; protection against a
+malicious producer who can rewrite the local chain before export; correctness of
+the executed command or its result. In Witness Mode in particular, WitSeal
+records what happened and what policy decided — it does not prevent a denied
+action from running.
+
+> Witness Mode (`--mode witness`) and the `witnessed_executed` outcome arrive in
+> `0.1.2`. The verified flow below is Gate Mode on `0.1.1`; the Witness
+> demonstration is marked for `0.1.2` and is verified at that release.
 
 ## Demonstrable QA Flow
 
@@ -77,6 +114,51 @@ The expected-failure checks above must exit with the listed codes.
 
 This flow creates its own policy file. It does not rely on policy-pack paths
 being present inside the npm package.
+
+### Witness Mode (`--mode witness`, from `0.1.2`)
+
+Witness Mode does not block: it executes an action the policy would deny and
+records it under `witnessed_executed`, distinct from a blocked `denied_by_policy`
+action. Shown on a harmless command (`echo`) denied by a demo policy, so the
+example is safe to run, and in its own data directory:
+
+```bash
+export WITSEAL_DATA_DIR="$(mktemp -d)"
+cat > deny-echo.json <<'EOF'
+{
+  "schema_version": "witseal.policy.v0.1",
+  "pack_id": "deny-echo-demo",
+  "version": "1.0.0",
+  "description": "Demo: deny echo, to show the Gate/Witness difference safely.",
+  "rules": [
+    {
+      "id": "deny-echo",
+      "match": { "command_matches": "^echo\\b" },
+      "decision": "deny",
+      "reason": "echo denied (demo)"
+    }
+  ],
+  "default_decision": "allow"
+}
+EOF
+witseal policy add ./deny-echo.json
+
+# Gate (default): the deny blocks execution.
+if witseal exec -- echo hi; then
+  echo "expected Gate to block the denied command" >&2
+  exit 1
+else
+  test "$?" -eq 100
+fi
+
+# Witness: the same deny is recorded, but the action executes.
+witseal exec --mode witness -- echo hi   # prints "hi"; outcome witnessed_executed
+witseal receipt show 1                   # outcome witnessed_executed
+```
+
+The two runs are distinguishable by outcome: `denied_by_policy` (Gate, not
+executed) versus `witnessed_executed` (Witness, executed). This Witness run is
+verified at the `0.1.2` release.
 
 ## Positive Claims
 

@@ -28,6 +28,7 @@ import { runEvidenceExport } from './evidence.js';
 import { runReceiptShow } from './receipt.js';
 import { runPolicyAdd, runPolicyList } from './policy.js';
 import { runUnlock } from './unlock.js';
+import type { ExecutionMode } from '../policy/enforcement.js';
 import { WITSEAL_VERSION } from '../version.js';
 
 const program = new Command();
@@ -45,6 +46,7 @@ program
   .option('--agent <id>', 'Agent identifier', 'cli-user')
   .option('--cwd <path>', 'Working directory for the command', process.cwd())
   .option('--timeout <ms>', 'Execution timeout in milliseconds', '0')
+  .option('--mode <mode>', 'Execution mode: gate (default, deny-by-default) or witness', 'gate')
   .argument('<command>', 'Executable to run')
   .argument('[args...]', 'Arguments to pass')
   .action(async (command: string, args: string[], opts, cmd) => {
@@ -56,6 +58,13 @@ program
     // configured agent identity from the runtime's built-in default.
     const agentSource = (cmd as { getOptionValueSource: (k: string) => string }).getOptionValueSource('agent');
     const identityOrigin = agentSource === 'default' ? 'fallback' : 'configured';
+    const mode = opts.mode as string;
+    if (mode !== 'gate' && mode !== 'witness') {
+      process.stderr.write(
+        `witseal: invalid --mode '${mode}': expected 'gate' or 'witness'\n`
+      );
+      process.exit(2);
+    }
     const exitCode = await runExec({
       command,
       args,
@@ -65,6 +74,7 @@ program
       timeoutMs: parseInt(opts.timeout as string, 10) || 0,
       dataDir: program.opts()['dataDir'] as string,
       segmentId: program.opts()['segment'] as string,
+      mode: mode as ExecutionMode,
     });
     process.exit(exitCode);
   });
