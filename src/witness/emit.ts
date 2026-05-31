@@ -135,6 +135,9 @@ export async function emitIntentRecorded(
   eventLog: EventLog,
   input: EmitInput
 ): Promise<WitnessEvent> {
+  // DEPRECATED-FOR-EMISSION (RFC-0003 Decision B): emitIntentRecorded emits
+  // 'pending' under witseal.witness.v0.1. New runtimes should not call this
+  // function; 2PC semantics develop under witseal.witness.v0.2.
   if (input.outcome !== 'pending') {
     throw new Error(
       `emitIntentRecorded: outcome must be 'pending' (got ${input.outcome})`
