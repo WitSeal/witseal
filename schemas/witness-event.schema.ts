@@ -44,6 +44,13 @@ export const TimestampSchema = z
  * policy mediation". Presence of `execution_result` tells the consumer
  * which case occurred: `null` = blocked; non-null = ran under escape hatch.
  *
+ * Additive values `witnessed_executed` / `witnessed_executed_with_error`
+ * (RFC-0002): emitted in Witness Mode, where the policy decision is recorded as
+ * evidence but not enforced and the action executes. Additive within
+ * `witseal.witness.v0.1` (no version bump). Strictly distinct from
+ * `denied_by_policy`, preserving the invariant that `denied_by_policy` implies
+ * the action did not run (`execution_result = null`).
+ *
  * §7.1 placement guard: `no_policy_configured` is valid ONLY as a witness
  * event outcome (here). It MUST NOT appear as a policy rule decision value
  * (`PolicyRuleSchema.decision`) or as a policy pack default decision
@@ -59,6 +66,11 @@ export const WitnessOutcomeSchema = z.enum([
   'denied_by_approval',
   'denied_by_classification_failure',
   'no_policy_configured',
+  // Witness Mode (RFC-0002): the policy decision was recorded as evidence but
+  // not enforced, and the action executed. Distinct from `denied_by_policy`
+  // (which implies the action did NOT run; execution_result=null).
+  'witnessed_executed',
+  'witnessed_executed_with_error',
   // Two-phase commit so the chain records the action BEFORE execution
   // attempts and can recover from a crash mid-flight.
   'pending',          // emitted as `intent_recorded` (Phase A), execution_result=null
