@@ -1,0 +1,49 @@
+name: Compat Corpus Parity Gate (§9)
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  compat-corpus:
+    name: Cross-track parity gate
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout witseal
+        uses: actions/checkout@v4
+
+      - name: Setup SSH for compat-corpus deploy key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.COMPAT_CORPUS_DEPLOY_KEY }}" > ~/.ssh/compat_corpus_deploy_key
+          chmod 600 ~/.ssh/compat_corpus_deploy_key
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
+          cat >> ~/.ssh/config <<'EOF'
+          Host github-compat-corpus
+            HostName github.com
+            User git
+            IdentityFile ~/.ssh/compat_corpus_deploy_key
+            IdentitiesOnly yes
+          EOF
+
+      - name: Clone compat-corpus (private)
+        run: |
+          git clone git@github-compat-corpus:WitSeal/compat-corpus.git /tmp/compat-corpus
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run compat-corpus parity check
+        run: node --import tsx scripts/compat-corpus-check.mjs /tmp/compat-corpus/chains/v0.1
