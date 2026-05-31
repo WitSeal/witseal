@@ -32,10 +32,10 @@ deny-by-default: the action proceeds only after the pipeline clears.
 
 ## Install
 
-Install the CLI from npm:
+Install the `0.1.1` CLI from npm:
 
 ```bash
-npm install -g @witseal/cli
+npm install -g @witseal/cli@0.1.1
 ```
 
 ## Run
@@ -80,10 +80,13 @@ EOF
 Then add it, run a command, inspect the receipt, and verify:
 
 ```bash
+export WITSEAL_DATA_DIR="$(mktemp -d)"
 witseal policy add ./quickstart-policy.json
 witseal exec -- echo hello
 witseal receipt show 1
 witseal verify
+witseal evidence export --out ./quickstart-evidence.json
+witseal verify ./quickstart-evidence.json
 ```
 
 `policy add` registers the pack — without an active pack, deny-by-default refuses
@@ -93,7 +96,8 @@ execution receipt is written; `exec` prints the paired event and receipt ids.
 `receipt show` renders a receipt for inspection, addressed by its receipt id, the
 paired event id, a sequence number, or a unique prefix — here sequence `1` is the
 completed execution (`allowed_executed`) and sequence `0` is its
-`intent_recorded` precursor. `verify` checks the evidence chain.
+`intent_recorded` precursor. `verify` checks the live evidence chain, and
+`evidence export` writes an evidence package that `verify` can check offline.
 
 A command the pack denies (e.g. `witseal exec -- rm -rf /`) is refused — and the
 denial is recorded as evidence too.
