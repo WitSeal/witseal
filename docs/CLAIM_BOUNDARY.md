@@ -1,7 +1,7 @@
 # WitSeal Claim Boundary
 
 Status: Phase 1 public claim boundary
-Verified against: `@witseal/cli@0.1.1`
+Verified against: `@witseal/cli@0.1.2`
 
 WitSeal Phase 1 makes a narrow claim: the CLI can mediate actions through a
 policy pack, record witness events and execution receipts, export an evidence
