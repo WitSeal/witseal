@@ -10,25 +10,35 @@ boundary.
 WitSeal Phase 1 is a pre-release. Schemas and CLI surface may change before
 `v1.0`.
 
-## Deployment modes
+## Execution modes
 
-WitSeal Phase 1 has one receipt protocol and two deployment modes.
+WitSeal Phase 1 has one receipt protocol and two execution modes, selected per
+invocation with `--mode`. **Gate is the default.**
 
-### Witness Mode
+### Gate Mode (default, deny-by-default)
 
-Witness Mode places WitSeal beside the agent's action path. WitSeal observes
-actions, witnesses them, and emits execution receipts without gating the action
-path. Witness Mode does not claim that an action was permissioned.
+Gate Mode places WitSeal in the agent's critical path. WitSeal classifies the
+action, evaluates policy, records any approval-gate outcome, and — when the
+policy decision is `deny` — the constraint blocks execution: the action does
+not run, and the denial is recorded as execution evidence. The action proceeds
+only after the pipeline clears. This is the deny-by-default posture, and the
+default with no `--mode`.
 
-Witness Mode is the recommended starting point when the first requirement is
-verifiable execution evidence without inserting WitSeal into the critical path.
+### Witness Mode (explicit, non-default)
 
-### Gate Mode
+Witness Mode places WitSeal beside the agent's action path and **does not
+block**. WitSeal still classifies the action and evaluates policy, and records
+the policy decision — including a `deny` — as evidence, **but it does not
+enforce that decision: the action executes**. The receipt records both the
+policy decision and the fact of execution, under a distinct outcome
+(`witnessed_executed`) that is never conflated with a blocked `denied_by_policy`
+action.
 
-Gate Mode places WitSeal in the agent's critical path. In this mode, WitSeal
-classifies the action, evaluates policy, records any approval gate outcome,
-witnesses the execution, and emits an execution receipt. Gate Mode is
-deny-by-default: the action proceeds only after the pipeline clears.
+Witness Mode is an explicit operator choice; it does not weaken the default. The
+constraint is by policy decision, not authorship: WitSeal evaluates and records
+against the active policy; it does not author the policy or the authority behind
+an action. In Witness Mode in particular, WitSeal records what happened and what
+policy decided — it does not prevent a denied action from running.
 
 ## Install
 

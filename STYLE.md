@@ -45,6 +45,7 @@ The left column is what WitSeal **uses**. The right column is what WitSeal **doe
 | authority declaration | role assignment, configuration | Authority is declared by a human, not configured by an admin. The distinction matters. |
 | cross-agent trust | multi-agent governance, agent orchestration | Cross-agent trust is what WitSeal eventually enables; orchestration is a different category. |
 | operational integrity | reliability, robustness | Operational integrity means the action chain remains intact under attack and failure. The others are weaker. |
+| constraint (by policy decision) | enforcement, gating, compliance control, guard, guardrails | The Gate contour constrains an action per an externally supplied policy decision — it does not author the policy (authoring is PAI-Kernel territory; cf. authority boundary). |
 
 ---
 

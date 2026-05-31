@@ -29,28 +29,33 @@ machine.
 
 This document is the architectural contract Phase 1 implementation must satisfy. Deviations require an RFC.
 
-### 1.1 Deployment Modes
+### 1.1 Execution Modes
 
-Phase 1 is one product with one receipt protocol, deployed in exactly two modes.
-The mode is selected on the single execution command:
+Phase 1 is one product with one receipt protocol, run in exactly two modes. The
+mode is selected on the single execution command; **Gate is the default**:
 
 ```bash
-witseal exec --mode witness|gate
+witseal exec --mode gate|witness
 ```
 
-- **Witness Mode** places WitSeal beside the agent's action path. WitSeal
-  observes the action, witnesses it, and emits an execution receipt without
-  blocking the agent's normal execution path.
-- **Gate Mode** places WitSeal in the agent's critical path. The full governed
-  pipeline runs: risk classification, policy evaluation, approval, controlled
-  execution, witness event, execution receipt, and hash-chain update. The
-  Gate-Mode pipeline is `deny-by-default`.
+- **Gate Mode** (default, `deny-by-default`) places WitSeal in the agent's
+  critical path. The full governed pipeline runs: risk classification, policy
+  evaluation, approval, and — when the policy decision is `deny` — the
+  constraint blocks execution; the action does not run and the denial is
+  recorded as evidence. With no `--mode`, WitSeal is Gate.
+- **Witness Mode** (explicit, non-default) places WitSeal beside the agent's
+  action path and does not block. WitSeal still classifies the action and
+  evaluates policy, and records the policy decision — including a `deny` — as
+  evidence, but does not enforce it: the action executes. The execution is
+  recorded under a distinct outcome (`witnessed_executed`), never conflated with
+  a blocked `denied_by_policy` action.
 
-Witness Mode and Gate Mode share the runtime pipeline, receipt protocol,
-evidence chain, schema relationships, and trust-boundary model below. The
-difference is WitSeal's position relative to the action path, and therefore
-whether the policy and approval gate is exercised. Phase 1 has no third
-deployment mode; in particular, it has no guard or sandbox-execution mode.
+Both modes share the runtime pipeline, receipt protocol, evidence chain, schema
+relationships, and trust-boundary model below: the evidence core (classify →
+policy decision → witness → receipt → verify) is identical. The difference is
+the constraint contour — whether the policy decision is enforced (Gate) or only
+recorded (Witness). The constraint is by policy decision, not authorship. Phase 1
+has no third mode; in particular, no guard or sandbox-execution mode.
 
 ---
 
@@ -60,10 +65,11 @@ The diagram below is the full Gate-Mode pipeline. In Gate Mode, every
 WitSeal-mediated action passes through these stages in this order; the order is
 canonical and must not change without an RFC.
 
-Witness Mode uses the same product, runtime pipeline, and receipt protocol, but
-WitSeal is beside the agent's action path. It observes the action, witnesses it,
-and emits an execution receipt without exercising the policy and approval gate
-or blocking the action path.
+Witness Mode uses the same product, runtime pipeline, and receipt protocol. The
+classification, policy decision, witness event, and execution receipt are all
+produced and recorded; the difference is that the constraint is not enforced —
+WitSeal is beside the action path and does not block, so the action executes
+even when the policy decision is `deny` (recorded under `witnessed_executed`).
 
 ```mermaid
 flowchart TD
