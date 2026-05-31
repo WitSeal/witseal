@@ -1,8 +1,7 @@
 # RFC-0002 — Witness Mode outcome: `witnessed_executed`
 
-**Status:** Draft — TypeScript-track initiating draft, circulated to the Rust
-track for joint sign-off under the cross-track wire-format coordination process.
-Both implementations must sign off and ship tested support before release.
+**Status:** Draft — open questions resolved by founder 2026-05-31. Awaiting
+TS + Rust signatures and tested support (DR-0008 D3) before release.
 
 **Tracks:** TypeScript (`@witseal/cli`) · Rust (reference implementation)
 
@@ -89,11 +88,20 @@ Gate Mode is unchanged: `deny` ⇒ blocked ⇒ `denied_by_policy`,
    existing published version, and only after both implementations have tested
    support.
 
-## Open questions (to resolve in review)
+## Founder decisions (resolved 2026-05-31)
 
-1. **Witness-event schema version literal.** Treat the additive enum change as
-   compatible within `witseal.witness.v0.1`, or bump the schema literal to
-   `v0.2`? (Affects the `versions.schema` literal and cross-track readers.)
-2. **Witness Mode with no policy pack.** Proposed: record `no_policy_configured`
-   as evidence and execute (non-enforcing), consistent with Witness semantics —
-   to be confirmed and pinned here. Gate Mode keeps fail-closed (deny-by-default).
+The following questions were open in the circulated draft and are now closed by
+the founder. Neither question is subject to re-open in TS or Rust sign-off.
+
+1. **Witness-event schema version literal — ADDITIVE within `witseal.witness.v0.1`,
+   no bump.** The two new outcome values are backward-compatible enum additions.
+   Readers that pass through unknown outcome strings remain compatible; the
+   schema literal stays `witseal.witness.v0.1`; the golden receipt is byte-for-byte
+   intact. Bumping to `v0.2` is explicitly rejected.
+
+2. **Witness Mode with no policy pack — emit `no_policy_configured`, execute,
+   no enforcement.** When Witness Mode runs and no policy pack is configured,
+   the witness event records `no_policy_configured` as the outcome and the
+   action executes; the absence of a policy pack is not treated as a block.
+   Gate Mode behavior is unchanged and remains fail-closed (deny-by-default):
+   no policy pack in Gate Mode is a hard deny.
