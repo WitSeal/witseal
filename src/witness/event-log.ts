@@ -16,6 +16,9 @@ import {
   mkdirSync,
   openSync,
   readFileSync,
+  readSync,
+  statSync,
+  truncateSync,
   writeFileSync,
   writeSync,
 } from 'node:fs';
@@ -122,7 +125,53 @@ export class EventLog {
    *   - Setting sequence correctly
    *   - Computing event_hash via finalizeEvent before passing in
    */
+  /**
+   * Torn-tail heal (crash-recovery class B fix).
+   *
+   * A previous process may have crashed mid-writeSync, leaving a partial JSON
+   * fragment at the tail of the log with no terminating '\n'. Procedure
+   * (mirrors the Rust fix):
+   *
+   *   1. Stat the file; return immediately if absent or empty.
+   *   2. Read the single last byte. If it is '\n' (0x0a): clean tail, return.
+   *   3. If it is not '\n': scan the file content for the last '\n'.
+   *        - Found at position p → truncate to p+1 (keep the newline).
+   *        - Not found (no prior complete line) → truncate to 0.
+   *
+   * Called at the start of every lock-held write path (appendDraftEvent,
+   * appendEvent) BEFORE the chain-head read, so that readLastEvent never
+   * sees the partial fragment. Also called at the top of appendEventUnsafe
+   * as a safety belt for direct callers.
+   *
+   * The external read/verify path (readEvents / readAllEvents / verifyAll)
+   * is intentionally NOT modified: after the heal, the file ends on '\n' so
+   * split('\n').filter() sees no partial fragment. Historical receipts issued
+   * before the fix remain verifiable.
+   */
+  private healTornTail(): void {
+    if (!existsSync(this.logPath)) return;
+    const { size } = statSync(this.logPath);
+    if (size === 0) return;
+    const lastByteBuf = Buffer.alloc(1);
+    const checkFd = openSync(this.logPath, 'r');
+    try {
+      readSync(checkFd, lastByteBuf, 0, 1, size - 1);
+    } finally {
+      closeSync(checkFd);
+    }
+    if (lastByteBuf[0] !== 0x0a /* '\n' */) {
+      const content = readFileSync(this.logPath);
+      const lastNl = content.lastIndexOf(0x0a);
+      truncateSync(this.logPath, lastNl === -1 ? 0 : lastNl + 1);
+    }
+  }
+
   appendEventUnsafe(event: WitnessEvent): void {
+    // Safety belt: heal any torn tail before writing. The primary call is
+    // in appendDraftEvent / appendEvent (before readChainHeadUnsafe), so
+    // this is a no-op on those code paths. It matters when appendEventUnsafe
+    // is called directly under a caller-managed lock.
+    this.healTornTail();
     const line = JSON.stringify(event) + '\n';
     const fd = openSync(this.logPath, 'a');
     try {
@@ -155,6 +204,7 @@ export class EventLog {
    */
   appendEvent(event: WitnessEvent): void {
     this.lock.withExclusive(() => {
+      this.healTornTail();
       const { head, sequence } = this.readChainHeadUnsafe();
       if (event.previous_event_hash !== head) {
         throw new StaleAppendError(
@@ -195,6 +245,7 @@ export class EventLog {
     buildDraft: (chainHead: string | null, sequence: number) => WitnessEventDraft
   ): WitnessEvent {
     return this.lock.withExclusive(() => {
+      this.healTornTail();
       const { head, sequence } = this.readChainHeadUnsafe();
       const draft = buildDraft(head, sequence);
 
