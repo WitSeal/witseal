@@ -1,6 +1,6 @@
 # Hello, witness
 
-The 90-second tour of WitSeal for `@witseal/cli@0.1.2`.
+The 90-second tour of WitSeal for `@witseal/cli@0.1.3`.
 
 ## What this shows
 
@@ -16,7 +16,7 @@ In about 90 seconds this walkthrough demonstrates:
 You will need a working WitSeal install:
 
 ```bash
-npm install -g @witseal/cli@0.1.2
+npm install -g @witseal/cli@0.1.3
 ```
 
 ## The walkthrough
@@ -146,7 +146,7 @@ Both are hash-linked. Tampering with the exported evidence package is detectable
 
 This is the WitSeal Phase 1 wedge: every significant agent action — including the ones policy refuses to allow — becomes a verifiable artifact.
 
-This walkthrough ran in **Gate Mode** — the default, deny-by-default: the denied `rm -rf` did not execute. WitSeal also has **Witness Mode** (`--mode witness`, from `0.1.2`), which does not block — it executes an action the policy would deny and records it as evidence under a distinct `witnessed_executed` outcome, never confused with a blocked `denied_by_policy`. See [`docs/CLAIM_BOUNDARY.md`](../../docs/CLAIM_BOUNDARY.md) for both modes.
+This walkthrough ran in **Gate Mode** — the default, deny-by-default: the denied `rm -rf` did not execute. WitSeal also has **Witness Mode** (`--mode witness`, from `0.1.3`), which does not block — it executes an action the policy would deny and records it as evidence under a distinct `witnessed_executed` outcome, never confused with a blocked `denied_by_policy`. See [`docs/CLAIM_BOUNDARY.md`](../../docs/CLAIM_BOUNDARY.md) for both modes.
 
 ## Next
 
