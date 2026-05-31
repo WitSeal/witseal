@@ -10,19 +10,41 @@ boundary.
 WitSeal Phase 1 is a pre-release. Schemas and CLI surface may change before
 `v1.0`.
 
+## Recommended path: Witness → Understand → Enforce
+
+The fastest way to adopt WitSeal is to **start in Witness Mode**, learn what your
+agent actually does, and only then turn on enforcement. The CLI default stays
+**Gate Mode (deny-by-default)** — Witness is the recommended on-ramp, not a
+change to the default.
+
+1. **Witness** — run real actions through WitSeal with `--mode witness`. Nothing
+   is blocked: WitSeal records the policy decision — including a `deny` — and the
+   fact of execution, as evidence. You observe what your agent does, and what a
+   policy *would* decide, on real actions.
+2. **Understand** — inspect the receipts and verify the chain. See which actions
+   a policy would deny, where the risk concentrates, and refine the pack until
+   the policy matches what you observed.
+3. **Enforce** — drop `--mode witness`. **Gate Mode is the CLI default**
+   (deny-by-default): a `deny` now blocks execution, and the denial is recorded
+   as evidence.
+
+> Witness Mode executes the action — including one the policy would deny. Only
+> witness commands you are willing to actually run.
+
+## Install
+
+Install the `0.1.2` CLI from npm:
+
+```bash
+npm install -g @witseal/cli@0.1.2
+```
+
 ## Execution modes
 
 WitSeal Phase 1 has one receipt protocol and two execution modes, selected per
-invocation with `--mode`. **Gate is the default.**
-
-### Gate Mode (default, deny-by-default)
-
-Gate Mode places WitSeal in the agent's critical path. WitSeal classifies the
-action, evaluates policy, records any approval-gate outcome, and — when the
-policy decision is `deny` — the constraint blocks execution: the action does
-not run, and the denial is recorded as execution evidence. The action proceeds
-only after the pipeline clears. This is the deny-by-default posture, and the
-default with no `--mode`.
+invocation with `--mode`. **Gate is the default.** Witness Mode is described
+first below because it is the recommended starting point; at runtime, with no
+`--mode`, WitSeal is Gate.
 
 ### Witness Mode (explicit, non-default)
 
@@ -40,77 +62,78 @@ against the active policy; it does not author the policy or the authority behind
 an action. In Witness Mode in particular, WitSeal records what happened and what
 policy decided — it does not prevent a denied action from running.
 
-## Install
+### Gate Mode (default, deny-by-default)
 
-Install the `0.1.1` CLI from npm:
+Gate Mode places WitSeal in the agent's critical path. WitSeal classifies the
+action, evaluates policy, records any approval-gate outcome, and — when the
+policy decision is `deny` — the constraint blocks execution: the action does
+not run, and the denial is recorded as execution evidence. The action proceeds
+only after the pipeline clears. This is the deny-by-default posture, and the
+default with no `--mode`.
 
-```bash
-npm install -g @witseal/cli@0.1.1
-```
+## Walkthrough: Witness → Understand → Enforce
 
-## Run
+This reproducible walkthrough uses a tiny demo policy that denies a harmless
+command (`echo`) so the Witness/Gate difference is visible and safe to run.
 
-WitSeal is **deny-by-default**: with no active policy pack it refuses to run a
-command, and the refusal is itself recorded as evidence. You run an action
-*through* a policy pack. The core command is:
-
-```bash
-witseal exec -- <command> [args...]
-```
-
-See the complete, reproducible flow under **Minimal example** below.
-
-## Minimal example
-
-Add a policy pack, run a benign command through it, inspect the receipt, and
-verify the chain. This runs as-is.
-
-Create a minimal pack (allow by default; deny `rm -rf` on absolute paths):
+Create the demo policy (allow by default; deny `echo`):
 
 ```bash
-cat > quickstart-policy.json <<'EOF'
+export WITSEAL_DATA_DIR="$(mktemp -d)"
+cat > deny-echo-policy.json <<'EOF'
 {
   "schema_version": "witseal.policy.v0.1",
-  "pack_id": "quickstart",
+  "pack_id": "deny-echo-demo",
   "version": "1.0.0",
-  "description": "Quickstart: allow by default; deny rm -rf on absolute paths.",
+  "description": "Demo: deny echo, to show the Witness/Gate difference safely.",
   "rules": [
     {
-      "id": "deny-rm-rf-absolute",
-      "match": { "command_matches": "^rm\\s+(-[rRf]+\\s+)+(/|\\$HOME|~)" },
+      "id": "deny-echo",
+      "match": { "command_matches": "^echo\\b" },
       "decision": "deny",
-      "reason": "rm -rf on absolute paths is denied"
+      "reason": "echo denied (demo)"
     }
   ],
   "default_decision": "allow"
 }
 EOF
+witseal policy add ./deny-echo-policy.json
 ```
 
-Then add it, run a command, inspect the receipt, and verify:
+**1. Witness** — observe a would-be-denied action without blocking it:
 
 ```bash
-export WITSEAL_DATA_DIR="$(mktemp -d)"
-witseal policy add ./quickstart-policy.json
-witseal exec -- echo hello
-witseal receipt show 1
-witseal verify
-witseal evidence export --out ./quickstart-evidence.json
-witseal verify ./quickstart-evidence.json
+witseal exec --mode witness -- echo hello   # prints "hello"
 ```
 
-`policy add` registers the pack — without an active pack, deny-by-default refuses
-the action (and records the refusal as evidence). `exec` runs the action through
-the pack: `echo` is risk class C0, the pack allows it, it executes, and an
-execution receipt is written; `exec` prints the paired event and receipt ids.
-`receipt show` renders a receipt for inspection, addressed by its receipt id, the
-paired event id, a sequence number, or a unique prefix — here sequence `1` is the
-completed execution (`allowed_executed`) and sequence `0` is its
-`intent_recorded` precursor. `verify` checks the live evidence chain, and
-`evidence export` writes an evidence package that `verify` can check offline.
+The command runs even though the policy decides `deny`. WitSeal records the
+decision and the execution under the outcome `witnessed_executed` — distinct
+from a blocked `denied_by_policy`.
 
-A command the pack denies (e.g. `witseal exec -- rm -rf /`) is refused — and the
-denial is recorded as evidence too.
+**2. Understand** — inspect the evidence and verify the chain:
+
+```bash
+witseal receipt show 1   # outcome: witnessed_executed
+witseal verify           # VALID (live chain)
+witseal evidence export --out ./walkthrough-evidence.json
+witseal verify ./walkthrough-evidence.json
+```
+
+Sequence `1` is the completed Witness execution; sequence `0` is its
+`intent_recorded` precursor. Reading these receipts is how you learn which
+actions a policy would deny on real traffic, and refine the pack to match.
+
+**3. Enforce** — drop `--mode witness` and let the CLI default (Gate,
+deny-by-default) enforce the same policy:
+
+```bash
+witseal exec -- echo hello   # denied by policy; does not run; exits 100
+witseal verify               # VALID (the denial is recorded as evidence)
+```
+
+The same `deny` that Witness merely recorded now blocks execution. The two runs
+are distinguishable by outcome: `witnessed_executed` (Witness, executed) versus
+`denied_by_policy` (Gate, not executed).
 
 Because the chain is hash-linked, `witseal verify` surfaces tampering with a
 recorded receipt or event — and any break in the chain — as an evidence-

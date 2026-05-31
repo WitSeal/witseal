@@ -43,7 +43,7 @@ records what happened and what policy decided — it does not prevent a denied
 action from running.
 
 > Witness Mode (`--mode witness`) and the `witnessed_executed` outcome arrive in
-> `0.1.2`. The verified flow below is Gate Mode on `0.1.1`; the Witness
+> `0.1.2`. The verified flow below is Gate Mode on `0.1.2`; the Witness
 > demonstration is marked for `0.1.2` and is verified at that release.
 
 ## Demonstrable QA Flow
@@ -53,7 +53,7 @@ The positive claims below are bounded by this fresh-package flow:
 ```bash
 set -euo pipefail
 
-npm install -g @witseal/cli@0.1.1
+npm install -g @witseal/cli@0.1.2
 export WITSEAL_DATA_DIR="$(mktemp -d)"
 
 NO_POLICY_DATA_DIR="$(mktemp -d)"
@@ -162,9 +162,9 @@ verified at the `0.1.2` release.
 
 ## Positive Claims
 
-For the verified `@witseal/cli@0.1.1` flow, WitSeal Phase 1 claims:
+For the verified `@witseal/cli@0.1.2` flow, WitSeal Phase 1 claims:
 
-- `npm install -g @witseal/cli@0.1.1` installs the CLI.
+- `npm install -g @witseal/cli@0.1.2` installs the CLI.
 - With no active policy pack, `witseal exec -- <command>` fails closed, exits
   with code `100`, and records a `no_policy_configured` receipt.
 - `witseal policy add <file>` registers a local JSON policy pack that conforms
@@ -197,6 +197,18 @@ Verification means evidence continuity inside the local Phase 1 boundary:
 - exported evidence packages preserve those relationships.
 
 Verification does not extend beyond those evidence relationships.
+
+## Schema Evolution and Receipt Portability
+
+WitSeal's witness-event and receipt schemas evolve additively, and that
+evolution does not retroactively invalidate evidence already produced:
+
+> Historical receipts remain verifiable. Future runtimes may stop emitting
+> deprecated outcomes.
+
+A newer runtime may stop *emitting* an outcome value it has deprecated, but it
+continues to *verify* receipts that carry it. Evidence produced by an earlier
+runtime stays checkable within the documented boundary.
 
 ## Explicit Non-Claims
 
