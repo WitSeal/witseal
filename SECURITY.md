@@ -6,16 +6,21 @@ WitSeal is a trust-runtime product. Vulnerabilities in WitSeal undermine the tru
 
 ### Report channel
 
-Email **security@witseal** (replace with the actual address before public launch) with:
+Use the private GitHub Security Advisory form:
+
+<https://github.com/WitSeal/witseal/security/advisories/new>
+
+Include:
 
 - A description of the vulnerability
 - Steps to reproduce
 - Affected version(s)
 - Your name and contact info (for credit, optional)
 
-For sensitive reports, use our PGP key: see `security.txt` (key fingerprint will be published before v0.1).
+A dedicated security email address and PGP key are not currently published for
+Phase 1. Use the private advisory form for sensitive reports.
 
-**Do not file a public GitHub issue for security vulnerabilities.** GitHub Security Advisories are enabled on this repository — you can use the "Report a vulnerability" button on the Security tab as an alternative private channel.
+**Do not file a public GitHub issue for security vulnerabilities.**
 
 ### Response timeline
 
@@ -63,12 +68,22 @@ Starting with v0.1, every release is signed via [Sigstore Cosign](https://www.si
 To verify a release:
 
 ```bash
+gh release download v0.1.1 --repo WitSeal/witseal \
+  --pattern 'witseal-v0.1.1.tgz' \
+  --pattern 'witseal-v0.1.1.tgz.sig' \
+  --pattern 'witseal-v0.1.1.tgz.crt'
+
+# Release .crt assets are base64-wrapped PEM certificates.
+openssl base64 -d -A \
+  -in witseal-v0.1.1.tgz.crt \
+  -out witseal-v0.1.1.tgz.pem
+
 cosign verify-blob \
-  --certificate-identity-regexp 'https://github.com/witseal/witseal/.+' \
+  --certificate-identity 'https://github.com/WitSeal/witseal/.github/workflows/release.yml@refs/tags/v0.1.1' \
   --certificate-oidc-issuer 'https://token.actions.githubusercontent.com' \
-  --signature witseal-v0.1.0.tar.gz.sig \
-  --certificate witseal-v0.1.0.tar.gz.crt \
-  witseal-v0.1.0.tar.gz
+  --signature witseal-v0.1.1.tgz.sig \
+  --certificate witseal-v0.1.1.tgz.pem \
+  witseal-v0.1.1.tgz
 ```
 
 Releases also include:
@@ -77,7 +92,7 @@ Releases also include:
 - **CycloneDX SBOM** (`*.cdx.json`) listing all dependencies
 - **SHA-256 checksums** (`SHA256SUMS`) for all artifacts
 
-The exact verification one-liner is published in each release's notes.
+The exact verification commands are published in each release's notes.
 
 ---
 

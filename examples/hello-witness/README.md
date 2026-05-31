@@ -1,113 +1,154 @@
 # Hello, witness
 
-The 90-second tour of WitSeal.
+The 90-second tour of WitSeal for `@witseal/cli@0.1.1`.
 
 ## What this shows
 
 In about 90 seconds this walkthrough demonstrates:
 
-1. WitSeal mediates a benign command and produces a hash-chained receipt.
-2. WitSeal blocks a destructive command via a policy pack.
-3. The denial itself is recorded as evidence.
-4. The chain can be verified independently.
+1. WitSeal loads a local policy pack.
+2. WitSeal mediates an allowed command and produces a hash-chained receipt.
+3. WitSeal denies a destructive command through policy.
+4. The denial itself is recorded as evidence.
+5. The live chain and exported evidence package can be verified.
+6. Tampering with the exported package is reported as `INVALID`.
 
-You will need a working WitSeal install (`npm install -g @witseal/cli`, or `npm link` from a local checkout).
+You will need a working WitSeal install:
+
+```bash
+npm install -g @witseal/cli@0.1.1
+```
 
 ## The walkthrough
 
-### 1. Run a benign command
+### 1. Start with a fresh data directory
+
+```bash
+export WITSEAL_DATA_DIR="$(mktemp -d)"
+```
+
+This keeps the sequence numbers below reproducible.
+
+### 2. Create a quickstart policy
+
+The npm package may not include reference policy-pack files. Create the policy
+used by this walkthrough locally:
+
+```bash
+cat > quickstart-policy.json <<'EOF'
+{
+  "schema_version": "witseal.policy.v0.1",
+  "pack_id": "quickstart",
+  "version": "1.0.0",
+  "description": "Quickstart: allow by default; deny rm -rf on absolute paths.",
+  "rules": [
+    {
+      "id": "deny-rm-rf-absolute",
+      "match": { "command_matches": "^rm\\s+(-[rRf]+\\s+)+(/|\\$HOME|~)" },
+      "decision": "deny",
+      "reason": "rm -rf on absolute paths is denied"
+    }
+  ],
+  "default_decision": "allow"
+}
+EOF
+```
+
+### 3. Add the policy pack
+
+```bash
+witseal policy add ./quickstart-policy.json
+```
+
+WitSeal is deny-by-default: without an active policy pack, `exec` refuses to run
+the command and records the refusal as evidence.
+
+### 4. Run an allowed command
 
 ```bash
 witseal exec -- echo "hello, witness"
 ```
 
-You will see:
+You will see the command output and a WitSeal footer:
+
 ```
 hello, witness
 [witseal: event=evt_<id> receipt=rcpt_<id> risk=C0 outcome=allowed_executed]
 ```
 
-The `echo` ran. WitSeal classified it as C0 (informational), the default policy allowed it, and an evidence chain entry was written.
+The allowed execution writes two witness events in this fresh flow: sequence `0`
+is `intent_recorded`, and sequence `1` is the completed execution.
 
-### 2. Inspect the witness event log
+### 5. Inspect the execution receipt
 
 ```bash
-witseal events list
+witseal receipt show 1
 ```
 
-You should see one event with sequence 0, decision `allow`, outcome `allowed_executed`.
+`receipt show` answers "what happened?" for the completed execution receipt.
 
-### 3. Verify the chain
+### 6. Verify the live chain
 
 ```bash
 witseal verify
 ```
 
-Expected output:
+Expected shape:
+
 ```
-witseal: chain verified ✓
+witseal: VALID ... (chain)
          segment: default
-         events:  1
+         events:  2
 ```
 
-### 4. Add the destructive-block policy pack
-
-```bash
-witseal policy add ./examples/policy-packs/block-destructive.json
-```
-
-### 5. Try a destructive command
+### 7. Try a denied command
 
 ```bash
 witseal exec -- rm -rf /tmp/witseal-test-target
 ```
 
-You will see:
+You will see a denial diagnostic:
+
 ```
 witseal: action denied by policy (rule deny-rm-rf-absolute, event evt_<id>)
-         reason: rm -rf on absolute paths is denied without exception
+         reason: rm -rf on absolute paths is denied
 ```
 
-The command did **not** execute. But the *attempt* is recorded — silence is not consent, and silence about denial is also not acceptable.
+The command did not execute. The denied attempt is recorded as evidence and
+`witseal exec` exits with code `100`.
 
-### 6. Confirm the denial is in the chain
-
-```bash
-witseal events list
-```
-
-You will see two events now: the original `echo` (sequence 0, allowed) and the denied `rm -rf` (sequence 1, decision `deny`, outcome `denied_by_policy`).
-
-### 7. Replay the denial event
-
-```bash
-witseal replay 1
-```
-
-This walks through the recorded event, regenerates its receipt, verifies all hash linkages, and prints a summary.
-
-### 8. Export an evidence package
+### 8. Export and verify an evidence package
 
 ```bash
 witseal evidence export --out ./hello-witness-evidence.json
+witseal verify ./hello-witness-evidence.json
 ```
 
-The exported file is independently verifiable. Anyone with the package alone (no access to your `.witseal` directory) can reconstruct and verify the chain head.
+The exported package is independently verifiable from the package contents.
+
+### 9. Confirm tamper detection
+
+```bash
+node -e "const fs=require('node:fs'); const p='hello-witness-evidence.json'; const j=JSON.parse(fs.readFileSync(p,'utf8')); j.events[1].agent_identifier='tampered'; fs.writeFileSync('hello-witness-evidence-tampered.json', JSON.stringify(j,null,2));"
+witseal verify ./hello-witness-evidence-tampered.json
+```
+
+Expected result: `INVALID`.
 
 ## What just happened
 
 You produced two pieces of evidence:
 
-- One receipt for an *allowed* action you actually ran
-- One receipt for a *denied* attempt that never ran
+- One completed execution receipt for an allowed action you ran
+- One denial receipt for an attempt that policy refused
 
-Both are hash-linked. Tampering with either is detectable. Both are exportable as evidence.
+Both are hash-linked. Tampering with the exported evidence package is detectable.
 
 This is the WitSeal Phase 1 wedge: every significant agent action — including the ones policy refuses to allow — becomes a verifiable artifact.
 
 ## Next
 
 - Read [`docs/ARCHITECTURE.md`](../../docs/ARCHITECTURE.md) for the full runtime pipeline
+- Read [`docs/CLAIM_BOUNDARY.md`](../../docs/CLAIM_BOUNDARY.md) for the public claim boundary
 - Read [`docs/adr/`](../../docs/adr/) for the design decisions
-- Try the other policy packs in [`examples/policy-packs/`](../policy-packs/)
 - Run an actual coding agent through `witseal exec` (see [`src/adapters/README.md`](../../src/adapters/README.md))
