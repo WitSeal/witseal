@@ -44,7 +44,7 @@ action from running.
 
 > Witness Mode (`--mode witness`) and the `witnessed_executed` outcome arrive in
 > `0.1.2`. The verified flow below is Gate Mode on `0.1.2`; the Witness
-> demonstration is marked for `0.1.2` and is verified at that release.
+> demonstration is verified in `0.1.2` — the flow is confirmed released.
 
 ## Demonstrable QA Flow
 
@@ -151,14 +151,19 @@ else
   test "$?" -eq 100
 fi
 
-# Witness: the same deny is recorded, but the action executes.
-witseal exec --mode witness -- echo hi   # prints "hi"; outcome witnessed_executed
-witseal receipt show 1                   # outcome witnessed_executed
+# Witness: run in a FRESH data dir (isolated from the Gate demo above) so
+# receipt show 0 returns exactly one event — the witnessed_executed outcome.
+WITNESS_DATA_DIR="$(mktemp -d)"
+WITSEAL_DATA_DIR="$WITNESS_DATA_DIR" witseal exec --mode witness -- echo witness-demo
+WITSEAL_DATA_DIR="$WITNESS_DATA_DIR" witseal receipt show 0
+WITSEAL_DATA_DIR="$WITNESS_DATA_DIR" witseal verify
 ```
 
 The two runs are distinguishable by outcome: `denied_by_policy` (Gate, not
-executed) versus `witnessed_executed` (Witness, executed). This Witness run is
-verified at the `0.1.2` release.
+executed) versus `witnessed_executed` (Witness, executed). The Witness
+demonstration uses a fresh data dir so `receipt show 0` shows `witnessed_executed`
+as the sole event in that chain, without a `pending` precursor from the Gate run.
+This Witness flow is verified at the `0.1.2` release.
 
 ## Positive Claims
 
