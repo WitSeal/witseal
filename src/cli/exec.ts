@@ -15,6 +15,7 @@ import { existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { classify, CLASSIFIER_VERSION } from '../risk/classifier.js';
 import { PolicyEngine } from '../policy/engine.js';
+import { applyConstraint, type ExecutionMode } from '../policy/enforcement.js';
 import { EventLog } from '../witness/event-log.js';
 import {
   emitExecutionComplete,
@@ -57,9 +58,22 @@ export interface ExecOptions {
   timeoutMs: number;
   dataDir: string;
   segmentId: string;
+  /**
+   * Execution mode. Default `gate` (deny-by-default): a `deny` decision blocks
+   * execution. `witness` does not enforce — the policy decision is recorded as
+   * evidence and the action executes, under a distinct `witnessed_executed`
+   * outcome (never `denied_by_policy`).
+   */
+  mode?: ExecutionMode;
 }
 
 export async function runExec(opts: ExecOptions): Promise<number> {
+  // Mode routing (clean-seam product boundary). Default Gate (deny-by-default).
+  // Gate enforces the policy decision (a `deny` blocks); Witness records the
+  // decision as evidence but never enforces — no block, no approval prompt —
+  // and the action executes under a distinct `witnessed_executed` outcome.
+  const mode: ExecutionMode = opts.mode ?? 'gate';
+
   // 0. Recovery: if a prior invocation crashed between intent_recorded
   //    and execution_complete, the chain tail is an unpaired `pending`.
   //    Emit `execution_lost` before any new work so the chain captures
@@ -117,8 +131,13 @@ export async function runExec(opts: ExecOptions): Promise<number> {
   const noPolicyLoaded = packsLoaded === 0;
   const noPolicyEscapeActive =
     noPolicyLoaded && process.env[ENV_UNSAFE_ALLOW_NO_POLICY] === '1';
+  // Q2 (RFC-0002): Witness Mode does not enforce, so a missing policy pack is
+  // recorded as evidence (`no_policy_configured`) and the action executes — no
+  // env opt-in needed. Gate Mode stays fail-closed (deny-by-default).
+  const noPolicyWitness = noPolicyLoaded && mode === 'witness';
+  const noPolicyProceed = noPolicyEscapeActive || noPolicyWitness;
 
-  if (noPolicyLoaded && !noPolicyEscapeActive) {
+  if (noPolicyLoaded && !noPolicyProceed) {
     const eventLog = new EventLog({ root: opts.dataDir, segmentId: opts.segmentId });
     const noPolicyDecision: PolicyDecision = {
       schema_version: 'witseal.policy.v0.1',
@@ -157,9 +176,17 @@ export async function runExec(opts: ExecOptions): Promise<number> {
 
   const decision = engine.evaluate(classifiedIntent);
 
-  // 4. Approval if required
+  // Constraint contour (clean-seam product boundary): does this mode enforce the
+  // policy decision? Gate enforces (a `deny` blocks; `require-approval` prompts);
+  // Witness records the decision as evidence but never enforces. Computed BEFORE
+  // approval so Witness skips the prompt entirely.
+  const constraint = applyConstraint(decision, mode);
+
+  // 4. Approval — Gate Mode only. Witness does not enforce, so it does not
+  //    prompt; the `require-approval` decision is recorded as evidence and the
+  //    action executes.
   let approval = null;
-  if (decision.outcome === 'require-approval') {
+  if (mode === 'gate' && decision.outcome === 'require-approval') {
     approval = await obtainApproval(classifiedIntent, decision);
     if (approval.outcome !== 'approved') {
       // Denied by approval → emit witness, return non-zero
@@ -179,8 +206,9 @@ export async function runExec(opts: ExecOptions): Promise<number> {
     }
   }
 
-  // 5. Denied by policy
-  if (decision.outcome === 'deny') {
+  // 5. Constraint block — Gate Mode blocks a `deny` here. In Witness Mode
+  //    constraint.block is always false (recorded as evidence, executed below).
+  if (constraint.block) {
     const eventLog = new EventLog({ root: opts.dataDir, segmentId: opts.segmentId });
     const event = await emitWitnessEvent(eventLog, {
       classifiedIntent,
@@ -224,9 +252,9 @@ export async function runExec(opts: ExecOptions): Promise<number> {
   //    outcome stays `no_policy_configured` regardless of how mediateShell
   //    fared — evidence consumers MUST be able to tell that this action
   //    ran without policy mediation.
-  const outcome: WitnessOutcome = noPolicyEscapeActive
+  const outcome: WitnessOutcome = noPolicyProceed
     ? 'no_policy_configured'
-    : computeOutcome(decision.outcome, approval !== null, execResult);
+    : computeOutcome(decision.outcome, approval !== null, execResult, mode);
 
   // 8. Phase B: emit `execution_complete` AFTER
   //    the mediator returns, referencing the Phase A intent_recorded so
@@ -270,15 +298,23 @@ export async function runExec(opts: ExecOptions): Promise<number> {
 function computeOutcome(
   policyOutcome: 'allow' | 'deny' | 'require-approval',
   approved: boolean,
-  result: ExecutionResult
+  result: ExecutionResult,
+  mode: ExecutionMode
 ): WitnessOutcome {
   const hadError = result.exit_code !== 0 || result.spawn_error !== null;
   if (policyOutcome === 'allow') {
     return hadError ? 'allowed_executed_with_error' : 'allowed_executed';
   }
+  if (mode === 'witness') {
+    // Witness executed a non-allow decision (`deny` or `require-approval`)
+    // without enforcing it. Recorded under a distinct outcome — never
+    // `denied_by_policy` (which implies the action did not run).
+    return hadError ? 'witnessed_executed_with_error' : 'witnessed_executed';
+  }
   if (approved) {
     return hadError ? 'approved_executed_with_error' : 'approved_executed';
   }
-  // Should not reach here if denied, but a safety default:
+  // Gate Mode: a `deny` is blocked before execution, so this is unreachable
+  // for deny; a safety default.
   return 'denied_by_policy';
 }
