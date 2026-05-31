@@ -1,7 +1,7 @@
 # RFC-0002 — Witness Mode outcome: `witnessed_executed`
 
 **Status:** Draft — open questions resolved by founder 2026-05-31. Awaiting
-TS + Rust signatures and tested support (ADR-0008 D3) before release.
+TS + Rust signatures and tested support (cross-track wire-format coordination process) before release.
 
 **Tracks:** TypeScript (`@witseal/cli`) · Rust (reference implementation)
 
