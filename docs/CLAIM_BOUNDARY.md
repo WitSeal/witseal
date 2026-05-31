@@ -1,7 +1,7 @@
 # WitSeal Claim Boundary
 
 Status: Phase 1 public claim boundary
-Verified against: `@witseal/cli@0.1.2`
+Verified against: `@witseal/cli@0.1.3`
 
 WitSeal Phase 1 makes a narrow claim: the CLI can mediate actions through a
 policy pack, record witness events and execution receipts, export an evidence
@@ -43,8 +43,8 @@ records what happened and what policy decided — it does not prevent a denied
 action from running.
 
 > Witness Mode (`--mode witness`) and the `witnessed_executed` outcome arrive in
-> `0.1.2`. The verified flow below is Gate Mode on `0.1.2`; the Witness
-> demonstration is verified in `0.1.2` — the flow is confirmed released.
+> `0.1.3`. The verified flow below is Gate Mode on `0.1.3`; the Witness
+> demonstration is verified in `0.1.3` — the flow is confirmed released.
 
 ## Demonstrable QA Flow
 
@@ -53,7 +53,7 @@ The positive claims below are bounded by this fresh-package flow:
 ```bash
 set -euo pipefail
 
-npm install -g @witseal/cli@0.1.2
+npm install -g @witseal/cli@0.1.3
 export WITSEAL_DATA_DIR="$(mktemp -d)"
 
 NO_POLICY_DATA_DIR="$(mktemp -d)"
@@ -115,7 +115,7 @@ The expected-failure checks above must exit with the listed codes.
 This flow creates its own policy file. It does not rely on policy-pack paths
 being present inside the npm package.
 
-### Witness Mode (`--mode witness`, from `0.1.2`)
+### Witness Mode (`--mode witness`, from `0.1.3`)
 
 Witness Mode does not block: it executes an action the policy would deny and
 records it under `witnessed_executed`, distinct from a blocked `denied_by_policy`
@@ -163,13 +163,13 @@ The two runs are distinguishable by outcome: `denied_by_policy` (Gate, not
 executed) versus `witnessed_executed` (Witness, executed). The Witness
 demonstration uses a fresh data dir so `receipt show 0` shows `witnessed_executed`
 as the sole event in that chain, without a `pending` precursor from the Gate run.
-This Witness flow is verified at the `0.1.2` release.
+This Witness flow is verified at the `0.1.3` release.
 
 ## Positive Claims
 
-For the verified `@witseal/cli@0.1.2` flow, WitSeal Phase 1 claims:
+For the verified `@witseal/cli@0.1.3` flow, WitSeal Phase 1 claims:
 
-- `npm install -g @witseal/cli@0.1.2` installs the CLI.
+- `npm install -g @witseal/cli@0.1.3` installs the CLI.
 - With no active policy pack, `witseal exec -- <command>` fails closed, exits
   with code `100`, and records a `no_policy_configured` receipt.
 - `witseal policy add <file>` registers a local JSON policy pack that conforms
