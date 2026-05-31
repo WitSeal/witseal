@@ -5,6 +5,7 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -18,23 +19,21 @@ jobs:
       - name: Checkout witseal
         uses: actions/checkout@v4
 
-      - name: Setup SSH for compat-corpus deploy key
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.COMPAT_CORPUS_DEPLOY_KEY }}" > ~/.ssh/compat_corpus_deploy_key
-          chmod 600 ~/.ssh/compat_corpus_deploy_key
-          ssh-keyscan github.com >> ~/.ssh/known_hosts
-          cat >> ~/.ssh/config <<'EOF'
-          Host github-compat-corpus
-            HostName github.com
-            User git
-            IdentityFile ~/.ssh/compat_corpus_deploy_key
-            IdentitiesOnly yes
-          EOF
+      - name: Mint compat-corpus read token (GitHub App)
+        uses: actions/create-github-app-token@v1
+        id: app-token
+        with:
+          app-id: ${{ secrets.COMPAT_READER_APP_ID }}
+          private-key: ${{ secrets.COMPAT_READER_APP_PRIVATE_KEY }}
+          owner: WitSeal
+          repositories: compat-corpus
 
-      - name: Clone compat-corpus (private)
-        run: |
-          git clone git@github-compat-corpus:WitSeal/compat-corpus.git /tmp/compat-corpus
+      - name: Checkout compat-corpus (private, via App token)
+        uses: actions/checkout@v4
+        with:
+          repository: WitSeal/compat-corpus
+          token: ${{ steps.app-token.outputs.token }}
+          path: compat-corpus
 
       - name: Setup Node 22
         uses: actions/setup-node@v4
@@ -45,5 +44,5 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run compat-corpus parity check
-        run: node --import tsx scripts/compat-corpus-check.mjs /tmp/compat-corpus/chains/v0.1
+      - name: Run compat-corpus parity check (chains 01-05)
+        run: node --import tsx scripts/compat-corpus-check.mjs compat-corpus/chains/v0.1
