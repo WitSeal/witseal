@@ -106,6 +106,9 @@ function buildExecutionLostDraft(
     policy_decision: abandoned.policy_decision,
     approval: abandoned.approval,
     execution_result: null,
+    // DEPRECATED-FOR-EMISSION (RFC-0003 Decision B): execution_lost is retained
+    // for historical-receipt compatibility only. Do not extend this path for new
+    // v0.1 runtimes; 2PC → witseal.witness.v0.2.
     outcome: 'execution_lost',
     receipt_id: generateReceiptId(),
     intent_recorded_event_id: abandoned.event_id,
