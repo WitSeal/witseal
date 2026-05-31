@@ -38,7 +38,7 @@ For trivial changes (typo fixes, doc improvements, dependency bumps), open a PR 
 - **Documentation improvements** — corrections, clarifications, missing examples
 - **Performance improvements** — with benchmark numbers and reproducible methodology
 - **New adapters** for AI coding agents (see [`src/adapters/README.md`](./src/adapters/README.md))
-- **Reference policy packs** — for common scenarios not yet covered in `examples/policy-packs/`
+- **Reference policy packs** — for common scenarios not yet covered by existing examples
 - **Translations** of user-facing text (after the API stabilizes; not yet)
 - **Test coverage** for under-tested areas
 
@@ -87,7 +87,7 @@ npm install
 npm test
 ```
 
-If `npm test` shows `Tests 45 passed (45)` — your environment is ready.
+If `npm test` passes, your environment is ready.
 
 To run the CLI from source during development:
 
