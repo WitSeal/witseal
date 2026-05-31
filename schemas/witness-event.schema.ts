@@ -51,6 +51,9 @@ export const TimestampSchema = z
  * `denied_by_policy`, preserving the invariant that `denied_by_policy` implies
  * the action did not run (`execution_result = null`).
  *
+ * RFC-0003 Decision A: `no_policy_configured` is a WitnessOutcome (witness-path
+ * runtime state, not a PolicyOutcome). §7.1 placement guard unchanged.
+ *
  * §7.1 placement guard: `no_policy_configured` is valid ONLY as a witness
  * event outcome (here). It MUST NOT appear as a policy rule decision value
  * (`PolicyRuleSchema.decision`) or as a policy pack default decision
@@ -71,10 +74,13 @@ export const WitnessOutcomeSchema = z.enum([
   // (which implies the action did NOT run; execution_result=null).
   'witnessed_executed',
   'witnessed_executed_with_error',
-  // Two-phase commit so the chain records the action BEFORE execution
-  // attempts and can recover from a crash mid-flight.
-  'pending',          // emitted as `intent_recorded` (Phase A), execution_result=null
-  'execution_lost',   // emitted on next startup when a `pending` tail has no successor
+  // Deprecated-for-emission under witseal.witness.v0.1 (RFC-0003 Decision B).
+  // Retained for READ/VERIFY only — historical @witseal/cli@0.1.2-issued events
+  // carry these values and must remain verifiable. New runtimes MUST NOT emit
+  // pending or execution_lost under v0.1. 2PC semantics → witseal.witness.v0.2
+  // (separate forthcoming RFC).
+  'pending',
+  'execution_lost',
 ]);
 
 export type WitnessOutcome = z.infer<typeof WitnessOutcomeSchema>;

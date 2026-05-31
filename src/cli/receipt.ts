@@ -250,6 +250,7 @@ function renderV01(receipt: ExecutionReceipt, event: WitnessEvent | undefined): 
   lines.push(`  chain segment:   ${receipt.chain_segment_id}`);
   lines.push(`  finalized at:    ${receipt.finalized_at}`);
   lines.push(`  outcome:         ${receipt.outcome}`);
+  lines.push(`  mode:            ${deriveMode(receipt.outcome)}`);
   lines.push('');
   lines.push('  Hashes:');
   lines.push(`    receipt_hash:          ${receipt.receipt_hash}`);
@@ -269,6 +270,7 @@ function renderV02(receipt: ExecutionReceiptV02, event: WitnessEvent | undefined
   lines.push(`  chain segment:   ${receipt.chain_segment_id}`);
   lines.push(`  finalized at:    ${receipt.finalized_at}`);
   lines.push(`  outcome:         ${receipt.outcome}`);
+  lines.push(`  mode:            ${deriveMode(receipt.outcome)}`);
   lines.push('');
   lines.push('  Hashes:');
   lines.push(`    receipt_hash:          ${receipt.receipt_hash}`);
@@ -304,6 +306,25 @@ function renderV02(receipt: ExecutionReceiptV02, event: WitnessEvent | undefined
   }
   lines.push(renderActionBlock(event));
   return lines.join('\n') + '\n';
+}
+
+/**
+ * Derive the execution mode from the outcome value. Witness outcomes
+ * (`witnessed_executed`, `witnessed_executed_with_error`, and
+ * `no_policy_configured` when execution proceeded) indicate Witness Mode;
+ * all other outcomes indicate Gate Mode.
+ *
+ * Defect 4 (RFC-0003): additive display field — no schema change required.
+ */
+function deriveMode(outcome: string): 'witness' | 'gate' {
+  switch (outcome) {
+    case 'witnessed_executed':
+    case 'witnessed_executed_with_error':
+    case 'no_policy_configured':
+      return 'witness';
+    default:
+      return 'gate';
+  }
 }
 
 /**
