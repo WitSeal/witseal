@@ -11,7 +11,7 @@
 
 import type { Intent, RiskClass } from '../../schemas/intent.schema.js';
 
-export const CLASSIFIER_VERSION = 'witseal-classifier-1.0';
+export const CLASSIFIER_VERSION = 'witseal-classifier-1.1';
 
 export interface ClassificationResult {
   risk_class: RiskClass;
@@ -48,6 +48,9 @@ const C4_PATTERNS: Array<{ pattern: RegExp; reason: string }> = [
   { pattern: /:\(\)\s*\{/, reason: 'shell fork bomb pattern detected' },
   { pattern: /\bshutdown\b|\breboot\b|\bhalt\b/, reason: 'system shutdown command' },
   { pattern: /\biptables\b|\bnft\b/, reason: 'firewall modification' },
+  // D8 shell-bypass: opaque remote/encoded execution is treated as catastrophic.
+  { pattern: /\b(curl|wget|fetch)\b.*\|\s*(bash|sh|zsh|dash)\b/, reason: 'shell-bypass: network download piped to a shell (remote code execution)' },
+  { pattern: /\bbase64\b.*\|\s*(bash|sh|zsh|dash)\b/, reason: 'shell-bypass: base64 payload piped to a shell (opaque execution)' },
 ];
 
 const C3_PATTERNS: Array<{ pattern: RegExp; reason: string }> = [
@@ -57,6 +60,13 @@ const C3_PATTERNS: Array<{ pattern: RegExp; reason: string }> = [
   { pattern: /\bdocker\s+(run|exec|push)\b/, reason: 'container execution or registry push' },
   { pattern: /\bssh\b/, reason: 'remote shell access' },
   { pattern: /\brm\s+-[rRf]/, reason: 'recursive removal' },
+  // D8 shell-bypass: nested interpreters hide the real action from structural
+  // classification, so the invocation itself is elevated (policy can still allow).
+  { pattern: /\b(bash|sh|zsh|dash|ksh)\s+-[A-Za-z]*c\b/, reason: 'shell-bypass: nested shell -c invocation, opaque to classification' },
+  { pattern: /\beval\b/, reason: 'shell-bypass: eval of a dynamic string' },
+  { pattern: /\b(python3?|ruby|perl|node|deno|php)\s+-(c|e)\b/, reason: 'shell-bypass: inline interpreter code (-c/-e)' },
+  { pattern: /\bnode\s+--eval\b/, reason: 'shell-bypass: node --eval inline code' },
+  { pattern: /\|\s*(bash|sh|zsh|dash)\b/, reason: 'shell-bypass: command piped to a shell' },
 ];
 
 const C2_PATTERNS: Array<{ pattern: RegExp; reason: string }> = [
