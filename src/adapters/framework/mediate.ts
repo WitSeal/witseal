@@ -12,8 +12,10 @@
  * mediation primitive is shared: `mediateShellCommand` maps a freeform shell
  * command into a `runExec` invocation, captures the command's stdout, and
  * returns a result a framework tool can hand straight back to the model. The
- * per-framework registration shims (a few lines of `tool({...})`) live in the
- * `langgraph/` and `openai-agents/` READMEs and call this core.
+ * tool-shaped half — the shared input schema and the tool body — lives in
+ * `tool.ts`; the per-framework shims (`langgraph/tool.ts`, `openai-agents/tool.ts`)
+ * arrange those shared pieces into the exact object each framework's `tool()`
+ * helper expects, so the only line an integrator writes is the framework binding.
  *
  * This module has no framework dependency and is unit-testable on its own.
  */
