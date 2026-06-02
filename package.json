@@ -23,7 +23,8 @@
   "types": "./dist/index.d.ts",
   "bin": {
     "witseal": "dist/src/cli/index.js",
-    "witseal-mcp": "dist/src/adapters/mcp/bin.js"
+    "witseal-mcp": "dist/src/adapters/mcp/bin.js",
+    "witseal-witness-claude-code": "dist/src/adapters/claude-code/bin.js"
   },
   "exports": {
     "./exec": {
@@ -41,6 +42,10 @@
     "./adapters/framework": {
       "types": "./dist/src/adapters/framework/mediate.d.ts",
       "import": "./dist/src/adapters/framework/mediate.js"
+    },
+    "./adapters/claude-code": {
+      "types": "./dist/src/adapters/claude-code/witness.d.ts",
+      "import": "./dist/src/adapters/claude-code/witness.js"
     },
     "./package.json": "./package.json"
   },
