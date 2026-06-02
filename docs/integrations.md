@@ -33,14 +33,16 @@ today (capability ≠ a shipped turnkey adapter).
 | Integration | Gate | Witness | Witnessed Execution | Highest level | WitSeal adapter |
 |---|:---:|:---:|:---:|---|---|
 | OpenCode | ✅ | ✅ | ✅ | **Witnessed Execution** | shipped |
-| LangGraph + OpenAI Agents SDK | ✅ | ✅ | ✅ | **Witnessed Execution** | shipped |
-| MCP — WitSeal's own tools | ✅ | ✅ | ✅ | **Witnessed Execution** | shipped |
+| LangGraph | ✅ | ✅ | ✅ | **Witnessed Execution** | shipped |
+| OpenAI Agents SDK | ✅ | ✅ | ✅ | **Witnessed Execution** | shipped |
+| WitSeal MCP | ✅ | ✅ | ✅ | **Witnessed Execution** | shipped |
+| Temporal | ✅ | ✅ | ✅ | **Witnessed Execution** | shipped |
 | Claude Code | ✅ opt-in¹ | ✅ | — | **Witness** | Witness shipped |
 | Cursor | ✅ opt-in¹ | ✅ | — | **Witness** | planned |
 | Codex | ✅ opt-in¹ | ✅ | — | **Witness** | planned |
 
-For the own-execute integrations (OpenCode, LangGraph + OpenAI Agents SDK, MCP
-own-tools), WitSeal runs the action through `runExec`, so all three capabilities
+For the own-execute integrations (OpenCode, LangGraph, OpenAI Agents SDK,
+WitSeal MCP, and Temporal), WitSeal runs the action through `runExec`, so all three capabilities
 are reachable: Gate is the default mode (deny-by-default), Witness Mode is
 available (`--mode witness`), and the action's receipt is independently
 verifiable — Witnessed Execution.
@@ -61,14 +63,14 @@ hook). Witnessed Execution is not reachable on a sealed host.
 Because Witnessed Execution is a stronger record. In a sealed host you get
 Witness today — each action's result is recorded as evidence, on the host's
 word. Routing the action through an own-execute integration (OpenCode, a
-framework tool, or WitSeal's own MCP tools) lets WitSeal run it and produce a
+framework tool, or WitSeal MCP) lets WitSeal run it and produce a
 receipt that is **independently verifiable** — the next level of evidence, not
 the observation you already had.
 
 ## Availability today
 
-- **Shipped (own-execute, Witnessed Execution):** OpenCode, LangGraph + OpenAI
-  Agents SDK, MCP own-tools.
+- **Shipped (own-execute, Witnessed Execution):** OpenCode, LangGraph, OpenAI
+  Agents SDK, WitSeal MCP, Temporal.
 - **Shipped (Witness):** Claude Code (`PostToolUse`).
 - **Planned (Witness-level, sealed hosts):** Cursor, Codex.
 

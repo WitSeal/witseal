@@ -1,14 +1,14 @@
-# MCP server (`witseal-mcp`)
+# WitSeal MCP (`witseal-mcp`)
 
-Exposes WitSeal's witnessed execution as a [Model Context
+**WitSeal MCP** exposes WitSeal's witnessed execution as a [Model Context
 Protocol](https://modelcontextprotocol.io) server, so **any MCP client** —
 Claude Desktop, Claude Code, Cursor, and others — can run shell commands that
 pass through the WitSeal pipeline (classify → policy → mediate → witness →
 receipt) before they run.
 
 This is the host-independent integration: instead of one adapter per agent, an
-MCP client points at `witseal-mcp` and gets witnessed execution from whatever
-model it drives.
+MCP client points at the `witseal-mcp` server and gets witnessed execution from
+whatever model it drives.
 
 ## Model (Level 3 — WitSeal owns execution)
 
