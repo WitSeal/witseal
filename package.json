@@ -43,6 +43,14 @@
       "types": "./dist/src/adapters/framework/mediate.d.ts",
       "import": "./dist/src/adapters/framework/mediate.js"
     },
+    "./adapters/langgraph": {
+      "types": "./dist/src/adapters/langgraph/tool.d.ts",
+      "import": "./dist/src/adapters/langgraph/tool.js"
+    },
+    "./adapters/openai-agents": {
+      "types": "./dist/src/adapters/openai-agents/tool.d.ts",
+      "import": "./dist/src/adapters/openai-agents/tool.js"
+    },
     "./adapters/claude-code": {
       "types": "./dist/src/adapters/claude-code/witness.d.ts",
       "import": "./dist/src/adapters/claude-code/witness.js"
