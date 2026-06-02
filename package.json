@@ -25,6 +25,21 @@
     "witseal": "dist/src/cli/index.js",
     "witseal-mcp": "dist/src/adapters/mcp/bin.js"
   },
+  "exports": {
+    "./exec": {
+      "types": "./dist/src/cli/exec.d.ts",
+      "import": "./dist/src/cli/exec.js"
+    },
+    "./adapters/opencode": {
+      "types": "./dist/src/adapters/opencode/mediate.d.ts",
+      "import": "./dist/src/adapters/opencode/mediate.js"
+    },
+    "./adapters/mcp": {
+      "types": "./dist/src/adapters/mcp/mediate.d.ts",
+      "import": "./dist/src/adapters/mcp/mediate.js"
+    },
+    "./package.json": "./package.json"
+  },
   "files": [
     "dist/",
     "docs/CLAIM_BOUNDARY.md",
