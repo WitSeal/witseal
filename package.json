@@ -38,6 +38,10 @@
       "types": "./dist/src/adapters/mcp/mediate.d.ts",
       "import": "./dist/src/adapters/mcp/mediate.js"
     },
+    "./adapters/framework": {
+      "types": "./dist/src/adapters/framework/mediate.d.ts",
+      "import": "./dist/src/adapters/framework/mediate.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [
