@@ -8,6 +8,61 @@ Pre-1.0 versions: schemas and CLI surface are unstable. Minor versions may intro
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-06-02
+
+> Draft — release date stamped by the maintainer at publish. This release is the
+> integration wave: WitSeal gains first-class adapters across the agent
+> ecosystem, all over the existing `runExec` pipeline with no wire-format change
+> (golden receipt unchanged; no schema-version bump).
+
+### Added
+
+- **Integration adapters (the witnessed-execution wave).** Each brings an agent's
+  shell actions through the WitSeal pipeline (classify → policy → mediate →
+  witness → receipt) and is documented in `docs/integrations.md` with its level:
+  - **OpenCode** — *Witnessed Execution (Level 3)*. A custom `bash` tool that
+    shadows the built-in and own-executes via `runExec`; pinned to a tagged
+    OpenCode release. Export `@witseal/cli/adapters/opencode`.
+  - **WitSeal MCP server** (`witseal-mcp`) — *Witnessed Execution (Level 3),
+    host-independent*. Exposes WitSeal's witnessed `shell` tool over the Model
+    Context Protocol (newline-delimited JSON-RPC over stdio) so any MCP client
+    gets witnessed execution. Export `@witseal/cli/adapters/mcp`.
+  - **LangGraph** and **OpenAI Agents SDK** — *Witnessed Execution (Level 3)*.
+    Author-the-tool shims over a shared `mediateShellCommand` core. Exports
+    `@witseal/cli/adapters/langgraph`, `.../openai-agents`, `.../framework`.
+  - **Temporal** — *Witnessed Execution (Level 3)* via a `witnessedShell`
+    Activity that own-executes through `runExec`, plus an optional
+    `ActivityInboundCallsInterceptor` for *Witness (Level 2)* observation of
+    activities you do not own. Export `@witseal/cli/adapters/temporal`.
+  - **Claude Code** — *Witness (Level 2)*. A `PostToolUse` hook
+    (`witseal-witness-claude-code`) that records the host-reported result as a
+    witness event; observe-only, does not execute. Export
+    `@witseal/cli/adapters/claude-code`.
+- New executables: `witseal-mcp`, `witseal-witness-claude-code`.
+- New package export subpaths for every adapter (`./adapters/*`).
+
+### Changed
+
+- **Risk classifier shell-bypass hardening** (`CLASSIFIER_VERSION` `1.0` → `1.1`):
+  nested interpreters (`sh -c`, `eval`, `python -c` / `node -e`) and pipe-to-shell
+  are elevated so opaque execution is not under-classified. The classifier
+  version is recorded in evidence and is decoupled from the golden receipt.
+
+### Security
+
+- Network/encoded payloads piped to a shell (`curl … | sh`, `base64 -d … | sh`)
+  are now classified as remote/opaque execution (C4), closing a shell-bypass
+  under-classification gap. Policy can still allow such commands explicitly.
+
+### Docs
+
+- **Integrations & capability matrix** (`docs/integrations.md`): the Gate /
+  Witness / Witnessed Execution ladder, source-of-trust framing, and
+  per-integration status for all seven adapters (Cursor and Codex listed as
+  planned Witness integrations).
+- Per-adapter READMEs under `src/adapters/*` with install shims and the
+  never-bypass / deny-by-default notes.
+
 ## [0.1.3] - 2026-05-31
 
 ### Security
