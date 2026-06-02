@@ -32,17 +32,17 @@ today (capability ≠ a shipped turnkey adapter).
 
 | Integration | Gate | Witness | Witnessed Execution | Highest level | WitSeal adapter |
 |---|:---:|:---:|:---:|---|---|
+| WitSeal MCP | ✅ | ✅ | ✅ | **Witnessed Execution** | shipped |
 | OpenCode | ✅ | ✅ | ✅ | **Witnessed Execution** | shipped |
 | LangGraph | ✅ | ✅ | ✅ | **Witnessed Execution** | shipped |
 | OpenAI Agents SDK | ✅ | ✅ | ✅ | **Witnessed Execution** | shipped |
-| WitSeal MCP | ✅ | ✅ | ✅ | **Witnessed Execution** | shipped |
 | Temporal | ✅ | ✅ | ✅ | **Witnessed Execution** | shipped |
 | Claude Code | ✅ opt-in¹ | ✅ | — | **Witness** | Witness shipped |
 | Cursor | ✅ opt-in¹ | ✅ | — | **Witness** | planned |
 | Codex | ✅ opt-in¹ | ✅ | — | **Witness** | planned |
 
-For the own-execute integrations (OpenCode, LangGraph, OpenAI Agents SDK,
-WitSeal MCP, and Temporal), WitSeal runs the action through `runExec`, so all three capabilities
+For the own-execute integrations (WitSeal MCP, OpenCode, LangGraph, OpenAI
+Agents SDK, and Temporal), WitSeal runs the action through `runExec`, so all three capabilities
 are reachable: Gate is the default mode (deny-by-default), Witness Mode is
 available (`--mode witness`), and the action's receipt is independently
 verifiable — Witnessed Execution.
@@ -69,8 +69,8 @@ the observation you already had.
 
 ## Availability today
 
-- **Shipped (own-execute, Witnessed Execution):** OpenCode, LangGraph, OpenAI
-  Agents SDK, WitSeal MCP, Temporal.
+- **Shipped (own-execute, Witnessed Execution):** WitSeal MCP, OpenCode,
+  LangGraph, OpenAI Agents SDK, Temporal.
 - **Shipped (Witness):** Claude Code (`PostToolUse`).
 - **Planned (Witness-level, sealed hosts):** Cursor, Codex.
 
