@@ -8,6 +8,18 @@ Pre-1.0 versions: schemas and CLI surface are unstable. Minor versions may intro
 
 ## [Unreleased]
 
+### Added
+
+- **Claude Code adapter — PreToolUse gate (Level 2).** An opt-in `PreToolUse`
+  hook (`witseal-gate-claude-code`) that evaluates policy and blocks or
+  escalates a Bash command *before* Claude Code runs it, complementing the
+  observe-only PostToolUse witness. WitSeal decides but never executes — Claude
+  Code's own executor still runs allowed commands — so this stays Level 2. A
+  block is recorded as a `denied_by_policy` witness event with a null
+  `execution_result`; a missing policy pack fails closed (deny-by-default),
+  the opposite stance from the fail-open witness. No schema change: reuses
+  `witseal.witness.v0.1`.
+
 ## [0.1.3] - 2026-05-31
 
 ### Security

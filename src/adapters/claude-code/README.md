@@ -16,9 +16,11 @@ a witnessed result after the fact.
 
 - **Does:** record each `Bash` tool call (command + observed exit/stdout/stderr)
   as a witness event in the evidence chain, with a policy annotation.
-- **Does not block.** `PostToolUse` runs *after* the command has executed, so
-  this adapter cannot refuse a command — it witnesses the result. Gating Claude
-  Code before a command runs would need a different hook and is out of scope.
+- **The witness does not block.** `PostToolUse` runs *after* the command has
+  executed, so the witness cannot refuse a command — it records the result.
+  Blocking a command *before* it runs is a separate, opt-in **PreToolUse gate**
+  (see [below](#optional-gate-before-a-command-runs-pretooluse)); the witness
+  itself never blocks.
 - **Only the `Bash` tool** is witnessed in this version. Other tools are
   skipped (the hook exits cleanly without recording).
 
@@ -68,6 +70,48 @@ a witnessed result after the fact.
 A non-`allow` annotation is recorded as `witnessed_executed`, never
 `denied_by_policy` — the command ran (Claude Code executed it), and the witness
 record reflects that honestly.
+
+## Optional: gate before a command runs (PreToolUse)
+
+The witness above is observe-only. If you also want WitSeal to **block** a
+command *before* Claude Code runs it, add the companion `PreToolUse` gate. It
+evaluates your policy packs and tells Claude Code to allow, block, or escalate —
+**without executing the command** (Claude Code still runs it when allowed, so
+this stays Level 2: WitSeal decides, it never owns execution).
+
+The gate is **additive** — it can only make Claude Code *more* restrictive:
+
+| Policy decision | Gate tells Claude Code | Evidence recorded |
+|---|---|---|
+| `deny` | block the call | `denied_by_policy` (witness event, `execution_result` null) |
+| `require-approval` | escalate to the user (`ask`) | none yet — PostToolUse records it if it runs |
+| `allow` | nothing; normal flow proceeds | none yet — PostToolUse records it when it runs |
+
+**Fail-closed.** With no policy pack configured the gate **blocks** (and records
+`no_policy_configured`), honoring WitSeal's deny-by-default stance — the opposite
+of the witness, which fails open. Set `WITSEAL_UNSAFE_ALLOW_NO_POLICY=1` to run
+advisory-only (no decision) when no pack is present. An internal error also
+fails closed.
+
+Add it alongside the witness hook in your Claude Code settings:
+
+```json
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          { "type": "command", "command": "witseal-gate-claude-code" }
+        ]
+      }
+    ]
+  }
+}
+```
+
+The gate reads the same `WITSEAL_DATA_DIR` / `WITSEAL_SEGMENT` /
+`WITSEAL_AGENT_ID` environment as the witness.
 
 ## Notes
 

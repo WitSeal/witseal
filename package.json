@@ -24,7 +24,8 @@
   "bin": {
     "witseal": "dist/src/cli/index.js",
     "witseal-mcp": "dist/src/adapters/mcp/bin.js",
-    "witseal-witness-claude-code": "dist/src/adapters/claude-code/bin.js"
+    "witseal-witness-claude-code": "dist/src/adapters/claude-code/bin.js",
+    "witseal-gate-claude-code": "dist/src/adapters/claude-code/gate-bin.js"
   },
   "exports": {
     "./exec": {
@@ -46,6 +47,10 @@
     "./adapters/claude-code": {
       "types": "./dist/src/adapters/claude-code/witness.d.ts",
       "import": "./dist/src/adapters/claude-code/witness.js"
+    },
+    "./adapters/claude-code/gate": {
+      "types": "./dist/src/adapters/claude-code/gate.d.ts",
+      "import": "./dist/src/adapters/claude-code/gate.js"
     },
     "./adapters/temporal": {
       "types": "./dist/src/adapters/temporal/index.d.ts",
