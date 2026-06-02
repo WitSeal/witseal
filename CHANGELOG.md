@@ -10,8 +10,7 @@ Pre-1.0 versions: schemas and CLI surface are unstable. Minor versions may intro
 
 ## [0.2.0] - 2026-06-02
 
-> Draft — release date stamped by the maintainer at publish. This release is the
-> integration wave: WitSeal gains first-class adapters across the agent
+> This release is the integration wave: WitSeal gains first-class adapters across the agent
 > ecosystem, all over the existing `runExec` pipeline with no wire-format change
 > (golden receipt unchanged; no schema-version bump).
 
