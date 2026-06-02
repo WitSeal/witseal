@@ -47,6 +47,10 @@
       "types": "./dist/src/adapters/claude-code/witness.d.ts",
       "import": "./dist/src/adapters/claude-code/witness.js"
     },
+    "./adapters/temporal": {
+      "types": "./dist/src/adapters/temporal/index.d.ts",
+      "import": "./dist/src/adapters/temporal/index.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [
