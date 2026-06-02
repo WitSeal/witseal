@@ -22,7 +22,8 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
-    "witseal": "dist/src/cli/index.js"
+    "witseal": "dist/src/cli/index.js",
+    "witseal-mcp": "dist/src/adapters/mcp/bin.js"
   },
   "files": [
     "dist/",
