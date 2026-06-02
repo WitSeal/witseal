@@ -9,48 +9,45 @@ a witnessed decision.
 
 ## Model (Level 3 — WitSeal owns execution)
 
-`mediateShellCommand` (in `../framework/mediate.ts`) is the framework-agnostic
-core. A function tool's `execute` calls it and returns its summary; the command
-runs inside WitSeal's mediator, which captures the output and records the
-outcome (`allowed_executed` / `denied_by_policy`).
+`createWitsealShellTool` (in `tool.ts`) returns the config object the OpenAI
+Agents SDK `tool({...})` helper expects, already wired: `execute` is the
+witnessed tool body and `parameters` is the input schema. The body runs the
+command through WitSeal's `runExec`, which captures the output and records the
+outcome (`allowed_executed` / `denied_by_policy`). The shared schema and body
+live in `../framework/tool.ts`; this directory only shapes them for the SDK.
+
+The SDK's input/output validation features sit beside the model and would only
+constrain an already-decided call (Level 2) — this shim authors the tool
+instead, so WitSeal owns execution.
 
 ## Supported versions
 
-| Component | Minimum supported | Verified against |
+| Component | Minimum supported | API confirmed against |
 |---|---|---|
 | `@openai/agents` (provides `tool`) | `^0.11.0` | `0.11.6` |
 
 > The OpenAI Agents JS SDK is pre-1.0; the `tool({ name, description,
-> parameters, execute })` shape is pinned to the `0.11.x` line. Revisit the
+> parameters, execute })` shape is pinned to the `0.11.x` line. The signature was
+> confirmed against the official documentation on 2026-06-01, and `0.11.6` was
+> the current latest on npm that day. No `@openai` package is imported by the
+> adapter — the listed version is what an integrator binds it to. Revisit the
 > minimum when the SDK reaches 1.0.
 
 ## Install
 
 1. `npm install -g @witseal/cli` (or add `@witseal/cli` as a dependency)
-2. Define a witnessed `shell` function tool and pass it to your agent:
+2. Build the witnessed `shell` function tool from the factory and pass it to your
+   agent:
 
 ```typescript
 import { Agent, tool } from '@openai/agents';
-import { z } from 'zod';
-import { mediateShellCommand } from '@witseal/cli/adapters/framework';
+import { createWitsealShellTool } from '@witseal/cli/adapters/openai-agents';
 
-const dataDir = process.env.WITSEAL_DATA_DIR ?? `${process.env.HOME}/.witseal`;
-
-export const witsealShell = tool({
-  name: 'shell',
-  description: 'Run a shell command, mediated and witnessed by WitSeal.',
-  parameters: z.object({
-    command: z.string().describe('The shell command to run'),
-  }),
-  async execute({ command }) {
-    const { summary, output, denied } = await mediateShellCommand(
-      { command },
-      { dataDir, agentId: 'openai-agents' }
-    );
-    if (denied) throw new Error(summary);
-    return output.length > 0 ? `${summary}\n\n${output}` : summary;
-  },
-});
+export const witsealShell = tool(
+  createWitsealShellTool({
+    dataDir: process.env.WITSEAL_DATA_DIR ?? `${process.env.HOME}/.witseal`,
+  })
+);
 
 export const agent = new Agent({
   name: 'witnessed-agent',
@@ -58,6 +55,11 @@ export const agent = new Agent({
   tools: [witsealShell],
 });
 ```
+
+The tool's `execute` body — the part that runs the command through WitSeal — is
+shipped and tested; the only line you write is the `tool(...)` binding.
+`createWitsealShellTool` also accepts `segmentId`, `agentId` (default
+`openai-agents`), `mode`, `timeoutMs`, and `name` / `description` overrides.
 
 ## Notes
 

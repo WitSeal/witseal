@@ -8,7 +8,9 @@ This directory contains adapters that integrate WitSeal with specific AI coding 
 
 - **OpenCode** — primary integration target; in development
 - **Claude Code** — adapter sketched (Phase 1 stretch goal)
-- **Cursor**, **Gemini CLI**, **OpenAI Agents SDK**, **LangGraph**, **CrewAI** — Phase 7
+- **LangGraph**, **OpenAI Agents SDK** — author-the-tool (Level 3) shims over the
+  shared framework core (`framework/`); see each directory's README
+- **Cursor**, **Gemini CLI**, **CrewAI** — Phase 7
 
 ## Adapter contract
 
