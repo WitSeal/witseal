@@ -19,6 +19,21 @@ shell invocation (`/bin/sh -c "<command>"`). A freeform shell command is opaque
 to structural classification, so the D8 shell-bypass rules correctly elevate it;
 policy can still allow it.
 
+## Supported versions
+
+| Component | Minimum supported | Verified against |
+|---|---|---|
+| `opencode` (CLI) | `>= 1.0.0` (1.x stable line) | tagged release `1.0.142` |
+| `@opencode-ai/plugin` | `^1.0.0` | `1.15.13` |
+
+The custom-tool-shadows-built-in behavior this integration relies on — a custom
+tool whose name matches a built-in takes precedence — is documented for the
+OpenCode 1.x release line (OpenCode docs, *Custom Tools* and *Tools*). This
+integration is pinned to that **tagged** release line, not a development build:
+pre-1.0 / snapshot builds are not supported. If a future OpenCode release
+changes tool-name precedence, this minimum is revised before the change is
+relied on.
+
 ## Install
 
 1. `npm install -g @witseal/cli`
