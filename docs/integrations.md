@@ -67,6 +67,45 @@ framework tool, or WitSeal MCP) lets WitSeal run it and produce a
 receipt that is **independently verifiable** — the next level of evidence, not
 the observation you already had.
 
+## Multiple surfaces, one evidence core
+
+WitSeal exposes more than one integration surface over a single evidence core:
+every surface runs through `runExec` and produces the same witness event →
+receipt → hash chain. The proof model is identical across surfaces; only the
+connection surface differs.
+
+- **Use the WitSeal MCP server** for MCP-hosted workflows — configure the
+  `witseal` MCP server in the host; no application code changes.
+- **Use the direct factories** for code-native frameworks — import the WitSeal
+  factory and register the tool or activity in your own code (LangGraph, OpenAI
+  Agents SDK, Temporal, and the generic framework shim).
+
+### What each surface witnesses
+
+A surface witnesses only what it actually runs — nothing more:
+
+- The **WitSeal MCP server** witnesses only calls to its own `shell` tool. It is
+  not a proxy for all MCP traffic: calls the agent makes to *other* MCP servers
+  are not witnessed.
+- The **direct factories** witness only the tools you wrap with the WitSeal
+  factory and register in your code. Other, unwrapped tools in the same graph or
+  agent are not witnessed.
+- The **observe-level adapters** (e.g. the Claude Code `PostToolUse` hook)
+  witness the result the host reports; they do not own execution and do not
+  block.
+
+### One logical action → one witness path → one receipt
+
+Route each logical action through exactly one witness path. Do not stack an
+observe-level path and an own-execute path over the same physical action: there
+is no de-duplication by command string, so the action would be recorded twice.
+
+- For Temporal, do not wrap an authored Level-3 `witnessedShell` Activity with
+  the Level-2 `ActivityInboundCallsInterceptor` — the same action is recorded by
+  both.
+- If an agent has both an MCP path and a direct tool configured for the shell,
+  send a given logical action through one of them, not both.
+
 ## Availability today
 
 - **Shipped (own-execute, Witnessed Execution):** WitSeal MCP, OpenCode,
