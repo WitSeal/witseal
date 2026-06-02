@@ -65,6 +65,17 @@ export interface ExecOptions {
    * outcome (never `denied_by_policy`).
    */
   mode?: ExecutionMode;
+  /**
+   * Optional sink for the mediated command's surfaced stdout (head, and tail
+   * when truncated). When provided, `runExec` routes captured stdout here
+   * instead of writing to the process's own stdout. Non-CLI adapters whose own
+   * stdout is a protocol channel (e.g. the MCP server, where stdout carries
+   * newline-delimited JSON-RPC) use this so mediated command output never
+   * corrupts the channel. Default (undefined): write to `process.stdout`, as
+   * the CLI does. Stderr (the witness footer, denial notices) is unaffected —
+   * it is valid out-of-band logging for those callers.
+   */
+  onStdout?: (chunk: string) => void;
 }
 
 export async function runExec(opts: ExecOptions): Promise<number> {
@@ -275,11 +286,14 @@ export async function runExec(opts: ExecOptions): Promise<number> {
     intentRecorded.event_id
   );
 
-  // 9. Surface execution outputs to the user (head + tail)
-  if (execResult.stdout.head) process.stdout.write(execResult.stdout.head);
+  // 9. Surface execution outputs to the user (head + tail). Routed through the
+  //    optional onStdout sink so an adapter whose own stdout is a protocol
+  //    channel can capture this instead of letting it reach process.stdout.
+  const writeStdout = opts.onStdout ?? ((chunk: string): void => void process.stdout.write(chunk));
+  if (execResult.stdout.head) writeStdout(execResult.stdout.head);
   if (execResult.stdout.truncated && execResult.stdout.tail) {
-    process.stdout.write(`\n[witseal: stdout truncated; ${execResult.stdout.total_bytes} total bytes]\n`);
-    process.stdout.write(execResult.stdout.tail);
+    writeStdout(`\n[witseal: stdout truncated; ${execResult.stdout.total_bytes} total bytes]\n`);
+    writeStdout(execResult.stdout.tail);
   }
   if (execResult.stderr.head) process.stderr.write(execResult.stderr.head);
   if (execResult.stderr.truncated && execResult.stderr.tail) {
