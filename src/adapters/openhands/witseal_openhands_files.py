@@ -421,6 +421,61 @@ def build_witseal_apply_patch_tool(conv_state, cfg: WitSealBridgeConfig) -> Appl
     return _swap(tool, WitSealApplyPatchExecutor(cfg, workspace_root=workspace_root))
 
 
+# --- Stage C: restrict the granted toolset to witnessed tools ----------------
+
+# Tools whose executor mutates state and must be witnessed (wrapped) or excluded.
+# (Verified vs openhands-tools 1.21.0.)
+_EXECUTION_TOOL_NAMES = {
+    "terminal",              # shell — wrapped (Stage 1)
+    "file_editor",           # file mutation — wrapped (Stage B)
+    "apply_patch",           # file mutation — wrapped (Stage B)
+    "planning_file_editor",  # file mutation — wrapped (Stage B)
+    "task_tracker",          # writes TASKS.json to persistence_dir — EXCLUDED
+    "browser_use",           # browser ops — no witseal primitive — EXCLUDED
+}
+# Tools excluded from the witnessed set (not witnessable by the file_write model
+# / no witseal primitive). Excluding them is the order-sanctioned "restrict the
+# toolset to witnessed tools" path. task_tracker only writes its own TASKS.json
+# bookkeeping; browser_use has no witseal equivalent.
+_EXCLUDED_TOOL_NAMES = {"task_tracker", "browser_use", "browser_tool_set"}
+
+
+def build_witnessed_toolset(conv_state, cfg, terminal_builder):
+    """Return the agent's default toolset with every execution-capable tool
+    either WitSeal-wrapped or excluded — no unwrapped execution path.
+
+    ``terminal_builder`` is ``witseal_openhands.build_witseal_terminal_tool``
+    (passed in to avoid a hard import cycle). Browser and task_tracker are
+    dropped (see ``_EXCLUDED_TOOL_NAMES``); terminal + file tools are swapped to
+    their WitSeal executors; any non-execution tool (e.g. read-only grep/glob)
+    is passed through unchanged.
+    """
+    from openhands.tools.preset.default import get_default_tools
+
+    # cli_mode=True excludes browser_use at source; we additionally drop
+    # task_tracker and defensively re-check every tool below.
+    default = get_default_tools(enable_browser=False)
+
+    witnessed = []
+    swapped = {
+        "terminal": lambda: terminal_builder(conv_state, cfg),
+        "file_editor": lambda: build_witseal_file_editor_tool(conv_state, cfg),
+        "apply_patch": lambda: build_witseal_apply_patch_tool(conv_state, cfg),
+        "planning_file_editor": lambda: build_witseal_planning_file_editor_tool(
+            conv_state, cfg
+        ),
+    }
+    for spec in default:
+        name = getattr(spec, "name", None)
+        if name in _EXCLUDED_TOOL_NAMES:
+            continue
+        if name in swapped:
+            witnessed.append(swapped[name]())
+        else:
+            witnessed.append(spec)  # non-execution tool (search/etc.) — unchanged
+    return witnessed
+
+
 __all__ = [
     "WITSEAL_DENIED_EXIT",
     "WitSealApplyPatchExecutor",
