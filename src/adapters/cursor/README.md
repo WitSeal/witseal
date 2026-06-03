@@ -5,7 +5,9 @@ calls as evidence. Cursor runs tools with its own executor and does not let an
 integration replace it, so WitSeal cannot own execution here. Instead it
 **observes**: the `postToolUse` hook fires after a tool runs and carries the
 real command and result. For the `Shell` tool, `tool_output` is a
-JSON-stringified payload with the exit code and stdout. WitSeal records a
+JSON-stringified payload with the exit code and command output (the agent CLI
+reports an `output` field; the IDE docs show `stdout` — both are accepted).
+When the payload's `cwd` is empty, the workspace root is used. WitSeal records a
 **Level-2 witness event** from that — evidence of what the Shell tool actually
 did.
 

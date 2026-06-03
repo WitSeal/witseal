@@ -112,6 +112,30 @@ describe('Cursor — witnessCursorPostToolUse (postToolUse hook shim)', () => {
     expect(evs[evs.length - 1]!.execution_result!.stdout.head).toBe('plain text output');
   });
 
+  it('handles the real cursor-agent CLI payload (output field + empty cwd + workspace_roots fallback)', async () => {
+    writePack([], 'allow');
+    const payload = {
+      hook_event_name: 'postToolUse',
+      tool_name: 'Shell',
+      cwd: '', // the agent CLI reports an empty cwd
+      workspace_roots: ['/private/tmp/cursor-live-ws'],
+      tool_input: { command: 'echo cursor-live-2026', cwd: '', timeout: 30000 },
+      tool_output: JSON.stringify({ output: 'cursor-live-2026\n', exitCode: 0 }),
+    };
+    const out = await witnessCursorPostToolUse(payload, { dataDir: dir });
+    expect(out.recorded).toBe(true);
+    if (out.recorded) {
+      expect(out.result.outcome).toBe('allowed_executed');
+    }
+    const evs = await events();
+    const last = evs[evs.length - 1]!;
+    // stdout parsed from the `output` field (not `stdout`).
+    expect(last.execution_result!.stdout.head).toBe('cursor-live-2026\n');
+    expect(last.execution_result!.exit_code).toBe(0);
+    // empty cwd fell back to the workspace root (non-empty → passes schema validation).
+    expect(last.classified_intent.intent.cwd).toBe('/private/tmp/cursor-live-ws');
+  });
+
   it('skips a non-Shell tool', async () => {
     writePack([], 'allow');
     const out = await witnessCursorPostToolUse(

@@ -47,18 +47,30 @@ export interface CursorPostToolUsePayload {
   cwd?: unknown;
   tool_input?: unknown;
   tool_output?: unknown;
+  /**
+   * Workspace roots reported by Cursor's agent CLI. Used as a `cwd` fallback:
+   * the CLI's `postToolUse` payload reports an empty `cwd`, while the workspace
+   * root is the accurate working directory.
+   */
+  workspace_roots?: unknown;
 }
 
 function asString(v: unknown): string | undefined {
   return typeof v === 'string' ? v : undefined;
 }
 
+function nonEmptyString(v: unknown): string | undefined {
+  return typeof v === 'string' && v.length > 0 ? v : undefined;
+}
+
 /**
- * Extract the observed result from Cursor's `tool_output`. For the Shell tool
- * it is a JSON string `{"exitCode":n,"stdout":"..."}`. A non-JSON value is
- * tolerated by treating the raw string as stdout (the observed output is still
- * real; the exit code defaults to 0 only in that malformed-payload fallback,
- * matching the Claude Code adapter's robustness).
+ * Extract the observed result from Cursor's `tool_output`. For the Shell tool it
+ * is a JSON string carrying the exit code and command output — the agent CLI
+ * uses `{"output":"...","exitCode":n}`, the IDE docs show
+ * `{"exitCode":n,"stdout":"..."}`; both `output` and `stdout` are accepted. A
+ * non-JSON value is tolerated by treating the raw string as stdout (the observed
+ * output is still real; the exit code defaults to 0 only in that
+ * malformed-payload fallback, matching the Claude Code adapter's robustness).
  */
 function parseToolOutput(raw: unknown): { exitCode: number; stdout: string; stderr: string } {
   if (typeof raw === 'string') {
@@ -69,7 +81,7 @@ function parseToolOutput(raw: unknown): { exitCode: number; stdout: string; stde
         const code = obj['exitCode'];
         return {
           exitCode: typeof code === 'number' ? code : 0,
-          stdout: asString(obj['stdout']) ?? '',
+          stdout: asString(obj['output']) ?? asString(obj['stdout']) ?? '',
           stderr: asString(obj['stderr']) ?? '',
         };
       }
@@ -118,7 +130,10 @@ export async function witnessCursorPostToolUse(
   }
 
   const { exitCode, stdout, stderr } = parseToolOutput(payload.tool_output);
-  const cwd = asString(payload.cwd) ?? process.cwd();
+  // Cursor's agent CLI reports an empty `cwd`; fall back to the workspace root,
+  // then the process cwd. recordWitnessedExecution requires a non-empty cwd.
+  const roots = Array.isArray(payload.workspace_roots) ? payload.workspace_roots : [];
+  const cwd = nonEmptyString(payload.cwd) ?? nonEmptyString(roots[0]) ?? process.cwd();
 
   const result = await recordWitnessedExecution({
     command,
