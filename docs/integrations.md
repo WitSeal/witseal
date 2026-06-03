@@ -30,27 +30,54 @@ Legend: ✅ capability reachable · ✅ opt-in capability reachable but not the
 default · — not applicable. The **WitSeal adapter** column states what ships
 today (capability ≠ a shipped turnkey adapter).
 
-| Integration | Gate | Witness | Witnessed Execution | Highest level | WitSeal adapter |
-|---|:---:|:---:|:---:|---|---|
-| WitSeal MCP | ✅ | ✅ | ✅ | **Witnessed Execution** | shipped |
-| OpenCode | ✅ | ✅ | ✅ | **Witnessed Execution** | shipped |
-| LangGraph | ✅ | ✅ | ✅ | **Witnessed Execution** | shipped |
-| OpenAI Agents SDK | ✅ | ✅ | ✅ | **Witnessed Execution** | shipped |
-| Temporal | ✅ | ✅ | ✅ | **Witnessed Execution** | shipped |
-| Claude Code | ✅ opt-in¹ | ✅ | — | **Witness** | Witness shipped |
-| Cursor | ✅ opt-in¹ | ✅ | — | **Witness** | planned |
-| Codex | ✅ opt-in¹ | ✅ | — | **Witness** | planned |
+**Witnessed Execution spans two execution boundaries.** Both produce the same
+independently-verifiable receipt; they differ in how much of the host's
+execution falls inside the witness boundary — *Full Execution Coverage* (WitSeal
+owns the action end to end) and *MCP-Compatible* (WitSeal witnesses the calls
+routed through its own MCP tool). That boundary is detailed in *Multiple
+surfaces, one evidence core* below.
 
-For the own-execute integrations (WitSeal MCP, OpenCode, LangGraph, OpenAI
-Agents SDK, and Temporal), WitSeal runs the action through `runExec`, so all three capabilities
-are reachable: Gate is the default mode (deny-by-default), Witness Mode is
-available (`--mode witness`), and the action's receipt is independently
-verifiable — Witnessed Execution.
+### Witnessed Execution — Full Execution Coverage
 
-For the sealed hosts (Claude Code, Cursor, Codex), WitSeal cannot own execution —
-the host runs the action with its own executor. Witness is reached by observing
-the host's reported result after the fact (e.g. Claude Code's `PostToolUse`
-hook). Witnessed Execution is not reachable on a sealed host.
+*Full control of execution.* WitSeal runs the action itself through `runExec`, so
+all three capabilities are reachable: Gate is the default mode (deny-by-default),
+Witness Mode is available (`--mode witness`), and the action's receipt is
+independently verifiable.
+
+| Integration | Gate | Witness | Witnessed Execution | WitSeal adapter |
+|---|:---:|:---:|:---:|---|
+| WitSeal MCP | ✅ | ✅ | ✅ | shipped |
+| OpenCode | ✅ | ✅ | ✅ | shipped |
+| LangGraph | ✅ | ✅ | ✅ | shipped |
+| OpenAI Agents SDK | ✅ | ✅ | ✅ | shipped |
+| Temporal | ✅ | ✅ | ✅ | shipped |
+
+### Witnessed Execution — MCP-Compatible
+
+Witnessed execution via the WitSeal MCP tool. Receipts are generated for
+operations executed through the WitSeal MCP tool; host-native execution remains
+outside the witness boundary. These hosts call the WitSeal `shell` tool
+alongside their own built-in execution — the WitSeal tool is witnessed; the
+host's native executor is not.
+
+| Integration | Witnessed Execution (via the WitSeal MCP tool) | WitSeal adapter |
+|---|:---:|---|
+| OpenHands | ✅ | available |
+| OpenClaw | ✅ | available |
+| Hermes | ✅ | available |
+
+### Witness
+
+WitSeal records the result the **host** reports after the action ran: the host
+runs the action with its own executor, so Witnessed Execution is not reachable.
+Witness is reached by observing the host's reported result (e.g. Claude Code's
+`PostToolUse` hook).
+
+| Integration | Gate | Witness | WitSeal adapter |
+|---|:---:|:---:|---|
+| Claude Code | ✅ opt-in¹ | ✅ | Witness shipped |
+| Cursor | ✅ opt-in¹ | ✅ | planned |
+| Codex | ✅ opt-in¹ | ✅ | planned |
 
 > ¹ **Gate on a sealed host** is reachable opt-in via a pre-execution hook
 > (e.g. Claude Code's `PreToolUse`), where WitSeal's policy decides before the
@@ -108,8 +135,10 @@ is no de-duplication by command string, so the action would be recorded twice.
 
 ## Availability today
 
-- **Shipped (own-execute, Witnessed Execution):** WitSeal MCP, OpenCode,
+- **Shipped (own-execute, Full Execution Coverage):** WitSeal MCP, OpenCode,
   LangGraph, OpenAI Agents SDK, Temporal.
+- **Available (MCP-Compatible Witnessed Execution, via the WitSeal MCP tool):**
+  OpenHands, OpenClaw, Hermes.
 - **Shipped (Witness):** Claude Code (`PostToolUse`).
 - **Planned (Witness-level, sealed hosts):** Cursor, Codex.
 
