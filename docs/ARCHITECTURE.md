@@ -322,6 +322,8 @@ stateDiagram-v2
 
 **Append-only invariant:** the witness event log is strictly append-only at the file system level. Edit operations are forbidden by the runtime; tampering is detectable by chain re-verification (Phase 5) or by simple log replay (Phase 1).
 
+**Single witness owner per operation:** WitSeal does not allow two independent witness surfaces to claim the same logical operation. A deployment must assign exactly one witness owner per operation class. One logical action → one witness owner → one receipt. (This is a deployment-discipline principle; per-operation enforcement of it is out of Phase 1 scope.)
+
 ---
 
 ## 4. Schema Relationships
