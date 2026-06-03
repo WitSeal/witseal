@@ -76,7 +76,7 @@ Witness is reached by observing the host's reported result (e.g. Claude Code's
 | Integration | Gate | Witness | WitSeal adapter |
 |---|:---:|:---:|---|
 | Claude Code | ✅ opt-in¹ | ✅ | Witness shipped |
-| Cursor | ✅ opt-in¹ | ✅ | planned |
+| Cursor | ✅ opt-in¹ | ✅ | Witness shipped |
 | Codex | ✅ opt-in¹ | ✅ | planned |
 
 > ¹ **Gate on a sealed host** is reachable opt-in via a pre-execution hook
@@ -139,7 +139,7 @@ is no de-duplication by command string, so the action would be recorded twice.
   LangGraph, OpenAI Agents SDK, Temporal.
 - **Available (MCP-Compatible Witnessed Execution, via the WitSeal MCP tool):**
   OpenHands, OpenClaw, Hermes.
-- **Shipped (Witness):** Claude Code (`PostToolUse`).
-- **Planned (Witness-level, sealed hosts):** Cursor, Codex.
+- **Shipped (Witness):** Claude Code (`PostToolUse`), Cursor.
+- **Planned (Witness-level, sealed hosts):** Codex.
 
 See each integration's directory under `src/adapters/` for setup.
