@@ -8,6 +8,44 @@ Pre-1.0 versions: schemas and CLI surface are unstable. Minor versions may intro
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-06-03
+
+> File execution and full execution coverage. WitSeal can now mediate file
+> writes (not only shell), the OpenHands adapter reaches full execution coverage
+> of its default toolset, and the Cursor witness adapter ships. All additive over
+> the existing pipeline — no wire-format change, golden receipt unchanged, no
+> schema-version bump.
+
+### Added
+
+- **File execution path** (`witseal exec-file`). A `file_write` action is driven
+  through the same pipeline as shell (classify → policy → mediate → witness →
+  receipt) via the new `runFileExec` → `mediateFile`, reusing the existing
+  execution-result and witness schemas. Write modes: `overwrite`, `append`,
+  `create_only`; content is read from stdin. Additive only — no new wire-format,
+  and the golden receipt is byte-identical.
+- **OpenHands adapter — full execution coverage.** The agent's `terminal` and
+  `file_editor` tools (plus `apply_patch` / `planning_file_editor` for presets
+  that grant them) are wrapped to route through `witseal exec` / `witseal
+  exec-file`, so WitSeal owns execution and emits a full receipt for the default
+  granted toolset. `browser` and `task_tracker` are excluded from the witnessed
+  set; `apply_patch` DELETE/MOVE and `file_editor` undo are refused (not silently
+  bypassed), since file delete/rename is outside the file-write model.
+- **Cursor witness adapter** — *Witness (Level 2)*. A `PostToolUse` hook
+  (`witseal-witness-cursor`) records Cursor's host-reported execution as a
+  witness event; observe-only, does not execute. Promotes Cursor from *planned*
+  to shipped. Export `@witseal/cli/adapters/cursor`.
+
+### Docs
+
+- **Coverage terminology** (`docs/integrations.md`): the execution-coverage axis
+  is framed as **Full Execution Coverage** (WitSeal owns execution → full
+  receipt) versus **Tool-Scoped Coverage via MCP** (the host agent/runtime
+  executes; only operations called through the WitSeal MCP tool are witnessed),
+  with an explicit "who executes" line per surface. Adds the three-tier Witnessed
+  Execution model, guidance on multiple surfaces over one evidence core, and
+  orders the WitSeal MCP server first among own-execute integrations.
+
 ## [0.2.0] - 2026-06-02
 
 > This release is the integration wave: WitSeal gains first-class adapters across the agent
