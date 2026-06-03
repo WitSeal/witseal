@@ -58,10 +58,22 @@ authorization + a schema decision).
 - Stage C (toolset restriction): DONE (`build_witnessed_toolset`; granted set reduced to
   witnessed tools; browser + task_tracker excluded; grounded by fact).
 - Stage D (programmatic path): ANALYZED — separate surface; no tool-layer bypass.
-- Stage E (live LLM agent driving each wrapped tool end-to-end, gpt-5.5): the deterministic
-  harness proves each executor against the real SDK types + real receipts; the LLM-driven
-  end-to-end run is the remaining proof. Runnable via the harnesses with a gpt-5.5 agent
-  assembled from `build_witnessed_toolset`.
+- Stage E (live LLM agent, gpt-5.5): DONE for the default granted set. `harness_stage_e.py`
+  assembled a real gpt-5.5 agent with the witnessed toolset (terminal + file_editor swapped;
+  task_tracker dropped; browser excluded) and ran a task; the agent itself invoked file_editor
+  (receipt rcpt_mpylf4r7…) and terminal (receipt rcpt_mpylf67z…), both exit 0, full receipts;
+  `witseal verify` → VALID (chain). The default agent grants only terminal + file_editor as
+  execution tools, so those are the two LLM-driven live proofs; apply_patch + planning_file_editor
+  are not in the default set (opt-in presets) and are proven deterministically against the real
+  SDK types in Stage B (they are LLM-driven when their preset grants them).
 
-No merge — branch only. Card move to Full Execution Coverage is founder-authorized
-after the live-LLM end-to-end (Stage E) closes.
+## Verdict
+
+For the default granted toolset, coverage is FULL by fact: every execution-capable granted tool
+is witnessed (terminal + file_editor live-LLM-proven; apply_patch + planning wrapped + Stage-B
+proven for their presets), browser + task_tracker excluded, no tool-layer bypass via
+execute_command. golden 8fc29592/1050 byte-identical throughout; schemas/serverInfo untouched;
+TS unchanged since Stage A.
+
+No merge — branch only. Card move to Full Execution Coverage is founder-authorized after a
+coverage gate-check of this A–E evidence.
