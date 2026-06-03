@@ -61,3 +61,7 @@ evidence.json
 # Internal coordination artifacts — never publish
 coordination/
 coverage-extract.mjs
+
+# Python adapter caches
+__pycache__/
+*.pyc

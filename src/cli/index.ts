@@ -21,6 +21,7 @@
 
 import { Command } from 'commander';
 import { runExec } from './exec.js';
+import { runFileExec, type FileWriteMode } from './exec-file.js';
 import { runVerify } from './verify.js';
 import { runReplay } from './replay.js';
 import { runEventsList } from './events.js';
@@ -72,6 +73,42 @@ program
       identityOrigin,
       cwd: opts.cwd as string,
       timeoutMs: parseInt(opts.timeout as string, 10) || 0,
+      dataDir: program.opts()['dataDir'] as string,
+      segmentId: program.opts()['segment'] as string,
+      mode: mode as ExecutionMode,
+    });
+    process.exit(exitCode);
+  });
+
+program
+  .command('exec-file')
+  .description('Write a file through WitSeal mediation (content read from stdin)')
+  .requiredOption('--path <path>', 'Target file path to write')
+  .option('--agent <id>', 'Agent identifier', 'cli-user')
+  .option('--write-mode <mode>', 'File write mode: overwrite (default), append, or create_only', 'overwrite')
+  .option('--mode <mode>', 'Execution mode: gate (default, deny-by-default) or witness', 'gate')
+  .action(async (opts, cmd) => {
+    const agentSource = (cmd as { getOptionValueSource: (k: string) => string }).getOptionValueSource('agent');
+    const identityOrigin = agentSource === 'default' ? 'fallback' : 'configured';
+    const mode = opts.mode as string;
+    if (mode !== 'gate' && mode !== 'witness') {
+      process.stderr.write(`witseal: invalid --mode '${mode}': expected 'gate' or 'witness'\n`);
+      process.exit(2);
+    }
+    const writeMode = opts.writeMode as string;
+    if (writeMode !== 'overwrite' && writeMode !== 'append' && writeMode !== 'create_only') {
+      process.stderr.write(
+        `witseal: invalid --write-mode '${writeMode}': expected 'overwrite', 'append', or 'create_only'\n`
+      );
+      process.exit(2);
+    }
+    const content = await readStdinBuffer();
+    const exitCode = await runFileExec({
+      path: opts.path as string,
+      content,
+      writeMode: writeMode as FileWriteMode,
+      agentId: opts.agent as string,
+      identityOrigin,
       dataDir: program.opts()['dataDir'] as string,
       segmentId: program.opts()['segment'] as string,
       mode: mode as ExecutionMode,
@@ -215,6 +252,12 @@ program.parseAsync(process.argv).catch((err) => {
   process.stderr.write(`witseal: error: ${err instanceof Error ? err.message : String(err)}\n`);
   process.exit(2);
 });
+
+async function readStdinBuffer(): Promise<Buffer> {
+  const chunks: Buffer[] = [];
+  for await (const chunk of process.stdin) chunks.push(chunk as Buffer);
+  return Buffer.concat(chunks);
+}
 
 function defaultDataDir(): string {
   return process.env['WITSEAL_DATA_DIR'] ?? `${process.env['HOME'] ?? '.'}/.witseal`;
