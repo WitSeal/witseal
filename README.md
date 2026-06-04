@@ -33,10 +33,10 @@ change to the default.
 
 ## Install
 
-Install the `0.1.3` CLI from npm:
+Install the `0.3.0` CLI from npm:
 
 ```bash
-npm install -g @witseal/cli@0.1.3
+npm install -g @witseal/cli@0.3.0
 ```
 
 ## Execution modes

@@ -114,7 +114,10 @@ A surface witnesses only what it actually runs — nothing more:
 
 - The **WitSeal MCP server** witnesses only calls to its own `shell` tool. It is
   not a proxy for all MCP traffic: calls the agent makes to *other* MCP servers
-  are not witnessed.
+  are not witnessed. This shipped adapter is an *integration surface* — WitSeal's
+  own tool exposed over MCP — not the *MCP runtime layer* in
+  [`ARCHITECTURE.md`](./ARCHITECTURE.md) (native mediation of arbitrary MCP
+  traffic), which is Phase 4 and not built.
 - The **direct factories** witness only the tools you wrap with the WitSeal
   factory and register in your code. Other, unwrapped tools in the same graph or
   agent are not witnessed.

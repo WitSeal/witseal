@@ -70,6 +70,7 @@ CI runs on every PR (see `.github/workflows/ci.yml`):
 - Tests on Node 20 and Node 22
 - TypeScript strict-mode check
 - Vocabulary linter (`scripts/style-check.mjs`)
+- Version-consistency gate (`scripts/check-version-consistency.mjs`)
 - Schema validation for example policy packs
 
 A PR that fails CI will not be merged.
@@ -122,6 +123,7 @@ export WITSEAL_DATA_DIR=/tmp/witseal-dev
 | `npm run lint:fix` | ESLint with auto-fix |
 | `npm run format` | Prettier over `src/`, `tests/`, `schemas/` |
 | `npm run style-check` | Vocabulary discipline linter |
+| `npm run check:versions` | Version-consistency gate (release fail-closed) |
 
 All of these must pass before opening a PR.
 
@@ -211,6 +213,17 @@ The path to maintainership is the boring one:
 We are looking for maintainers who will be active for the long haul, not drive-by contributors. WitSeal is infrastructure — the half-life of the right decisions is years, not weeks.
 
 If you're interested in becoming more involved earlier, open a discussion in the [Discussions](https://github.com/WitSeal/witseal/discussions) tab and tell us what you'd like to work on.
+
+---
+
+## Releasing
+
+Releases follow [`RELEASING.md`](./RELEASING.md). Before a release is cut, the
+**version-consistency gate** (`npm run check:versions`) must pass: the README
+install pin, the `docs/CLAIM_BOUNDARY.md` "Verified against" anchor, and the
+latest `CHANGELOG.md` entry must all agree with `package.json`. The gate is
+fail-closed — it runs in CI, in `prepublishOnly`, and in the release workflow, so
+a version drift blocks the release rather than shipping stale docs.
 
 ---
 
