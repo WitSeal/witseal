@@ -89,7 +89,8 @@
     "typecheck": "tsc --noEmit",
     "format": "prettier --write src tests schemas",
     "style-check": "node scripts/style-check.mjs",
-    "prepublishOnly": "npm run build && npm test"
+    "check:versions": "node scripts/check-version-consistency.mjs",
+    "prepublishOnly": "npm run check:versions && npm run build && npm test"
   },
   "dependencies": {
     "commander": "^12.1.0",

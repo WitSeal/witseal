@@ -22,7 +22,7 @@ machine.
 - Failure modes and their handling
 
 **Out of scope (deferred to later phases):**
-- MCP runtime layer (Phase 4)
+- MCP runtime layer (Phase 4) — WitSeal natively mediating arbitrary MCP tool-call traffic as a first-class runtime boundary; distinct from the shipped WitSeal MCP server *adapter* (which exposes WitSeal's own tool — see [`integrations.md`](./integrations.md))
 - Cryptographic signature scheme details — Sigstore integration (Phase 5)
 - Remote witnessed execution protocol (Phase 6)
 - PAI-Kernel constitutional substrate (Phase 8)
@@ -451,7 +451,7 @@ arguments.
 command/argument/payload that was passed to the tool layer, and this is what
 came back."
 
-**Phase 1 scope:** shell commands, filesystem reads/writes. MCP tool calls (Phase 4) and remote tool invocations (Phase 6) extend this boundary.
+**Phase 1 scope:** shell commands, filesystem reads/writes. MCP tool calls (Phase 4) and remote tool invocations (Phase 6) extend this boundary. *(The Phase 4 "MCP runtime layer" is WitSeal natively mediating arbitrary MCP tool-call traffic as a runtime boundary — not built. It is distinct from the shipped WitSeal MCP server adapter, which exposes WitSeal's own `shell`/`file_write` tool over MCP as an integration surface; see [`integrations.md`](./integrations.md).)*
 
 ### 5.3 Shell Boundary
 
