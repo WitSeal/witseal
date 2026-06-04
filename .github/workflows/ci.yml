@@ -56,6 +56,21 @@ jobs:
       - name: Run style check
         run: node scripts/style-check.mjs
 
+  version-consistency:
+    name: Version consistency
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+
+      - name: Check version consistency
+        run: node scripts/check-version-consistency.mjs
+
   schema-lint:
     name: Schema validation
     runs-on: ubuntu-latest
