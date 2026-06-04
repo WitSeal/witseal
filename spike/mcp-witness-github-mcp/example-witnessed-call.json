@@ -1,0 +1,30 @@
+{
+  "_comment": "WitSeal MCP Witness SPIKE artifact (github-mcp get_me). \"receipt\" is the verbatim WitSeal execution receipt (existing canon; witseal verify VALID). \"metadata.experimental.mcp\" is a HASH-ONLY sidecar — NOT receipt canon, NOT in golden. Honesty ceiling: witnesses the MCP tool-call boundary, not the github-mcp server internal execution.",
+  "receipt": {
+    "schema_version": "witseal.receipt.v0.1",
+    "receipt_id": "rcpt_mpz3s2slJCdViGIp5Rwjjf",
+    "witness_event_id": "evt_mpz3s2slugfX4sb9gejqYa",
+    "chain_segment_id": "default",
+    "finalized_at": "2026-06-04T06:17:36Z",
+    "policy_decision_hash": "e9b071e15ad7e296cf9d4fd699ace5e157bd22363cb0c01c05c0cd17dc93a11a",
+    "classified_intent_hash": "f3fced50dca87f21e096dcf9431558bb25cb76d83416630902bfc260b3f94146",
+    "execution_result_hash": "1bc9c975a9da4aff067326e9846ba9589b007de71921e4f6f3df564a90e64b8a",
+    "outcome": "allowed_executed",
+    "receipt_hash": "fa823e281ba82a34cccbae2d797f2a1e8d4490e86cf0f2be4bd4eb66da5e6821"
+  },
+  "metadata": {
+    "experimental": {
+      "mcp": {
+        "note": "experimental — NOT receipt canon. Witnesses the MCP tool-call boundary, not the server internal execution.",
+        "server_image": "ghcr.io/github/github-mcp-server",
+        "server_name": "github-mcp-server",
+        "transport": "stdio",
+        "negotiated_protocol": "2025-06-18",
+        "tool": "get_me",
+        "input_sha256": "58585f82ba3765bf57e197e3eddda631a11394c075a39cabab4d50e965d2723d",
+        "output_sha256": "ed3438150e6189e88b9127a597bad31f713c170d23dc80929ad6e1558ffc0ff3",
+        "is_error": false
+      }
+    }
+  }
+}
