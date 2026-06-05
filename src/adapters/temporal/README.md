@@ -7,7 +7,10 @@ work passes through the WitSeal pipeline (classify → policy → mediate → wi
 - **Level 3 (own-execute)** — `witnessedShell`, registered as an Activity. The
   cheap Level-3 path: an Activity is your own function, so its body runs the
   command through WitSeal and WitSeal **owns execution**. The call yields a
-  **full execution receipt**, not merely a witnessed decision.
+  **full execution receipt**, not merely a witnessed decision. Live-verified
+  (2026-06-05): `witnessedShell` run as an Activity produced execution receipt
+  `rcpt_mq1dxtszhOBzERBqPoKjcC` → `witseal verify` VALID (v0.1 receipt and v0.2
+  signed evidence package). "Full" is scoped to this WitSeal-owned Activity.
 - **Level 2 (observe)** — an `ActivityInboundCallsInterceptor` that witnesses an
   Activity you do **not** own (a shell step in a third-party Activity). WitSeal
   observes the result and records a Level-2 witness event; it does not execute.
