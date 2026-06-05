@@ -165,6 +165,13 @@ is no de-duplication by command string, so the action would be recorded twice.
 - **Available (own-execute, Full Execution Coverage of the witnessed toolset):**
   OpenHands — executor swap; `browser`/`task_tracker` excluded, delete/rename
   refused (see the OpenHands footnote above).
+- **Available (own-execute, Full Execution Coverage of the witnessed toolset) —
+  Python framework family:** CrewAI, PydanticAI, Google ADK, AWS Strands,
+  AutoGen — each ships a WitSeal-authored tool/executor whose body routes
+  execution through the witseal CLI; each live-verified (`witseal verify` VALID).
+  Python source under `src/adapters/` (not in the npm package; like OpenHands).
+  Scope is the witnessed authored tool, not framework internals — compose the
+  agent's granted toolset so it is the execution path (see each `COVERAGE.md`).
 - **Available (Tool-Scoped Coverage via MCP, via the WitSeal MCP tool):**
   OpenClaw, Hermes.
 - **Shipped (Witness):** Claude Code (`PostToolUse`), Cursor.

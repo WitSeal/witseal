@@ -10,7 +10,12 @@ This directory contains adapters that integrate WitSeal with specific AI coding 
 - **Claude Code** — adapter sketched (Phase 1 stretch goal)
 - **LangGraph**, **OpenAI Agents SDK** — author-the-tool (Level 3) shims over the
   shared framework core (`framework/`); see each directory's README
-- **Cursor**, **Gemini CLI**, **CrewAI** — Phase 7
+- **CrewAI**, **PydanticAI**, **Google ADK**, **AWS Strands**, **AutoGen** —
+  Level-3 Python adapters (author-the-tool / executor seam) whose authored tool
+  routes execution through the witseal CLI; each live-verified (`witseal verify`
+  VALID). Python source, like the OpenHands adapter (not in the npm package);
+  see each directory's `COVERAGE.md` for the honest, scoped coverage.
+- **Cursor**, **Gemini CLI** — roadmap
 
 ## Adapter contract
 
