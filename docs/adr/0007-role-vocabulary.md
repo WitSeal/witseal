@@ -130,8 +130,8 @@ creates vocabulary debt without benefit:
 
 - Schemas can use distinct fields for `claimant`, `claimer`, `witness`,
   `attester` without overloading `principal.id`
-- Future RFCs (e.g., RFC-0002 on identity attribution) can reference
-  these terms without redefining them
+- A future RFC on identity attribution can reference these terms without
+  redefining them (RFC-0002 is already assigned to Witness Mode outcome)
 - Public communication gains precision: "WitSeal makes Claimer actions
   verifiable against Claimant authority" is unambiguous
 - Three-tier integrity model creates a clean Phase escalation path:
@@ -217,5 +217,5 @@ Claim.
 - **Claim/stamp/seal canonical, deferred** (internal design record)
   publication targets, PAI synergy reservation
 - **STYLE.md** (public) — use/avoid lock for public copy
-- **Future RFC-0002** (planned) — identity attribution in evidence
-  schema
+- **A future RFC** (planned) — identity attribution in evidence schema
+  (number to be assigned; RFC-0001/0002/0003 are already taken)

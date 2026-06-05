@@ -79,7 +79,7 @@ import { spawnSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { ChainLock, ChainLockUnavailableError, ENV_UNSAFE_LOCKLESS } from '../src/integrity/lock.js';
+import { ChainLock, ENV_UNSAFE_LOCKLESS } from '../src/integrity/lock.js';
 
 // ---------------------------------------------------------------------------
 // Shim helpers

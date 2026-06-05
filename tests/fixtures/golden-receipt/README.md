@@ -86,7 +86,7 @@ Independently re-derive:
 | RFC 8785 canonicalization | Sorted keys, no whitespace, RFC 8785 escape rules |
 | Hash field wire form | Bare 64-hex lowercase |
 | Digest field wire form | `"sha256:<64-hex lowercase>"` (prefixed) |
-| `prev_hash` wire form | `"sha256:<64-hex lowercase>"` or explicit `null` |
+| `prev_hash` wire form | Bare 64-hex lowercase (same form as `receipt_hash`, per `schemas/receipt-v0.2.schema.ts`) or explicit `null` |
 | Ed25519 signature wire form | `"ed25519:"`-prefixed base64 standard-padded `^ed25519:[A-Za-z0-9+/]{86}==$` (96 chars total) |
 | `git_commit` wire form | Bare 40-char lowercase SHA-1 hex |
 | `artifact_type` wire form | Kebab-case taxonomy literal (e.g. `"generic-binary"`); closed enum |

@@ -96,6 +96,8 @@ These describe how WitSeal works at runtime:
 - witness
 - receipt
 - hash-chain
+- hash chain
+- stamp
 - evidence package
 
 The runtime pipeline is named in this exact order in `ARCHITECTURE.md`. Do not reorder, rename, or shortcut these terms.
