@@ -52,6 +52,17 @@ action's receipt is independently verifiable.
 | LangGraph | ✅ | ✅ | ✅ | shipped |
 | OpenAI Agents SDK | ✅ | ✅ | ✅ | shipped |
 | Temporal | ✅ | ✅ | ✅ | shipped |
+| OpenHands | ✅ | ✅ | ✅ | available¹ |
+
+¹ OpenHands reaches Full Execution Coverage of its **default witnessed toolset**
+(terminal + file editing) by swapping the agent's tool executors to route through
+`witseal exec` / `witseal exec-file` and restricting the granted toolset to
+witnessed tools via `build_witnessed_toolset`. `browser` and `task_tracker` are
+excluded from the granted set; `file_editor` undo and `apply_patch` DELETE/MOVE
+are refused (not silently bypassed). The adapter is Python source under
+`src/adapters/openhands/` (see its `COVERAGE.md`); it is not shipped in the npm
+package. A configuration that grants unwitnessed tools (browser/task_tracker) is
+not Full.
 
 ### Witnessed Execution — Tool-Scoped Coverage via MCP
 
@@ -63,7 +74,6 @@ WitSeal tool is witnessed; the host's native executor is not.
 
 | Integration | Witnessed Execution (via the WitSeal MCP tool) | WitSeal adapter |
 |---|:---:|---|
-| OpenHands | ✅ | available |
 | OpenClaw | ✅ | available |
 | Hermes | ✅ | available |
 
@@ -141,8 +151,11 @@ is no de-duplication by command string, so the action would be recorded twice.
 
 - **Shipped (own-execute, Full Execution Coverage):** WitSeal MCP, OpenCode,
   LangGraph, OpenAI Agents SDK, Temporal.
+- **Available (own-execute, Full Execution Coverage of the witnessed toolset):**
+  OpenHands — executor swap; `browser`/`task_tracker` excluded, delete/rename
+  refused (see the OpenHands footnote above).
 - **Available (Tool-Scoped Coverage via MCP, via the WitSeal MCP tool):**
-  OpenHands, OpenClaw, Hermes.
+  OpenClaw, Hermes.
 - **Shipped (Witness):** Claude Code (`PostToolUse`), Cursor.
 - **Planned (Witness-level, sealed hosts):** Codex.
 
