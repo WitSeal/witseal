@@ -174,7 +174,7 @@ The honest claim: **WitSeal Phase 1 directly addresses ASI02, ASI03, ASI05, ASI0
 | T2 — Producer rewrite | out of scope | mitigated (Sigstore + Rekor) | mitigated (federated witnesses) |
 | T5 — Subprocess side-effects | partial | mitigated (eBPF/ptrace on Linux) | unchanged |
 | T13 — Binary tampering | mitigated at install | mitigated at runtime (TEE attestation) | unchanged |
-| T14 — Supply chain | partial | mitigated (reproducible builds + SLSA L3) | unchanged |
+| T14 — Supply chain | partial | mitigated (reproducible builds + SLSA Build Level 3) | unchanged |
 
 ---
 

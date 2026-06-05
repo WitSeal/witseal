@@ -212,7 +212,7 @@ Initial pre-release of the WitSeal Phase 1 wedge: the witnessed CLI runtime that
 - Hello-witness 90-second walkthrough (`examples/hello-witness/`)
 - 45 unit tests (hash-chain, classifier, policy engine)
 - CI workflow (Node 20, 22 matrix; type-check; style-check; schema-lint)
-- Release workflow with Sigstore Cosign signing, SLSA L2 provenance, CycloneDX SBOM
+- Release workflow with Sigstore Cosign signing, SLSA Build Level 3 provenance, CycloneDX SBOM
 
 ### Known limitations
 
