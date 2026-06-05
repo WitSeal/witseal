@@ -88,7 +88,7 @@ cosign verify-blob \
 
 Releases also include:
 
-- **SLSA Level 2 provenance** (`*.intoto.jsonl`) generated via `slsa-github-generator`
+- **SLSA Build Level 3 provenance** (`*.intoto.jsonl`) generated via `slsa-github-generator` (`generator_generic_slsa3`) — non-forgeable provenance from an isolated reusable workflow; provenance distribution/verification remain the consumer's responsibility
 - **CycloneDX SBOM** (`*.cdx.json`) listing all dependencies
 - **SHA-256 checksums** (`SHA256SUMS`) for all artifacts
 

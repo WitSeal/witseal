@@ -176,7 +176,7 @@ Examples:
 ```
 feat(policy): add path_matches negation support
 fix(hash-chain): handle null previous_event_hash on genesis
-docs(adr): add ADR-0007 for SLSA L3 reproducible builds
+docs(adr): add ADR-0007 for SLSA Build Level 3 reproducible builds
 test(classifier): cover edge cases in shell pattern matching
 ```
 
