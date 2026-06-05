@@ -75,5 +75,6 @@ proven for their presets), browser + task_tracker excluded, no tool-layer bypass
 execute_command. golden 8fc29592/1050 byte-identical throughout; schemas/serverInfo untouched;
 TS unchanged since Stage A.
 
-No merge — branch only. Card move to Full Execution Coverage is founder-authorized after a
-coverage gate-check of this A–E evidence.
+Shipped: merged to main (PR #65) and the showcase card is Full Execution Coverage. The claim
+is scoped to the witnessed/restricted toolset above (browser + task_tracker excluded; file
+delete/rename refused) — it is not a claim over a configuration that grants unwitnessed tools.
