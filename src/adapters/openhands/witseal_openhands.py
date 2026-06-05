@@ -1,4 +1,4 @@
-"""OpenHands full-L3 adapter — WitSeal-side execution swap (Stage 1: terminal).
+"""OpenHands full-L3 adapter — WitSeal-side execution swap (terminal tool).
 
 OpenHands (openhands-sdk) runs the agent's shell via a ``TerminalExecutor`` that
 owns its own tmux/subprocess session (``openhands.tools.terminal``). That path
@@ -30,11 +30,12 @@ subprocess — ``node <dist>/src/cli/index.js --data-dir <dir> exec -- /bin/sh -
 <command>`` — the same ``runExec`` pipeline the OpenCode adapter calls directly.
 No global install of the CLI is required.
 
-Stage 1 covers the terminal (shell) tool only. Full Execution Coverage also
-requires wrapping every other execution-capable tool the agent is granted —
-verified present in 1.21.0: ``file_editor``, ``apply_patch``,
-``planning_file_editor``, ``browser_use`` — or restricting the toolset to
-witnessed tools. See README.
+This module wraps the terminal (shell) tool. The file-mutating tools
+(``file_editor``, ``apply_patch``, ``planning_file_editor``) are wrapped in
+``witseal_openhands_files.py``; ``build_witnessed_toolset`` there assembles a
+granted set that is fully witnessed — terminal + file tools swapped, ``browser``
+and ``task_tracker`` excluded — i.e. Full Execution Coverage of that restricted
+toolset. See ``COVERAGE.md`` and the README.
 """
 
 from __future__ import annotations
