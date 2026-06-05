@@ -7,6 +7,12 @@ action through WitSeal. WitSeal owns execution (classify → policy → mediate 
 witness → receipt), so the call produces a full execution receipt — not merely
 a witnessed decision.
 
+Live-verified (2026-06-05): invoking the authored tool's `execute` through
+WitSeal produced execution receipt `rcpt_mq1dxdskTdRrdYxarTmEh0` → `witseal
+verify` VALID (v0.1 receipt and v0.2 signed evidence package). "Full" is scoped
+to this WitSeal-authored tool; execution the agent performs outside it is not
+covered.
+
 ## Model (Level 3 — WitSeal owns execution)
 
 `createWitsealShellTool` (in `tool.ts`) returns the config object the OpenAI

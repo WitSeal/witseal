@@ -49,9 +49,9 @@ action's receipt is independently verifiable.
 |---|:---:|:---:|:---:|---|
 | WitSeal MCP | ✅ | ✅ | ✅ | shipped |
 | OpenCode | ✅ | ✅ | ✅ | shipped |
-| LangGraph | ✅ | ✅ | ✅ | shipped |
-| OpenAI Agents SDK | ✅ | ✅ | ✅ | shipped |
-| Temporal | ✅ | ✅ | ✅ | shipped |
+| LangGraph | ✅ | ✅ | ✅ | shipped² |
+| OpenAI Agents SDK | ✅ | ✅ | ✅ | shipped² |
+| Temporal | ✅ | ✅ | ✅ | shipped² |
 | OpenHands | ✅ | ✅ | ✅ | available¹ |
 
 ¹ OpenHands reaches Full Execution Coverage of its **default witnessed toolset**
@@ -63,6 +63,16 @@ are refused (not silently bypassed). The adapter is Python source under
 `src/adapters/openhands/` (see its `COVERAGE.md`); it is not shipped in the npm
 package. A configuration that grants unwitnessed tools (browser/task_tracker) is
 not Full.
+
+² LangGraph, OpenAI Agents SDK, and Temporal reach Full Execution Coverage of
+the **WitSeal-authored tool/activity** the host wires through WitSeal
+(`createWitsealShellTool` for the SDKs, the `witnessedShell` Activity for
+Temporal): WitSeal owns that action end to end through `runExec`. Execution the
+framework performs *outside* the WitSeal-provided tool is not covered — "Full"
+is scoped to the witnessed tool, as with OpenHands above. Live-verified
+2026-06-05: OpenAI Agents SDK `rcpt_mq1dxdskTdRrdYxarTmEh0` and Temporal
+`rcpt_mq1dxtszhOBzERBqPoKjcC` each → `witseal verify` VALID (v0.1 receipt and
+v0.2 signed evidence package); the LangGraph factory was proven live previously.
 
 ### Witnessed Execution — Tool-Scoped Coverage via MCP
 
@@ -149,8 +159,9 @@ is no de-duplication by command string, so the action would be recorded twice.
 
 ## Availability today
 
-- **Shipped (own-execute, Full Execution Coverage):** WitSeal MCP, OpenCode,
-  LangGraph, OpenAI Agents SDK, Temporal.
+- **Shipped (own-execute, Full Execution Coverage):** WitSeal MCP, OpenCode;
+  and LangGraph, OpenAI Agents SDK, Temporal — Full of the WitSeal-authored
+  tool/activity the host wires through WitSeal (see footnote ²).
 - **Available (own-execute, Full Execution Coverage of the witnessed toolset):**
   OpenHands — executor swap; `browser`/`task_tracker` excluded, delete/rename
   refused (see the OpenHands footnote above).
