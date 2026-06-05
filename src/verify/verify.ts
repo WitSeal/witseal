@@ -162,7 +162,17 @@ export function verifyReceiptV02Object(
         'v0.2 receipt verification requires a public key (none supplied)',
     };
   }
-  const receipt: ExecutionReceiptV02 = parsed.data;
+  // Forward-compatibility: the signature/receipt_hash pre-image must
+  // be recomputed from the RECEIVED object — including any unknown additive
+  // top-level fields the signer included — NOT from `parsed.data`, which the
+  // zod schema has stripped of unknown keys. A receipt that carries an unknown
+  // field and is signed over ALL its fields (the unknown one included) would
+  // otherwise fail here, because the stripped pre-image no longer matches the
+  // bytes that were signed. The strict `safeParse` above still gates required-
+  // field presence and types; this only changes WHICH object feeds the
+  // canonical pre-image. JCS sorts the extra keys in with the rest, so the
+  // canonicalization rule is unchanged.
+  const receipt = forVerification(value, parsed.data);
   const sig = verifyReceiptV02(receipt, publicKey);
   if (!sig.valid) {
     return {
@@ -306,7 +316,11 @@ function verifyPackageReceipt(
     if (publicKey === undefined) {
       return { valid: false, reason: 'v0.2 receipt in package requires a public key (none supplied)' };
     }
-    const sig = verifyReceiptV02(receipt, publicKey);
+    // Forward-compatibility: verify the signature/receipt_hash over
+    // the RAW received receipt (unknown additive fields preserved), not the
+    // zod-stripped `parsed.data`. Same rationale as `verifyReceiptV02Object`;
+    // cross-reference checks below still use the validated `receipt`.
+    const sig = verifyReceiptV02(forVerification(raw, receipt), publicKey);
     if (!sig.valid) {
       return { valid: false, ...(sig.reason !== undefined ? { reason: sig.reason } : {}) };
     }
@@ -355,6 +369,33 @@ function crossCheckAgainstEvent(
     }
   }
   return { valid: true };
+}
+
+/**
+ * Pick the object whose fields feed the v0.2 signature/receipt_hash pre-image.
+ *
+ * Forward-compatibility: the pre-image must be canonicalized over the
+ * bytes that were actually signed, which include any unknown additive top-level
+ * fields the signer added. `validated` (the zod `parse` output) has had those
+ * unknown keys stripped, so it is the WRONG basis for the pre-image. When `raw`
+ * is a plain JSON object (the normal case — `safeParse` already succeeded on
+ * it), we return `raw` so unknown keys survive into canonicalization; the
+ * returned value is sound to treat as an `ExecutionReceiptV02` because every
+ * required field is present and well-typed (the schema validated it) and
+ * `verifyReceiptV02` only READS fields. `validated` is the defensive fallback
+ * for the (unreachable-after-success) non-object case.
+ *
+ * This does NOT relax validation: a receipt missing a required field, or with a
+ * wrong-typed existing field, fails `safeParse` before this is ever called.
+ */
+function forVerification(
+  raw: unknown,
+  validated: ExecutionReceiptV02
+): ExecutionReceiptV02 {
+  if (typeof raw === 'object' && raw !== null && !Array.isArray(raw)) {
+    return raw as ExecutionReceiptV02;
+  }
+  return validated;
 }
 
 function formatZodError(error: { errors: Array<{ path: (string | number)[]; message: string }> }): string {
