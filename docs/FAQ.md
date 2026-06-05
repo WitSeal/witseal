@@ -27,6 +27,8 @@ AGT may be sufficient. If you have agents that take shell or filesystem actions
 outside any orchestration framework — most coding agents — WitSeal is the layer
 designed for that.
 
+AGT governs actions. WitSeal receipts prove execution.
+
 ## How does this relate to MCP?
 
 MCP (Model Context Protocol) is a protocol for tool exposure to AI models.

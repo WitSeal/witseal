@@ -33,7 +33,7 @@ Five capabilities × six product categories. Cells are: **yes** / **partial** / 
 
 WitSeal is honest about scope. Phase 1 (the current phase) explicitly does not cover several capabilities that other products do. This is by design — we're choosing depth over breadth.
 
-**Microsoft Agent Governance Toolkit** ships with framework-agnostic adapters for LangChain, CrewAI, Google ADK, Haystack, LangGraph, and PydanticAI on day one. WitSeal Phase 1 covers OpenCode plus one stretch adapter. Breadth comes later (Phase 7).
+**Microsoft Agent Governance Toolkit** ships with framework-agnostic adapters for LangChain, CrewAI, Google ADK, Haystack, LangGraph, and PydanticAI on day one. WitSeal Phase 1 covers OpenCode plus one stretch adapter. Breadth comes later (Phase 7). AGT governs actions. WitSeal receipts prove execution.
 
 **Zenity** and **Pillar Security** cover SaaS-native agents (Microsoft Copilot Studio, Salesforce Agentforce, ServiceNow). WitSeal does not, and probably never will — that's a different product category.
 

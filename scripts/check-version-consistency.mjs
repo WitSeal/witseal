@@ -15,6 +15,8 @@
  *   2. README.md             - "npm install -g @witseal/cli@x.y.z" install pin
  *                              (and the "Install the `x.y.z` CLI" prose, if present).
  *   3. docs/CLAIM_BOUNDARY.md - "Verified against: `@witseal/cli@x.y.z`" anchor.
+ *   3b. package-lock.json     - root "version" and packages[""]."version" must
+ *                              equal package.json (npm keeps them in lockstep).
  *   4. Sweep                 - every "npm install -g @witseal/cli@x.y.z" pin in
  *                              tracked *.md files (templated pins containing
  *                              "${{ }}" are skipped, e.g. workflow tag interpolation).
@@ -96,6 +98,11 @@ check(
   ),
   'docs/CLAIM_BOUNDARY.md',
 );
+
+// 3b. package-lock.json — root and packages[""] must declare package.json's version.
+const lock = JSON.parse(read('package-lock.json'));
+check('package-lock root', lock?.version ?? null, 'package-lock.json');
+check('package-lock packages[""]', lock?.packages?.['']?.version ?? null, 'package-lock.json');
 
 // 4. Sweep every tracked *.md install pin (skip templated workflow-style pins).
 let mdFiles = [];

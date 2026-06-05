@@ -25,7 +25,6 @@ import {
   rmSync,
   writeSync,
   closeSync,
-  statSync,
   readFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';

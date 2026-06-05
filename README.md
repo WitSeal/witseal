@@ -2,10 +2,10 @@
 
 > A witnessed execution runtime for AI-agent actions.
 
-WitSeal produces execution evidence for agent actions. It records witness events
-and execution receipts in an evidence chain so a developer can inspect what was
-witnessed and verify the resulting evidence within the documented claim
-boundary.
+WitSeal produces execution evidence for agent actions. It classifies each action
+against an explicit authority boundary, then records witness events and execution
+receipts in an evidence chain so a developer can inspect what was witnessed and
+verify the resulting evidence within the documented claim boundary.
 
 WitSeal Phase 1 is a pre-release. Schemas and CLI surface may change before
 `v1.0`.
