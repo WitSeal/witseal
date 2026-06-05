@@ -112,7 +112,7 @@ jobs:
           path: release/
 
   provenance:
-    name: SLSA L2 provenance
+    name: SLSA Build Level 3 provenance
     needs: build
     permissions:
       actions: read
