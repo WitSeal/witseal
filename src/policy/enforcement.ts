@@ -20,11 +20,11 @@
  * concerns); this contour covers the policy-decision -> block mapping that
  * distinguishes Gate from Witness.
  *
- * NOTE: the Witness execution path (acting on `block: false` to run an action
- * the policy would deny, recording a distinct `witnessed_executed` outcome) is
- * a cross-track witness-event change held behind a wire-format RFC and is NOT
- * yet wired into `runExec`. This function is pure and mode-complete so the seam
- * is unit-testable ahead of that wiring.
+ * The Witness execution path (acting on `block: false` to run an action the
+ * policy would deny, recording a distinct `witnessed_executed` outcome) is
+ * wired into `runExec` — see `computeOutcome` in `src/cli/exec.ts`, the
+ * `mode === 'witness'` branch. This function stays the pure, mode-complete
+ * policy-decision -> block mapping that the executor consumes.
  */
 
 import type { PolicyDecision } from '../../schemas/policy.schema.js';
