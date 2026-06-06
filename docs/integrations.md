@@ -83,11 +83,13 @@ same-id `bash` tool placed in Kilo's tool directory overrides the built-in.
 Kilo's engine is an OpenCode fork, so it reuses WitSeal's shipped `opencode`
 mediation core (`mediateOpenCodeBash` → `runExec`). The WitSeal execution path is
 live-verified 2026-06-05: `rcpt_mq1p9wbeEFId6LZ3K62ThL` → `witseal verify` VALID.
-The runtime override (the custom `bash` shadowing the built-in inside a live Kilo
-session) is **source-confirmed** — the same registry mechanism shipped and proven
-for OpenCode — with a live-Kilo override smoke still pending. The adapter is
-documentation under `src/adapters/kilocode/` (a drop-in `bash.ts` template), not
-shipped in the npm package.
+The runtime override is **live-verified** 2026-06-06: in a real Kilo Code session
+(model `openai/gpt-4o-mini`), the agent was offered only the WitSeal-authored
+`bash` (the same-id tool replaced the built-in in Kilo's registry) and its `bash`
+call routed into that tool — producing `rcpt_mq1qlcjc4p34z95UfpNch3` →
+`witseal verify` VALID. The adapter is documentation under
+`src/adapters/kilocode/` (a drop-in `bash.ts` template), not shipped in the npm
+package.
 
 ### Witnessed Execution — Tool-Scoped Coverage via MCP
 

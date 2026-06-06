@@ -52,11 +52,14 @@ execution path:
   precedence (last-writer-wins). The shipped OpenCode adapter relies on the same
   property. This adapter ships the same-name `bash` default-export module to
   occupy that seam.
-- **Runtime shadow NOT observed headlessly.** Kilo Code is distributed as an
-  editor extension and needs the editor host plus a model key to drive the
-  registry end-to-end; there is no published headless agent CLI that loads a tool
-  dir and resolves `bash` without those. So a live model-driven shadow was not
-  exercised in this build. This is stated rather than fabricated.
+- **Runtime shadow live-verified (2026-06-06).** In a real Kilo Code session
+  (`kilo run`, model `openai/gpt-4o-mini`), the same-id `bash` module placed in
+  Kilo's tool directory replaced the built-in: the tool definition offered to the
+  model was the WitSeal `bash` (its description, a single entry, the built-in
+  absent), and the agent's `bash` call routed into the WitSeal body — producing
+  execution receipt `rcpt_mq1qlcjc4p34z95UfpNch3` → `witseal verify` VALID. The
+  shadow rests on the OpenCode-fork registry's last-writer-wins, now observed
+  end-to-end rather than only source-confirmed.
 
 ## Live verification receipt (this build)
 

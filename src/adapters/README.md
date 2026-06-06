@@ -13,9 +13,10 @@ This directory contains adapters that integrate WitSeal with specific AI coding 
   see each directory's README
 - **Kilo Code** — B2 bash-shadow override (Kilo's engine is an OpenCode fork),
   reusing the shipped `opencode/` mediation core via a same-id `bash` tool.
-  Execution path live-verified (`witseal verify` VALID); the runtime override is
-  source-confirmed (the same registry shipped + proven for OpenCode), with a
-  live-Kilo override smoke pending. See its `COVERAGE.md`.
+  Both the execution path and the runtime override are live-verified: in a real
+  Kilo session the agent's `bash` call routed into the WitSeal shadow tool (the
+  same-id tool replaced the built-in) → `witseal verify` VALID. See its
+  `COVERAGE.md`.
 - **CrewAI**, **PydanticAI**, **Google ADK**, **AWS Strands**, **AutoGen**, **MAF
   (Microsoft Agent Framework, Python)** —
   Level-3 Python adapters (author-the-tool / executor seam) whose authored tool
