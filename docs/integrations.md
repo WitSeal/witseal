@@ -52,6 +52,7 @@ action's receipt is independently verifiable.
 | LangGraph | ✅ | ✅ | ✅ | shipped² |
 | OpenAI Agents SDK | ✅ | ✅ | ✅ | shipped² |
 | Temporal | ✅ | ✅ | ✅ | shipped² |
+| GitHub Copilot SDK | ✅ | ✅ | ✅ | shipped² |
 | OpenHands | ✅ | ✅ | ✅ | available¹ |
 
 ¹ OpenHands reaches Full Execution Coverage of its **default witnessed toolset**
@@ -64,15 +65,16 @@ are refused (not silently bypassed). The adapter is Python source under
 package. A configuration that grants unwitnessed tools (browser/task_tracker) is
 not Full.
 
-² LangGraph, OpenAI Agents SDK, and Temporal reach Full Execution Coverage of
-the **WitSeal-authored tool/activity** the host wires through WitSeal
-(`createWitsealShellTool` for the SDKs, the `witnessedShell` Activity for
-Temporal): WitSeal owns that action end to end through `runExec`. Execution the
-framework performs *outside* the WitSeal-provided tool is not covered — "Full"
-is scoped to the witnessed tool, as with OpenHands above. Live-verified
-2026-06-05: OpenAI Agents SDK `rcpt_mq1dxdskTdRrdYxarTmEh0` and Temporal
-`rcpt_mq1dxtszhOBzERBqPoKjcC` each → `witseal verify` VALID (v0.1 receipt and
-v0.2 signed evidence package); the LangGraph factory was proven live previously.
+² LangGraph, OpenAI Agents SDK, Temporal, and GitHub Copilot SDK reach Full
+Execution Coverage of the **WitSeal-authored tool/activity** the host wires
+through WitSeal (`createWitsealShellTool` for the SDKs, the `witnessedShell`
+Activity for Temporal): WitSeal owns that action end to end through `runExec`.
+Execution the framework performs *outside* the WitSeal-provided tool is not
+covered — "Full" is scoped to the witnessed tool, as with OpenHands above.
+Live-verified 2026-06-05: OpenAI Agents SDK `rcpt_mq1dxdskTdRrdYxarTmEh0`,
+Temporal `rcpt_mq1dxtszhOBzERBqPoKjcC`, and GitHub Copilot SDK
+`rcpt_mq1laky3RzxGUJ6weihogF` each → `witseal verify` VALID; the LangGraph
+factory was proven live previously.
 
 ### Witnessed Execution — Tool-Scoped Coverage via MCP
 
@@ -167,7 +169,8 @@ is no de-duplication by command string, so the action would be recorded twice.
   refused (see the OpenHands footnote above).
 - **Available (own-execute, Full Execution Coverage of the witnessed toolset) —
   Python framework family:** CrewAI, PydanticAI, Google ADK, AWS Strands,
-  AutoGen — each ships a WitSeal-authored tool/executor whose body routes
+  AutoGen, MAF (Microsoft Agent Framework) — each ships a WitSeal-authored
+  tool/executor whose body routes
   execution through the witseal CLI; each live-verified (`witseal verify` VALID).
   Python source under `src/adapters/` (not in the npm package; like OpenHands).
   Scope is the witnessed authored tool, not framework internals — compose the
