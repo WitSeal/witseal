@@ -8,9 +8,11 @@ This directory contains adapters that integrate WitSeal with specific AI coding 
 
 - **OpenCode** — primary integration target; in development
 - **Claude Code** — adapter sketched (Phase 1 stretch goal)
-- **LangGraph**, **OpenAI Agents SDK** — author-the-tool (Level 3) shims over the
-  shared framework core (`framework/`); see each directory's README
-- **CrewAI**, **PydanticAI**, **Google ADK**, **AWS Strands**, **AutoGen** —
+- **LangGraph**, **OpenAI Agents SDK**, **GitHub Copilot SDK** — author-the-tool
+  (Level 3) shims over the shared framework core (`framework/`); see each
+  directory's README
+- **CrewAI**, **PydanticAI**, **Google ADK**, **AWS Strands**, **AutoGen**, **MAF
+  (Microsoft Agent Framework, Python)** —
   Level-3 Python adapters (author-the-tool / executor seam) whose authored tool
   routes execution through the witseal CLI; each live-verified (`witseal verify`
   VALID). Python source, like the OpenHands adapter (not in the npm package);
