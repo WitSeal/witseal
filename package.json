@@ -56,6 +56,10 @@
       "types": "./dist/src/adapters/copilot/tool.d.ts",
       "import": "./dist/src/adapters/copilot/tool.js"
     },
+    "./adapters/mastra": {
+      "types": "./dist/src/adapters/mastra/tool.d.ts",
+      "import": "./dist/src/adapters/mastra/tool.js"
+    },
     "./adapters/claude-code": {
       "types": "./dist/src/adapters/claude-code/witness.d.ts",
       "import": "./dist/src/adapters/claude-code/witness.js"
