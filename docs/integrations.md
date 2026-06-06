@@ -53,6 +53,8 @@ action's receipt is independently verifiable.
 | OpenAI Agents SDK | ✅ | ✅ | ✅ | shipped² |
 | Temporal | ✅ | ✅ | ✅ | shipped² |
 | GitHub Copilot SDK | ✅ | ✅ | ✅ | shipped² |
+| Mastra | ✅ | ✅ | ✅ | shipped² |
+| Kilo Code | ✅ | ✅ | ✅ | available³ |
 | OpenHands | ✅ | ✅ | ✅ | available¹ |
 
 ¹ OpenHands reaches Full Execution Coverage of its **default witnessed toolset**
@@ -65,16 +67,27 @@ are refused (not silently bypassed). The adapter is Python source under
 package. A configuration that grants unwitnessed tools (browser/task_tracker) is
 not Full.
 
-² LangGraph, OpenAI Agents SDK, Temporal, and GitHub Copilot SDK reach Full
-Execution Coverage of the **WitSeal-authored tool/activity** the host wires
+² LangGraph, OpenAI Agents SDK, Temporal, GitHub Copilot SDK, and Mastra reach
+Full Execution Coverage of the **WitSeal-authored tool/activity** the host wires
 through WitSeal (`createWitsealShellTool` for the SDKs, the `witnessedShell`
 Activity for Temporal): WitSeal owns that action end to end through `runExec`.
 Execution the framework performs *outside* the WitSeal-provided tool is not
 covered — "Full" is scoped to the witnessed tool, as with OpenHands above.
 Live-verified 2026-06-05: OpenAI Agents SDK `rcpt_mq1dxdskTdRrdYxarTmEh0`,
-Temporal `rcpt_mq1dxtszhOBzERBqPoKjcC`, and GitHub Copilot SDK
-`rcpt_mq1laky3RzxGUJ6weihogF` each → `witseal verify` VALID; the LangGraph
-factory was proven live previously.
+Temporal `rcpt_mq1dxtszhOBzERBqPoKjcC`, GitHub Copilot SDK
+`rcpt_mq1laky3RzxGUJ6weihogF`, and Mastra `rcpt_mq1p7xs79L42AJdPFe4xtg` each →
+`witseal verify` VALID; the LangGraph factory was proven live previously.
+
+³ Kilo Code reaches Full Execution Coverage via a **B2 bash-shadow override**: a
+same-id `bash` tool placed in Kilo's tool directory overrides the built-in.
+Kilo's engine is an OpenCode fork, so it reuses WitSeal's shipped `opencode`
+mediation core (`mediateOpenCodeBash` → `runExec`). The WitSeal execution path is
+live-verified 2026-06-05: `rcpt_mq1p9wbeEFId6LZ3K62ThL` → `witseal verify` VALID.
+The runtime override (the custom `bash` shadowing the built-in inside a live Kilo
+session) is **source-confirmed** — the same registry mechanism shipped and proven
+for OpenCode — with a live-Kilo override smoke still pending. The adapter is
+documentation under `src/adapters/kilocode/` (a drop-in `bash.ts` template), not
+shipped in the npm package.
 
 ### Witnessed Execution — Tool-Scoped Coverage via MCP
 
