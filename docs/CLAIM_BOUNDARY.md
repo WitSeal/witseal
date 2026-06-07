@@ -1,7 +1,7 @@
 # WitSeal Claim Boundary
 
 Status: Phase 1 public claim boundary
-Verified against: `@witseal/cli@0.3.0`
+Verified against: `@witseal/cli@0.4.0`
 
 WitSeal Phase 1 makes a narrow claim: the CLI can mediate actions through a
 policy pack, record witness events and execution receipts, export an evidence
@@ -10,13 +10,13 @@ package, and verify evidence continuity inside the limits below.
 Anything outside this document is not a Phase 1 public claim.
 
 The Phase 1 Gate/Witness baseline documented here was first verified against
-`0.1.3` and is unchanged through the current `0.3.0` release: `0.3.0` is additive
-(file execution, OpenHands full execution coverage, the Cursor witness adapter)
-with no wire-format change and a byte-identical golden receipt, so the Phase 1
-claims below hold for `0.3.0`. The `0.3.0` file-execution path
-(`witseal exec-file`) is documented in [`CHANGELOG.md`](../CHANGELOG.md) and
-[`integrations.md`](./integrations.md); it is an additional capability and is not
-part of this Phase 1 claim boundary.
+`0.1.3` and is unchanged through the current `0.4.0` release: every release since
+has been additive (file execution in `0.4.0`; expanded adapter coverage and a
+forward-compatible verifier in `0.4.0`) with no wire-format change and a
+byte-identical golden receipt, so the Phase 1 claims below hold for `0.4.0`. The
+file-execution path (`witseal exec-file`) is documented in
+[`CHANGELOG.md`](../CHANGELOG.md) and [`integrations.md`](./integrations.md); it
+is an additional capability and is not part of this Phase 1 claim boundary.
 
 ## Execution Modes (Gate and Witness)
 
@@ -52,9 +52,9 @@ records what happened and what policy decided — it does not prevent a denied
 action from running.
 
 > Witness Mode (`--mode witness`) and the `witnessed_executed` outcome arrived in
-> `0.1.3` and are unchanged through `0.3.0`. The flow below (Gate Mode, and the
+> `0.1.3` and are unchanged through `0.4.0`. The flow below (Gate Mode, and the
 > Witness demonstration) was verified at `0.1.3` and remains valid on the
-> additive `0.3.0` release — the pipeline and the golden receipt are unchanged.
+> additive `0.4.0` release — the pipeline and the golden receipt are unchanged.
 
 ## Demonstrable QA Flow
 
@@ -63,7 +63,7 @@ The positive claims below are bounded by this fresh-package flow:
 ```bash
 set -euo pipefail
 
-npm install -g @witseal/cli@0.3.0
+npm install -g @witseal/cli@0.4.0
 export WITSEAL_DATA_DIR="$(mktemp -d)"
 
 NO_POLICY_DATA_DIR="$(mktemp -d)"
@@ -173,13 +173,13 @@ The two runs are distinguishable by outcome: `denied_by_policy` (Gate, not
 executed) versus `witnessed_executed` (Witness, executed). The Witness
 demonstration uses a fresh data dir so `receipt show 0` shows `witnessed_executed`
 as the sole event in that chain, without a `pending` precursor from the Gate run.
-This Witness flow was verified at the `0.1.3` release and is unchanged through `0.3.0`.
+This Witness flow was verified at the `0.1.3` release and is unchanged through `0.4.0`.
 
 ## Positive Claims
 
-For the verified `@witseal/cli@0.3.0` flow, WitSeal Phase 1 claims:
+For the verified `@witseal/cli@0.4.0` flow, WitSeal Phase 1 claims:
 
-- `npm install -g @witseal/cli@0.3.0` installs the CLI.
+- `npm install -g @witseal/cli@0.4.0` installs the CLI.
 - With no active policy pack, `witseal exec -- <command>` fails closed, exits
   with code `100`, and records a `no_policy_configured` receipt.
 - `witseal policy add <file>` registers a local JSON policy pack that conforms

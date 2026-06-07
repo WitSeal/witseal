@@ -8,6 +8,43 @@ Pre-1.0 versions: schemas and CLI surface are unstable. Minor versions may intro
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-06-07
+
+> Expanded adapter coverage and release-process hardening. WitSeal adds witnessed
+> execution for a broad set of agent frameworks, a forward-compatible verifier,
+> and a fail-closed version-consistency release gate. All additive over the
+> existing pipeline — no wire-format change, golden receipt byte-identical, no
+> schema-version bump.
+
+### Added
+
+- **New framework adapters** (Witnessed Execution, scoped to the witnessed tool):
+  GitHub Copilot SDK, Microsoft Agent Framework (Python), Mastra, Kilo Code,
+  CrewAI, PydanticAI, Google ADK, AWS Strands, and AutoGen. Each routes the
+  WitSeal-authored tool through `runExec` and emits an independently verifiable
+  receipt; coverage is scoped to that tool, not the framework's other execution.
+- **Release version-consistency gate** (`npm run check:versions`,
+  `scripts/check-version-consistency.mjs`): a fail-closed check that the README
+  install pin, the `docs/CLAIM_BOUNDARY.md` "Verified against" anchor, the
+  `CHANGELOG.md` latest release, `package.json`, and `package-lock.json` all
+  agree. Wired into CI, `prepublishOnly`, and the release workflow. See
+  [`RELEASING.md`](./RELEASING.md).
+
+### Changed
+
+- **Verifier preserves unknown additive fields** in the receipt hash preimage, so
+  receipts that carry forward-compatible additive fields stay verifiable across
+  versions. The golden receipt is unchanged.
+- Documentation scopes framework "Full Execution Coverage" to the witnessed tool,
+  with live-verified receipts cited; the SLSA level is unified to "SLSA Build
+  Level 3".
+
+### Docs
+
+- Public-surface hygiene: competitive positioning generalized to neutral
+  categories, the competitive-comparison document removed, and the public
+  sanitary-barrier workflow scrubbed of internal markers.
+
 ## [0.3.0] - 2026-06-03
 
 > File execution and full execution coverage. WitSeal can now mediate file
@@ -228,7 +265,10 @@ Documented honestly in [`docs/threat-model.md`](docs/threat-model.md):
 
 All schemas at `v0.1`. Stabilization to `v1.0` targeted at end of Phase 5.
 
-[Unreleased]: https://github.com/WitSeal/witseal/compare/v0.1.3...HEAD
+[Unreleased]: https://github.com/WitSeal/witseal/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/WitSeal/witseal/compare/v0.3.0...v0.4.0
+[0.3.0]: https://github.com/WitSeal/witseal/compare/v0.2.0...v0.3.0
+[0.2.0]: https://github.com/WitSeal/witseal/compare/v0.1.3...v0.2.0
 [0.1.3]: https://github.com/WitSeal/witseal/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/WitSeal/witseal/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/WitSeal/witseal/compare/v0.1.0...v0.1.1
