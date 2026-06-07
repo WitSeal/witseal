@@ -222,7 +222,7 @@ Documented honestly in [`docs/threat-model.md`](docs/threat-model.md):
 - No kernel-level mediation — Phase 5 (eBPF / ptrace)
 - No prompt-injection defense — out of scope (model-layer concern)
 - No remote witness chain — Phase 6 (federation)
-- No identity layer — out of scope (pair with Strata-style products)
+- No identity layer — out of scope (pair with identity gateway products)
 
 ### Schema versions
 
