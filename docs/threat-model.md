@@ -70,7 +70,7 @@ For each threat, this section states the Phase 1 posture: **mitigated**, **parti
 
 **Description:** A document fed to the agent contains instructions that subvert the agent's reasoning.
 
-**Posture:** **Out of scope.** WitSeal evaluates *what* an action does, not *why* the agent proposed it. The model layer requires its own defenses (e.g., Pillar Security, Prompt Security, Microsoft AGT for goal-hijack detection). WitSeal pairs naturally with these, addressing different layers.
+**Posture:** **Out of scope.** WitSeal evaluates *what* an action does, not *why* the agent proposed it. The model layer requires model-layer defenses and prompt-injection-aware gateways. WitSeal does not claim to replace model-layer defenses, identity gateways, observability systems, or governance frameworks. It provides a runtime evidence layer that can complement them.
 
 ### T5. Subprocess writing files outside its captured stdout
 
@@ -154,7 +154,7 @@ For each ASI item, what WitSeal Phase 1 addresses:
 |---|---|---|
 | ASI01 | Agent Goal Hijack | **Out of scope.** Model-layer defense; pair with prompt-injection-aware gateway |
 | ASI02 | Tool Misuse & Exploitation | **Mitigated.** Policy-driven mediation; deny-by-default for high-risk tools |
-| ASI03 | Identity & Privilege Abuse | **Partially mitigated.** Recording present; identity layer (token minting) deferred to integrations like Strata |
+| ASI03 | Identity & Privilege Abuse | **Partially mitigated.** Recording present; identity layer (token minting) deferred to identity gateway integrations |
 | ASI04 | Agentic Supply Chain Vulnerabilities | **Partially mitigated.** SBOM + signed releases; reproducible builds Phase 5 |
 | ASI05 | Unexpected Code Execution | **Mitigated.** Subprocess capture, argv recording, deny-by-default for destructive shells |
 | ASI06 | Memory & Context Poisoning | **Out of scope.** Model/orchestration-layer concern |

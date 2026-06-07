@@ -45,7 +45,7 @@ The left column is what WitSeal **uses**. The right column is what WitSeal **doe
 | authority declaration | role assignment, configuration | Authority is declared by a human, not configured by an admin. The distinction matters. |
 | cross-agent trust | multi-agent governance, agent orchestration | Cross-agent trust is what WitSeal eventually enables; orchestration is a different category. |
 | operational integrity | reliability, robustness | Operational integrity means the action chain remains intact under attack and failure. The others are weaker. |
-| constraint (by policy decision) | enforcement, gating, compliance control, guard, guardrails | The Gate contour constrains an action per an externally supplied policy decision — it does not author the policy (authoring is PAI-Kernel territory; cf. authority boundary). |
+| constraint (by policy decision) | enforcement, gating, compliance control, guard, guardrails | The Gate contour constrains an action per an externally supplied policy decision — it does not author the policy (authoring belongs to an external policy/authority layer; cf. authority boundary). |
 
 ---
 
@@ -106,9 +106,9 @@ The runtime pipeline is named in this exact order in `ARCHITECTURE.md`. Do not r
 
 These have specific meaning and should not be used loosely:
 
-- sovereign — only when describing the long-term PAI-Native runtime, not WitSeal Phase 1
-- constitutional — reserved for PAI-Kernel; WitSeal does not have a constitution
-- authorial — reserved for PAI ecosystem language; not used in WitSeal-only documents
+- sovereign — only when describing the later authority-runtime layer, not WitSeal Phase 1
+- constitutional — reserved for an upstream constitutional authority layer
+- authorial — broader authority-layer language; not used in WitSeal-only documents
 - authority — has a specific meaning (declared, inspectable boundary); not a synonym for "permission"
 
 ---
@@ -118,13 +118,13 @@ These have specific meaning and should not be used loosely:
 Some "Avoid" terms deserve explanation because they look harmless.
 
 **"AI safety"**
-Owned by alignment research community (Anthropic, DeepMind, OpenAI safety teams). Using it positions WitSeal as a competitor to ML research, which is the wrong frame. WitSeal is operational infrastructure, not safety research.
+Owned by alignment research and model-safety communities. Using it positions WitSeal as a competitor to ML research, which is the wrong frame. WitSeal is operational infrastructure, not safety research.
 
 **"AI governance"**
 Owned by enterprise GRC vendors and policy think tanks. Connotes dashboards, audits, and committee meetings. WitSeal is a developer-facing runtime; governance is an outcome, not a positioning.
 
 **"AI observability"**
-Owned by Datadog, New Relic, Honeycomb, Arize. Implies passive metrics and traces. WitSeal does not observe — it mediates and proves.
+Owned by existing logging/observability platforms. Implies passive metrics and traces. WitSeal does not observe — it mediates and proves.
 
 **"Compliance"**
 Compliance is downstream of WitSeal's evidence. Saying "WitSeal helps with compliance" weakens the product to a feature of someone else's category. Compliance buyers are the wrong wedge.
@@ -278,25 +278,7 @@ Repetition is the price of category creation. Linguists call this lexical primin
 
 ---
 
-## 8. Terms NOT Yet Owned (Watchlist)
-
-Other vendors have introduced terms that may converge with WitSeal's category. Track these; do not adopt them as primary terminology, but understand them:
-
-| External Term | Used By | WitSeal Position |
-|---|---|---|
-| receipt chain | Authensor, Aegon (arXiv 2604.06693), NABAOS (arXiv 2603.10060) | Adjacent. Use *evidence chain* as primary; mention *receipt chain* in comparison contexts. |
-| Cross-Model Verification Kernel | Microsoft Agent Governance Toolkit | Different concept (model-output verification). Do not adopt. |
-| AI Identity Gateway | Strata | Different layer (token minting, not action mediation). Do not adopt. |
-| AI Security Fabric | Pillar Security | Marketing term; no precise meaning. Do not adopt. |
-| Structured Decision Records | Oracle governance taxonomy | Adjacent to *policy decision*. Use *policy decision* as primary. |
-| fail-closed SDK | Authensor | Useful concept but already covered by *deny-by-default*. Use deny-by-default. |
-| ephemeral, task-scoped tokens | Strata | Identity layer concept. Out of WitSeal scope until Phase 6+. |
-
-Reassess this list quarterly. If a term gains industry-wide adoption (cited by analysts, used by 3+ vendors), reconsider whether to adopt or explicitly distinguish.
-
----
-
-## 9. Enforcement
+## 8. Enforcement
 
 This style guide is enforced through three mechanisms.
 
@@ -311,19 +293,17 @@ Once per quarter, run a simple grep across the repository for the top five Avoid
 
 ---
 
-## 10. When This Document Changes
+## 9. When This Document Changes
 
 The Use column is **stable** — terms only leave it under exceptional circumstances (e.g., a term becomes overloaded by an industry shift).
 
-The Avoid column is **growing** — as competitors introduce vocabulary that WitSeal explicitly distances from, new entries are added.
+The Avoid column is **growing** — as external vocabulary creates ambiguity with WitSeal's terms, new entries are added.
 
-The Watchlist (Section 8) is **active** — reassess every quarter.
-
-Changes to Sections 2 and 3 require an RFC and founder sign-off. Changes to Sections 8 and 10 require a PR with rationale.
+Changes to Sections 2 and 3 require an RFC and founder sign-off. Other changes require a PR with rationale.
 
 ---
 
-## 11. The One-Line Summary
+## 10. The One-Line Summary
 
 If anyone asks why WitSeal cares this much about words:
 

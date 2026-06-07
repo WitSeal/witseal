@@ -215,7 +215,7 @@ Claim.
 
 - **Analogy palette and vocabulary discipline** (internal design record)
 - **Claim/stamp/seal canonical, deferred** (internal design record)
-  publication targets, PAI synergy reservation
+  publication targets, future authority-layer integration reservation
 - **STYLE.md** (public) — use/avoid lock for public copy
 - **A future RFC** (planned) — identity attribution in evidence schema
   (number to be assigned; RFC-0001/0002/0003 are already taken)

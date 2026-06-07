@@ -69,7 +69,7 @@ body:
       options:
         - label: I have read [CONTRIBUTING.md](https://github.com/WitSeal/witseal/blob/main/CONTRIBUTING.md)
           required: true
-        - label: This is **not** a request for MCP runtime, PAI-Kernel integration, or items explicitly listed as out-of-scope in CONTRIBUTING.md
+        - label: This is **not** a request for MCP runtime, constitutional authority-layer integration, or items explicitly listed as out-of-scope in CONTRIBUTING.md
           required: true
         - label: I have searched existing issues and this is not a duplicate
           required: true

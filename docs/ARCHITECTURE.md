@@ -25,7 +25,9 @@ machine.
 - MCP runtime layer (Phase 4) — WitSeal natively mediating arbitrary MCP tool-call traffic as a first-class runtime boundary; distinct from the shipped WitSeal MCP server *adapter* (which exposes WitSeal's own tool — see [`integrations.md`](./integrations.md))
 - Cryptographic signature scheme details — Sigstore integration (Phase 5)
 - Remote witnessed execution protocol (Phase 6)
-- PAI-Kernel constitutional substrate (Phase 8)
+- constitutional authority substrate (Phase 8)
+
+WitSeal can operate alongside external policy, identity, governance, and observability layers. Its role is not to define policy, but to produce portable evidence of runtime execution.
 
 This document is the architectural contract Phase 1 implementation must satisfy. Deviations require an RFC.
 
@@ -613,7 +615,7 @@ with a prompt-injection-aware gateway for defense in depth.
 
 4. **No remote witness chain.** Phase 1 is single-node. Multi-node evidence federation is Phase 6.
 
-5. **No identity layer.** WitSeal does not authenticate agents, mint scoped tokens, or manage access at the identity layer. Pair with Strata-style identity gateway products if identity is required.
+5. **No identity layer.** WitSeal does not authenticate agents, mint scoped tokens, or manage access at the identity layer. Pair with identity gateway products if identity is required.
 
 6. **No replay-during-execution.** Replay is post-hoc reconstruction from evidence. Phase 1 does not support speculative re-execution or what-if analysis.
 

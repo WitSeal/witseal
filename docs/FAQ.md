@@ -6,28 +6,13 @@
 > - Architecture → [`docs/ARCHITECTURE.md`](./ARCHITECTURE.md)
 > - What we protect against (and don't) → [`docs/threat-model.md`](./threat-model.md)
 > - Decisions and rationale → [`docs/adr/`](./adr/)
-> - How we compare → [`docs/competitive-comparison.md`](./competitive-comparison.md)
 
 ---
 
-## How is this different from Microsoft Agent Governance Toolkit?
-
-Different layer. Microsoft AGT is a framework-agnostic agent governance toolkit
-focused on policy and guardrails for agents written against LangChain, CrewAI,
-LangGraph, and similar orchestration frameworks. It runs adjacent to the agent
-orchestration layer.
-
-WitSeal is a **runtime that mediates execution itself**. An agent (Claude Code,
-Cursor, OpenCode, etc.) running through `witseal exec` cannot take an action
-without WitSeal seeing, classifying, and recording it. The two products cover
-different parts of the stack and pair naturally.
-
-If you only run agents inside one of the orchestration frameworks AGT supports,
-AGT may be sufficient. If you have agents that take shell or filesystem actions
-outside any orchestration framework — most coding agents — WitSeal is the layer
-designed for that.
-
-AGT governs actions. WitSeal receipts prove execution.
+### How is WitSeal different from agent governance toolkits?
+Agent governance toolkits help define, enforce, or coordinate what AI systems should be allowed to do.
+WitSeal focuses on a different layer: producing verifiable runtime evidence of what actually executed.
+It does not replace governance systems. It gives them stronger evidence.
 
 ## How does this relate to MCP?
 
@@ -53,9 +38,8 @@ If a prompt-injected agent proposes `rm -rf /`, WitSeal will deny it (with
 the right policy pack loaded). But WitSeal does not detect that the agent was
 compromised — it just sees a destructive action and refuses.
 
-Pair WitSeal with a model-layer defense (Pillar Security, Prompt Security,
-Microsoft AGT for goal-hijack detection) for full coverage. They address
-different threats; they compose.
+Pair WitSeal with model-layer defenses or prompt-injection-aware gateways for
+full coverage. They address different threats; they compose.
 
 ## Can I use it in CI?
 
@@ -122,7 +106,7 @@ launch).
 for Phase 1. If you'd like to pilot, see the
 [design partner inquiry template](https://github.com/WitSeal/witseal/issues/new?template=design-partner.yml).
 
-## How is this different from logging tools like Datadog, Splunk, or CloudWatch?
+## How is this different from an existing logging/observability stack?
 
 Logs record what a system did, in a format optimized for diagnostics and
 search. WitSeal records actions in a format optimized for **evidence** —
@@ -148,8 +132,9 @@ WitSeal does **not** replace your existing logging stack. It complements it
 specifically for actions taken by AI agents — the place where conventional
 logging tools were not designed to provide cryptographic guarantees.
 
-If you already have Datadog or Splunk, you keep them. WitSeal adds the
-evidence layer that those tools don't provide for agentic workflows.
+If you already have an existing logging/observability stack, you keep it.
+WitSeal adds the evidence layer that stack does not provide for agentic
+workflows.
 
 ## Can I try it without an AI agent?
 
