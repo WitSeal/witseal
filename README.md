@@ -33,17 +33,18 @@ change to the default.
 
 ## Install
 
-Install the `0.4.0` CLI from npm:
+Install the `0.4.1` CLI from npm:
 
 ```bash
-npm install -g @witseal/cli@0.4.0
+npm install -g @witseal/cli@0.4.1
 ```
 
 ## Connect Claude (one command)
 
-Wire WitSeal into your MCP client — **Claude Desktop**, **Claude Code**, or
-**Cursor** — so the agent gets a witnessed `shell` tool. One command, idempotent,
-safe by default (witness mode records without blocking):
+Wire WitSeal into **Claude** — both **Claude Desktop** and **Claude Code** — so
+the agent gets a witnessed `shell` tool. One command, idempotent, safe by default
+(witness mode records without blocking). The same command also configures
+**Cursor** and other MCP clients:
 
 ```bash
 witseal connect                 # auto-detect + configure all supported clients
