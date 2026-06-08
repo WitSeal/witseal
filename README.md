@@ -39,6 +39,33 @@ Install the `0.4.0` CLI from npm:
 npm install -g @witseal/cli@0.4.0
 ```
 
+## Connect Claude (one command)
+
+Wire WitSeal into your MCP client — **Claude Desktop**, **Claude Code**, or
+**Cursor** — so the agent gets a witnessed `shell` tool. One command, idempotent,
+safe by default (witness mode records without blocking):
+
+```bash
+witseal connect                 # auto-detect + configure all supported clients
+# or target one:
+witseal connect claude-desktop
+witseal connect claude-code
+witseal connect cursor
+# preview the changes without writing:
+witseal connect --print
+# enforce instead of record:
+witseal connect --mode gate
+```
+
+It adds a `witseal` entry to the client's MCP config (never clobbering your other
+servers) and scaffolds a starter policy pack under `~/.witseal/`. Restart the
+client, ask it to run a shell command through WitSeal, then `witseal receipt
+show` and `witseal verify`.
+
+> **Scope:** the WitSeal MCP server witnesses commands run through its own
+> `shell` tool — not the client's other tools or native actions. See
+> [`src/adapters/mcp/README.md`](src/adapters/mcp/README.md).
+
 ## Execution modes
 
 WitSeal Phase 1 has one receipt protocol and two execution modes, selected per

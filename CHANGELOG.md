@@ -8,6 +8,14 @@ Pre-1.0 versions: schemas and CLI surface are unstable. Minor versions may intro
 
 ## [Unreleased]
 
+### Added
+
+- **`witseal connect`** — one-command MCP-client setup. Auto-configures Claude
+  Desktop, Claude Code, or Cursor to use the WitSeal MCP server (the witnessed
+  `shell` tool); idempotent (never clobbers other servers), witness-mode by
+  default, and scaffolds a starter policy pack under the data dir. Use `--print`
+  to preview and `--mode gate` to enforce.
+
 ## [0.4.0] - 2026-06-07
 
 > Expanded adapter coverage and release-process hardening. WitSeal adds witnessed
