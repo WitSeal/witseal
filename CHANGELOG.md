@@ -8,6 +8,8 @@ Pre-1.0 versions: schemas and CLI surface are unstable. Minor versions may intro
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-06-07
+
 ### Added
 
 - **`witseal connect`** — one-command MCP-client setup. Auto-configures Claude
@@ -273,7 +275,8 @@ Documented honestly in [`docs/threat-model.md`](docs/threat-model.md):
 
 All schemas at `v0.1`. Stabilization to `v1.0` targeted at end of Phase 5.
 
-[Unreleased]: https://github.com/WitSeal/witseal/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/WitSeal/witseal/compare/v0.4.1...HEAD
+[0.4.1]: https://github.com/WitSeal/witseal/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/WitSeal/witseal/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/WitSeal/witseal/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/WitSeal/witseal/compare/v0.1.3...v0.2.0
