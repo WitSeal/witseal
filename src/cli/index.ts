@@ -28,6 +28,8 @@ import { runEventsList } from './events.js';
 import { runEvidenceExport } from './evidence.js';
 import { runReceiptShow } from './receipt.js';
 import { runPolicyAdd, runPolicyList } from './policy.js';
+import { runConnect } from './connect.js';
+import type { ConnectMode } from './connect.js';
 import { runUnlock } from './unlock.js';
 import type { ExecutionMode } from '../policy/enforcement.js';
 import { WITSEAL_VERSION } from '../version.js';
@@ -244,6 +246,23 @@ evidence
       ...(opts.buildId ? { buildId: opts.buildId as string } : {}),
       dataDir: program.opts()['dataDir'] as string,
       segmentId: program.opts()['segment'] as string,
+    });
+    process.exit(exitCode);
+  });
+
+program
+  .command('connect')
+  .description('Connect an MCP client (Claude Desktop, Claude Code, Cursor) to WitSeal')
+  .argument('[client]', 'claude-desktop | claude-code | cursor | all', 'all')
+  .option('--mode <mode>', 'witness (record, do not block) or gate (enforce)', 'witness')
+  .option('--print', 'Print the config changes without writing them', false)
+  .action(async (client: string, opts) => {
+    const mode: ConnectMode = opts.mode === 'gate' ? 'gate' : 'witness';
+    const exitCode = await runConnect({
+      client,
+      mode,
+      dataDir: program.opts()['dataDir'] as string,
+      print: Boolean(opts.print),
     });
     process.exit(exitCode);
   });

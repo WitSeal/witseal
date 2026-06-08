@@ -35,6 +35,10 @@ and a minimal dependency set keeps the trust runtime easy to inspect.
 
 ## Install
 
+**Quick connect (recommended):** after `npm install -g @witseal/cli`, run
+`witseal connect` — it auto-configures Claude Desktop, Claude Code, or Cursor for
+you (idempotent; add `--print` to preview). The manual steps below are equivalent.
+
 1. `npm install -g @witseal/cli`
 2. Register the server with your MCP client. The exact file differs per client;
    the server entry is the same. Example (Claude Desktop
