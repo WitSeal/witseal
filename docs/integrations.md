@@ -71,8 +71,12 @@ not Full.
 Full Execution Coverage of the **WitSeal-authored tool/activity** the host wires
 through WitSeal (`createWitsealShellTool` for the SDKs, the `witnessedShell`
 Activity for Temporal): WitSeal owns that action end to end through `runExec`.
-Execution the framework performs *outside* the WitSeal-provided tool is not
-covered — "Full" is scoped to the witnessed tool, as with OpenHands above.
+The author-the-tool mediation core witnesses both shell commands
+(`mediateShellCommand`) and file writes (`mediateFileWrite`, routed through
+`runFileExec`); the witnessed file write is deny-by-default and yields the same
+independently verifiable receipt as the shell path. Execution the framework
+performs *outside* the WitSeal-provided tool is not covered — "Full" is scoped to
+the witnessed tool, as with OpenHands above.
 Live-verified 2026-06-05: OpenAI Agents SDK `rcpt_mq1dxdskTdRrdYxarTmEh0`,
 Temporal `rcpt_mq1dxtszhOBzERBqPoKjcC`, GitHub Copilot SDK
 `rcpt_mq1laky3RzxGUJ6weihogF`, and Mastra `rcpt_mq1p7xs79L42AJdPFe4xtg` each →

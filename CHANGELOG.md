@@ -8,6 +8,19 @@ Pre-1.0 versions: schemas and CLI surface are unstable. Minor versions may intro
 
 ## [Unreleased]
 
+### Added
+
+- **Witnessed file writes for the framework adapter.** The author-the-tool
+  mediation core gains `mediateFileWrite` (alongside `mediateShellCommand`):
+  it routes a file write through the same pipeline via `runFileExec`
+  (classify → policy → mediate → witness → receipt), so an allowed write yields
+  the same independently verifiable execution receipt as the shell path, and a
+  denied write (deny-by-default) blocks before any file is written. A matching
+  `fileWriteToolSchema` plus `DEFAULT_FILE_WRITE_TOOL_NAME` /
+  `DEFAULT_FILE_WRITE_TOOL_DESCRIPTION` mirror the witnessed shell tool. Additive
+  over the existing pipeline — no wire-format change, no schema-version bump,
+  golden receipt byte-identical.
+
 ## [0.4.1] - 2026-06-07
 
 ### Added

@@ -21,6 +21,7 @@
  */
 
 import { runExec, type ExecOptions } from '../../cli/exec.js';
+import { runFileExec, type FileWriteMode } from '../../cli/exec-file.js';
 
 /** WitSeal's reserved exit code for a Gate denial (deny-by-default block). */
 export const WITSEAL_DENIED_EXIT = 100;
@@ -31,6 +32,19 @@ export interface ShellCommandCall {
   command: string;
   /** Working directory for the command (defaults to the process cwd). */
   cwd?: string;
+}
+
+/** A file_write tool call, reduced to what the mediation core needs. */
+export interface FileWriteCall {
+  /** Target file path. */
+  path: string;
+  /** The exact text to write (encoded as UTF-8 bytes by the mediator). */
+  content: string;
+  /**
+   * Write mode. Defaults to `overwrite`. `create_only` refuses an existing
+   * file (use-once); `append` adds to the end.
+   */
+  writeMode?: FileWriteMode;
 }
 
 /** Options binding the mediation to a witseal data directory / segment / mode. */
@@ -92,4 +106,52 @@ export async function mediateShellCommand(
       `A full execution receipt was recorded (see "witseal receipt show").`;
 
   return { exitCode, denied, output: captured, summary };
+}
+
+/** Outcome of mediating a framework file_write tool call through witseal. */
+export interface FileMediationResult {
+  /** The exit code returned by `runFileExec`. */
+  exitCode: number;
+  /** True when the Gate denied the action (exit `WITSEAL_DENIED_EXIT`). */
+  denied: boolean;
+  /** Human-readable status line describing the mediation outcome. */
+  summary: string;
+}
+
+/**
+ * Mediate a file_write through the witseal pipeline, for use inside a framework
+ * tool's body.
+ *
+ * The file analogue of {@link mediateShellCommand}: it routes the write through
+ * the SAME end-to-end pipeline (classify -> policy -> mediate -> witness ->
+ * receipt -> chain) via `runFileExec`, so an allowed write yields the same kind
+ * of independently verifiable execution receipt as the shell path — no new
+ * wire-format. Content is handed over as UTF-8 bytes; `runFileExec` derives
+ * `content_hash` / `content_size_bytes`, and the mediator re-validates both
+ * against the bytes BEFORE any write occurs. Never bypasses witseal: the write
+ * happens only via `runFileExec`. In Gate mode (deny-by-default) a `deny`
+ * decision blocks the write and returns `WITSEAL_DENIED_EXIT` with no file
+ * created.
+ */
+export async function mediateFileWrite(
+  call: FileWriteCall,
+  opts: FrameworkMediateOptions
+): Promise<FileMediationResult> {
+  const exitCode = await runFileExec({
+    path: call.path,
+    content: Buffer.from(call.content, 'utf8'),
+    ...(call.writeMode ? { writeMode: call.writeMode } : {}),
+    agentId: opts.agentId ?? 'framework-tool',
+    dataDir: opts.dataDir,
+    segmentId: opts.segmentId ?? 'default',
+    ...(opts.mode ? { mode: opts.mode } : {}),
+  });
+
+  const denied = exitCode === WITSEAL_DENIED_EXIT;
+  const summary = denied
+    ? `WitSeal denied this file write by policy (exit ${exitCode}). It was recorded as evidence and no file was written.`
+    : `WitSeal-mediated file write finished with exit ${exitCode}. ` +
+      `A full execution receipt was recorded (see "witseal receipt show").`;
+
+  return { exitCode, denied, summary };
 }
