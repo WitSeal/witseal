@@ -123,12 +123,18 @@ program
   .description('Verify the live chain, or a receipt / evidence-package file')
   .argument('[file]', 'Receipt or evidence-package JSON to verify (default: live chain)')
   .option('--public-key <path|hex>', 'Ed25519 public key (PEM/DER path or 64-char raw hex); required for v0.2 receipt verification')
+  .option('--check-provenance', 'Additionally re-check that the receipt build-provenance digests are bound to a DSSE in-toto attestation (additive; requires --attestation)', false)
+  .option('--attestation <path>', 'DSSE in-toto attestation JSON to bind against the receipt (used with --check-provenance)')
+  .option('--builder-key <path|hex>', 'Builder Ed25519 public key (PEM/DER path or 64-char raw hex) authenticating the DSSE envelope; defaults to --public-key')
   .action(async (file: string | undefined, opts) => {
     const exitCode = await runVerify({
       dataDir: program.opts()['dataDir'] as string,
       segmentId: program.opts()['segment'] as string,
       ...(file ? { artifactPath: file } : {}),
       ...(opts.publicKey ? { publicKeyPath: opts.publicKey as string } : {}),
+      ...(opts.checkProvenance ? { checkProvenance: true } : {}),
+      ...(opts.attestation ? { attestationPath: opts.attestation as string } : {}),
+      ...(opts.builderKey ? { builderKeyPath: opts.builderKey as string } : {}),
     });
     process.exit(exitCode);
   });
