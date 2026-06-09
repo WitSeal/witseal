@@ -56,6 +56,10 @@ action's receipt is independently verifiable.
 | Mastra | ✅ | ✅ | ✅ | shipped² |
 | Kilo Code | ✅ | ✅ | ✅ | available³ |
 | OpenHands | ✅ | ✅ | ✅ | available¹ |
+| Cline | ✅ | ✅ | ✅ | available⁴ |
+| Pi | ✅ | ✅ | ✅ | available⁴ |
+| SWE-agent | ✅ | ✅ | ✅ | available⁴ |
+| Open Interpreter | ✅ | ✅ | ✅ | available⁴ |
 
 ¹ OpenHands reaches Full Execution Coverage of its **default witnessed toolset**
 (terminal + file editing) by swapping the agent's tool executors to route through
@@ -95,6 +99,31 @@ call routed into that tool — producing `rcpt_mq1qlcjc4p34z95UfpNch3` →
 `src/adapters/kilocode/` (a drop-in `bash.ts` template), not shipped in the npm
 package.
 
+⁴ Cline · Pi · SWE-agent · Open Interpreter reach Full Execution Coverage of the
+**WitSeal-authored tool / swapped executor** the host routes through: WitSeal
+owns that action end to end via `runExec`. Cline and Pi reuse the TS
+author-the-tool core (`createWitsealShellTool` / `runShellTool`) and are exported
+at `@witseal/cli/adapters/cline` and `/pi`; SWE-agent and Open Interpreter are
+Python adapters (CLI-bridge into `witseal exec`, like OpenHands) — Python source,
+not in the npm package. "Full" is scoped to the witnessed tool, not host
+internals. Execution-path live-verified 2026-06-08: Cline
+`rcpt_mq5wa0c5zfCfsMpHELZLjS`, Pi `rcpt_mq5wba3ekLx2l3VKnwDD`, SWE-agent
+`rcpt_mq5waj223sjmuvDfjh4f`, Open Interpreter `rcpt_mq5wacyi1kLiuIxWXwoG` each →
+`witseal verify` VALID. The Open Interpreter adapter is separate WitSeal code
+that shells to the witseal CLI; it does not incorporate OI's AGPL-3.0 source.
+
+⁵ Codex CLI · Windsurf · Antigravity · Replit reach Tool-Scoped Coverage by
+registering the shipped `witseal-mcp` server: commands the host routes through
+the WitSeal `shell` tool are witnessed; the host's own executor is not
+(Tool-Scoped, not Full). Codex CLI and Windsurf are MCP clients (local stdio
+config); Antigravity registers a local stdio MCP server; Replit accepts
+remote-HTTPS MCP only (a documented remote `witseal-mcp` endpoint).
+Execution-path live-verified 2026-06-08 over the `witseal-mcp` `shell` path:
+Codex CLI `rcpt_mq5w8xm0SXEjasj8rq8h`, Windsurf `rcpt_mq5w8vvjrDPRxTdvoj2c`,
+Antigravity `rcpt_mq5w90uznjqKUDgkcP6j`, Replit `rcpt_mq5w8wwyxumIWdWL2kun` each →
+`witseal verify` VALID. These adapters are documentation under
+`src/adapters/codex/`, `/windsurf/`, `/antigravity/`, `/replit/`.
+
 ### Witnessed Execution — Tool-Scoped Coverage via MCP
 
 **Who executes: the host agent/runtime.** Witnessed execution via the WitSeal MCP
@@ -107,6 +136,10 @@ WitSeal tool is witnessed; the host's native executor is not.
 |---|:---:|---|
 | OpenClaw | ✅ | available |
 | Hermes | ✅ | available |
+| Codex CLI | ✅ | available⁵ |
+| Windsurf | ✅ | available⁵ |
+| Antigravity | ✅ | available⁵ |
+| Replit | ✅ | available⁵ |
 
 ### Witness
 
@@ -119,7 +152,6 @@ Witness is reached by observing the host's reported result (e.g. Claude Code's
 |---|:---:|:---:|---|
 | Claude Code | ✅ opt-in¹ | ✅ | Witness shipped |
 | Cursor | ✅ opt-in¹ | ✅ | Witness shipped |
-| Codex | ✅ opt-in¹ | ✅ | planned |
 
 > ¹ **Gate on a sealed host** is reachable opt-in via a pre-execution hook
 > (e.g. Claude Code's `PreToolUse`), where WitSeal's policy decides before the

@@ -60,6 +60,14 @@
       "types": "./dist/src/adapters/mastra/tool.d.ts",
       "import": "./dist/src/adapters/mastra/tool.js"
     },
+    "./adapters/cline": {
+      "types": "./dist/src/adapters/cline/tool.d.ts",
+      "import": "./dist/src/adapters/cline/tool.js"
+    },
+    "./adapters/pi": {
+      "types": "./dist/src/adapters/pi/tool.d.ts",
+      "import": "./dist/src/adapters/pi/tool.js"
+    },
     "./adapters/claude-code": {
       "types": "./dist/src/adapters/claude-code/witness.d.ts",
       "import": "./dist/src/adapters/claude-code/witness.js"

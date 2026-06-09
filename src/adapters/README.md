@@ -8,9 +8,10 @@ This directory contains adapters that integrate WitSeal with specific AI coding 
 
 - **OpenCode** — primary integration target; in development
 - **Claude Code** — adapter sketched (Phase 1 stretch goal)
-- **LangGraph**, **OpenAI Agents SDK**, **GitHub Copilot SDK**, **Mastra** —
-  author-the-tool (Level 3) shims over the shared framework core (`framework/`);
-  see each directory's README
+- **LangGraph**, **OpenAI Agents SDK**, **GitHub Copilot SDK**, **Mastra**,
+  **Cline**, **Pi** — author-the-tool (Level 3) shims over the shared framework
+  core (`framework/`), exported as `@witseal/cli/adapters/<name>`; see each
+  directory's README
 - **Kilo Code** — B2 bash-shadow override (Kilo's engine is an OpenCode fork),
   reusing the shipped `opencode/` mediation core via a same-id `bash` tool.
   Both the execution path and the runtime override are live-verified: in a real
@@ -18,11 +19,18 @@ This directory contains adapters that integrate WitSeal with specific AI coding 
   same-id tool replaced the built-in) → `witseal verify` VALID. See its
   `COVERAGE.md`.
 - **CrewAI**, **PydanticAI**, **Google ADK**, **AWS Strands**, **AutoGen**, **MAF
-  (Microsoft Agent Framework, Python)** —
+  (Microsoft Agent Framework, Python)**, **SWE-agent**, **Open Interpreter** —
   Level-3 Python adapters (author-the-tool / executor seam) whose authored tool
   routes execution through the witseal CLI; each live-verified (`witseal verify`
   VALID). Python source, like the OpenHands adapter (not in the npm package);
-  see each directory's `COVERAGE.md` for the honest, scoped coverage.
+  see each directory's `COVERAGE.md` for the honest, scoped coverage. The Open
+  Interpreter adapter is separate WitSeal code that shells to the witseal CLI —
+  it does not incorporate OI's AGPL-3.0 source.
+- **Codex CLI**, **Windsurf**, **Antigravity**, **Replit** — Tool-Scoped Coverage
+  via MCP: register the shipped `witseal-mcp` server so the host's calls routed
+  through the WitSeal `shell` tool are witnessed (host-native execution is not).
+  Documentation adapters; execution-path live-verified over the `witseal-mcp`
+  path. See each directory's `COVERAGE.md`.
 - **Cursor**, **Gemini CLI** — roadmap
 
 ## Adapter contract
