@@ -21,6 +21,25 @@ Pre-1.0 versions: schemas and CLI surface are unstable. Minor versions may intro
   over the existing pipeline — no wire-format change, no schema-version bump,
   golden receipt byte-identical.
 
+### Fixed
+
+- **Risk classifier now flags a destructive `rm -rf` under the own-execute
+  (`sh -c`) shape as C4.** The classifier builds its match candidate from the
+  joined argv (`executable args…`), so an own-execute invocation
+  `/bin/sh -c 'rm -rf /'` becomes `/bin/sh -c rm -rf /` — the `rm` is not at the
+  start of the string. The C4 "rm -rf on root or home" rule was start-anchored
+  (`^rm …`), so the wrapped form silently fell through to the more lenient C3
+  "recursive removal" rule — a false-negative for any policy that denies or
+  escalates on `C4` but treats `C3` leniently. The rule is now word-boundary
+  anchored (`\brm …`), so the wrapped form classifies `C4` like the direct
+  `rm -rf /`; benign nested shells (`sh -c '<cmd>'`) still classify `C3` (opaque
+  inner command). Because this is a classifier rule change, `CLASSIFIER_VERSION`
+  bumps `witseal-classifier-1.1` → `witseal-classifier-1.2`. No wire-format or
+  schema change; the golden receipt is byte-identical (`classifier_version` is a
+  serialize-skip optional omitted from canonical bytes, and the golden's
+  `classified_intent_hash` derives from a fixed seed, not from `classify()`).
+  Mirrors the example-pack `command_matches` anchoring fix.
+
 ## [0.4.1] - 2026-06-07
 
 ### Added

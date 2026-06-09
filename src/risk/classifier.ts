@@ -11,7 +11,7 @@
 
 import type { Intent, RiskClass } from '../../schemas/intent.schema.js';
 
-export const CLASSIFIER_VERSION = 'witseal-classifier-1.1';
+export const CLASSIFIER_VERSION = 'witseal-classifier-1.2';
 
 export interface ClassificationResult {
   risk_class: RiskClass;
@@ -42,7 +42,11 @@ export function classify(intent: Intent): ClassificationResult {
 // actions classified too low) are NOT acceptable.
 
 const C4_PATTERNS: Array<{ pattern: RegExp; reason: string }> = [
-  { pattern: /^rm\s+(-[rRf]+\s+)+(\/|\$HOME|~)/, reason: 'rm -rf on root or home' },
+  // \b (not ^): the match candidate is the joined argv, so an own-execute
+  // wrapper `/bin/sh -c 'rm -rf /'` joins to `/bin/sh -c rm -rf /` and the rm is
+  // not at the start of the string. Word-boundary anchoring fires for both the
+  // direct and wrapped shapes (mirrors the example-pack command_matches fix).
+  { pattern: /\brm\s+(-[rRf]+\s+)+(\/|\$HOME|~)/, reason: 'rm -rf on root or home' },
   { pattern: /\b(dd|mkfs|fdisk|parted|wipefs)\b/, reason: 'disk-level destructive utility' },
   { pattern: /\bsudo\b/, reason: 'privilege escalation via sudo' },
   { pattern: /:\(\)\s*\{/, reason: 'shell fork bomb pattern detected' },

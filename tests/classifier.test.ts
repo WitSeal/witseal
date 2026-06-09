@@ -63,6 +63,15 @@ describe('classifier — D8 shell-bypass / nested interpreters', () => {
     expect(classify(shellIntent('sh', ['-c', 'do-thing'])).risk_class).toBe('C3');
   });
 
+  it('classifies a destructive rm -rf wrapped in sh -c as C4 (not under-classified to C3)', () => {
+    // Own-execute adapters run a freeform command as `/bin/sh -c '<cmd>'`, which
+    // joins to the match candidate `/bin/sh -c rm -rf /`. The C4 rm rule is
+    // word-boundary anchored, so the wrapped form classifies C4 like the direct
+    // `rm -rf /` — it is NOT down-graded to the C3 "recursive removal" rule.
+    expect(classify(shellIntent('/bin/sh', ['-c', 'rm -rf /'])).risk_class).toBe('C4');
+    expect(classify(shellIntent('sh', ['-c', 'rm -rf $HOME'])).risk_class).toBe('C4');
+  });
+
   it('elevates eval to C3', () => {
     expect(classify(shellIntent('eval', ['frobnicate'])).risk_class).toBe('C3');
   });
