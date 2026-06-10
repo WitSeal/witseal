@@ -1,0 +1,4 @@
+# Display-only mapping for legacy commits. This does not rewrite commit objects,
+# change GitHub commit pages, or remove trailers from commit messages.
+WitSeal Maintainers <noreply@witseal.com> Mikhail Sergeev <MikhailSergeev369@gmail.com>
+WitSeal Maintainers <noreply@witseal.com> Mikhail Sergeev <Mikhail.Sergeev@PAIkernel.org>

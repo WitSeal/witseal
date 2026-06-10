@@ -1,0 +1,99 @@
+name: Authorship guard
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  authorship:
+    name: Commit authorship
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Reject personal authorship and co-author trailers
+        env:
+          REQUIRED_EMAIL: noreply@witseal.com
+          EVENT_NAME: ${{ github.event_name }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PUSH_BEFORE_SHA: ${{ github.event.before }}
+          GITHUB_SHA_VALUE: ${{ github.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ "${EVENT_NAME}" = "pull_request" ]; then
+            if [ -z "${PR_NUMBER}" ] || [ -z "${PR_BASE_SHA}" ]; then
+              echo "::error::Pull request metadata unavailable"
+              exit 1
+            fi
+            git fetch --no-tags --quiet origin "${PR_BASE_SHA}"
+            git fetch --no-tags --quiet origin "pull/${PR_NUMBER}/head:refs/remotes/origin/pr-${PR_NUMBER}-head"
+            RANGE="${PR_BASE_SHA}..refs/remotes/origin/pr-${PR_NUMBER}-head"
+          else
+            if [ -z "${PUSH_BEFORE_SHA}" ] || python3 -c 'import os, sys; v=os.environ["PUSH_BEFORE_SHA"]; sys.exit(0 if set(v) <= {"0"} else 1)'; then
+              RANGE="${GITHUB_SHA_VALUE}"
+            else
+              RANGE="${PUSH_BEFORE_SHA}..${GITHUB_SHA_VALUE}"
+            fi
+          fi
+
+          python3 - "${RANGE}" "${REQUIRED_EMAIL}" <<'PY'
+          import re
+          import subprocess
+          import sys
+
+          commit_range = sys.argv[1]
+          required_email = sys.argv[2].lower()
+          record_sep = "\x01"
+          field_sep = "\x00"
+
+          raw = subprocess.check_output(
+              [
+                  "git",
+                  "log",
+                  "--reverse",
+                  f"--format=%H%x00%an%x00%ae%x00%cn%x00%ce%x00%B%x01",
+                  commit_range,
+              ],
+              text=True,
+          )
+
+          records = [r for r in raw.split(record_sep) if r.strip()]
+          flags = []
+          trailer_re = re.compile(r"^co-authored-by\s*:", re.IGNORECASE | re.MULTILINE)
+
+          for record in records:
+              parts = record.split(field_sep, 5)
+              if len(parts) != 6:
+                  flags.append(("unknown", "malformed git log record"))
+                  continue
+
+              commit, author_name, author_email, committer_name, committer_email, body = parts
+              bad = []
+              if author_email.lower() != required_email:
+                  bad.append(f"author={author_name} <{author_email}>")
+              if committer_email.lower() != required_email:
+                  bad.append(f"committer={committer_name} <{committer_email}>")
+              if trailer_re.search(body):
+                  bad.append("co-authored-by")
+              if bad:
+                  flags.append((commit[:12], "; ".join(bad)))
+
+          if flags:
+              print("::error::Commit authorship guard failed")
+              for commit, reason in flags:
+                  print(f"::error title=Commit authorship::{commit}: {reason}")
+              sys.exit(1)
+
+          print(f"Authorship guard clean: {len(records)} commit(s).")
+          PY
