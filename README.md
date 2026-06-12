@@ -33,10 +33,10 @@ change to the default.
 
 ## Install
 
-Install the `0.4.1` CLI from npm:
+Install the `0.4.2` CLI from npm:
 
 ```bash
-npm install -g @witseal/cli@0.4.1
+npm install -g @witseal/cli@0.4.2
 ```
 
 ## Connect an MCP client (one command)

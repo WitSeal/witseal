@@ -8,8 +8,21 @@ Pre-1.0 versions: schemas and CLI surface are unstable. Minor versions may intro
 
 ## [Unreleased]
 
+## [0.4.2] - 2026-06-11
+
 ### Added
 
+- **8 coding-agent integrations.** Cline, Pi, SWE-agent, and Open Interpreter
+  reach **Full Execution Coverage** of the WitSeal-authored witnessed tool;
+  Codex CLI, Windsurf, Antigravity, and Replit reach **Tool-Scoped Coverage via
+  MCP** — only calls routed through the WitSeal MCP tool are witnessed, the
+  host's own executor is not. Codex CLI moves from a planned Witness integration
+  to shipped Tool-Scoped via MCP. Each is live-verified (`witseal verify`
+  VALID). Additive — no wire-format change; golden receipt byte-identical.
+- **`witseal verify --check-provenance`.** Opt-in re-check of a receipt's
+  build-provenance fields (`git_commit`, `artifact_digest`,
+  `attestation_digest`) during verification. Additive — no wire-format or
+  schema-version change; golden receipt byte-identical.
 - **Witnessed file writes for the framework adapter.** The author-the-tool
   mediation core gains `mediateFileWrite` (alongside `mediateShellCommand`):
   it routes a file write through the same pipeline via `runFileExec`
@@ -307,7 +320,8 @@ Documented honestly in [`docs/threat-model.md`](docs/threat-model.md):
 
 All schemas at `v0.1`. Stabilization to `v1.0` targeted at end of Phase 5.
 
-[Unreleased]: https://github.com/WitSeal/witseal/compare/v0.4.1...HEAD
+[Unreleased]: https://github.com/WitSeal/witseal/compare/v0.4.2...HEAD
+[0.4.2]: https://github.com/WitSeal/witseal/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/WitSeal/witseal/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/WitSeal/witseal/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/WitSeal/witseal/compare/v0.2.0...v0.3.0

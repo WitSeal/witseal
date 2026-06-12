@@ -1,6 +1,6 @@
 # Hello, witness
 
-The 90-second tour of WitSeal for `@witseal/cli@0.4.1`.
+The 90-second tour of WitSeal for `@witseal/cli@0.4.2`.
 
 ## What this shows
 
@@ -16,7 +16,7 @@ In about 90 seconds this walkthrough demonstrates:
 You will need a working WitSeal install:
 
 ```bash
-npm install -g @witseal/cli@0.4.1
+npm install -g @witseal/cli@0.4.2
 ```
 
 ## The walkthrough
