@@ -13,13 +13,19 @@ updates:
       dev-dependencies:
         dependency-type: "development"
     ignore:
-      # Toolchain majors are migrated deliberately, not via grouped dev-bumps:
-      # a major here out of sync with @typescript-eslint breaks build and lint.
+      # The TypeScript/ESLint toolchain cluster is migrated deliberately as ONE
+      # synchronized group, never piecemeal: a partial major (e.g. typescript or
+      # eslint without a matching @typescript-eslint major) breaks build and lint.
+      # Hold semver-MAJOR updates for the whole cluster. These conditions use
+      # `update-types`, so Dependabot SECURITY updates for these packages are
+      # still delivered — only routine version-update majors are held.
       - dependency-name: "typescript"
         update-types: ["version-update:semver-major"]
       - dependency-name: "eslint"
         update-types: ["version-update:semver-major"]
       - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@typescript-eslint/*"
         update-types: ["version-update:semver-major"]
 
   - package-ecosystem: "github-actions"
