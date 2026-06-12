@@ -103,12 +103,13 @@ WitSeal uses the following cryptographic constructions:
 | Use | Algorithm | Source |
 |---|---|---|
 | Event/receipt hash | SHA-256 | Node.js stdlib (`crypto`) |
+| Receipt signing (v0.2, opt-in) | Ed25519 | Node.js stdlib (`crypto`) |
 | Canonicalization | RFC 8785 (JCS) | TBD library; vendored if no maintained Node implementation |
 | Release signing | Cosign / Fulcio (keyless ECDSA-P256) | Sigstore |
 | Transparency log | Rekor | Sigstore |
 | TEE attestation | (Phase 5+) AMD SEV-SNP, Intel TDX | TBD |
 
-Phase 1 does not include private-key cryptography in the local runtime — there are no keys to leak. Producer-side trust is bounded; see [`docs/threat-model.md`](./docs/threat-model.md).
+The default runtime path — v0.1 receipts and the live evidence chain — uses hashing only and holds no signing key. Signed v0.2 receipts are an opt-in path (`evidence export --signing-key`, and the Worker attestation build): there, an Ed25519 **private signing key supplied by the operator** is used to sign. WitSeal reads that key locally to sign and never transmits it off the machine; its custody is the operator's, and the verifier only ever needs the corresponding public key. Producer-side trust is bounded; see [`docs/threat-model.md`](./docs/threat-model.md).
 
 ---
 
