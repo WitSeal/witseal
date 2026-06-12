@@ -54,6 +54,16 @@ jobs:
 
           commit_range = sys.argv[1]
           required_email = sys.argv[2].lower()
+
+          # Authorship carve-out (founder-authorized 2026-06-11): Dependabot is an
+          # allowed *author* of dependency-bump commits, recognised only by the
+          # fixed GitHub-assigned Dependabot identity below. The *committer* must
+          # still be the project identity — a maintainer lands every commit on
+          # main (e.g. by rebasing the bot PR) — so this widens authorship only,
+          # not who may commit to main, and the co-author-trailer rejection below
+          # is unchanged.
+          DEPENDABOT_EMAIL = "49699333+dependabot[bot]@users.noreply.github.com"
+          allowed_authors = {required_email, DEPENDABOT_EMAIL}
           record_sep = "\x01"
           field_sep = "\x00"
 
@@ -80,7 +90,7 @@ jobs:
 
               commit, author_name, author_email, committer_name, committer_email, body = parts
               bad = []
-              if author_email.lower() != required_email:
+              if author_email.lower() not in allowed_authors:
                   bad.append(f"author={author_name} <{author_email}>")
               if committer_email.lower() != required_email:
                   bad.append(f"committer={committer_name} <{committer_email}>")
