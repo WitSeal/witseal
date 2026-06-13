@@ -134,8 +134,6 @@ WitSeal tool is witnessed; the host's native executor is not.
 
 | Integration | Witnessed Execution (via the WitSeal MCP tool) | WitSeal adapter |
 |---|:---:|---|
-| OpenClaw | ✅ | available |
-| Hermes | ✅ | available |
 | Codex CLI | ✅ | available⁵ |
 | Windsurf | ✅ | available⁵ |
 | Antigravity | ✅ | available⁵ |
@@ -226,9 +224,7 @@ is no de-duplication by command string, so the action would be recorded twice.
   Python source under `src/adapters/` (not in the npm package; like OpenHands).
   Scope is the witnessed authored tool, not framework internals — compose the
   agent's granted toolset so it is the execution path (see each `COVERAGE.md`).
-- **Available (Tool-Scoped Coverage via MCP, via the WitSeal MCP tool):**
-  OpenClaw, Hermes.
 - **Shipped (Witness):** Claude Code (`PostToolUse`), Cursor.
-- **Planned (Witness-level, sealed hosts):** Codex.
+- **Planned (Tool-Scoped via MCP — not yet shipped or verified):** OpenClaw, Hermes.
 
 See each integration's directory under `src/adapters/` for setup.
