@@ -2,7 +2,7 @@
 
 Integrates WitSeal with [SWE-agent](https://github.com/SWE-agent/SWE-agent)
 (the `sweagent` package, MIT) so the agent's **own** command execution runs
-through WitSeal — every command becomes a full, independently-verifiable
+through WitSeal — every command becomes a full, verifiable
 execution receipt, not merely a witnessed decision alongside a separate tool.
 
 This is the own-execute path ("Full Execution Coverage"): WitSeal **owns the

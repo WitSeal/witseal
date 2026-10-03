@@ -125,7 +125,7 @@ export interface FileMediationResult {
  * The file analogue of {@link mediateShellCommand}: it routes the write through
  * the SAME end-to-end pipeline (classify -> policy -> mediate -> witness ->
  * receipt -> chain) via `runFileExec`, so an allowed write yields the same kind
- * of independently verifiable execution receipt as the shell path — no new
+ * of execution receipt as the shell path — no new
  * wire-format. Content is handed over as UTF-8 bytes; `runFileExec` derives
  * `content_hash` / `content_size_bytes`, and the mediator re-validates both
  * against the bytes BEFORE any write occurs. Never bypasses witseal: the write

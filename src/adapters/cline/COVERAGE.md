@@ -7,7 +7,7 @@ This adapter ships one WitSeal-authored tool, a Cline tool object
 `execute` routes every command through WitSeal's mediation pipeline (classify →
 policy → mediate → witness → receipt). When you register **only** this tool as
 the agent's execution path, every shell command the agent runs is a real,
-independently verifiable witnessed execution. It reuses the existing
+verifiable witnessed execution. It reuses the existing
 execution-result / witness schema (no new wire-format); the golden receipt is
 untouched.
 
@@ -46,7 +46,7 @@ Compose the registered toolset so the witnessed tool **is** the execution path:
 - Do **not** also enable a raw shell / terminal / code-exec tool — that
   reintroduces an unwitnessed path.
 - Run in `gate` mode (deny-by-default) for enforcement, or `witness` mode for
-  observe-only attestation.
+  recording without enforcement.
 
 ## Override status — honest
 

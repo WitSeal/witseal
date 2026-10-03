@@ -3,7 +3,7 @@
 Integrates WitSeal with the [Microsoft Agent Framework](https://github.com/microsoft/agent-framework)
 (MAF) Python SDK (`pip install agent-framework`, module `agent_framework`) so an
 MAF agent's **own** command execution runs through WitSeal — every run becomes a
-full, independently-verifiable execution receipt (classify → policy → mediate →
+full, verifiable execution receipt (classify → policy → mediate →
 witness → receipt), not a raw local subprocess.
 
 This is a thin layer (a self-contained CLI bridge), like the shipped OpenCode /

@@ -6,7 +6,7 @@ This adapter ships one WitSeal-authored tool, `witnessed_shell`, a Strands
 `@tool` whose body routes every command through WitSeal's mediation pipeline
 (classify -> policy -> mediate -> witness -> receipt). When you grant the agent
 **only** this tool as its execution path — `Agent(tools=build_witnessed_toolset())`
-— every shell command the agent runs is a real, independently verifiable
+— every shell command the agent runs is a real, verifiable
 witnessed execution.
 
 ## What is and is not witnessed
@@ -38,7 +38,7 @@ Compose the granted toolset so the witnessed tool **is** the execution path:
 - Do **not** also grant a raw shell / code-exec tool — that reintroduces an
   unwitnessed path.
 - Run the tool in `gate` mode (`WITSEAL_MODE=gate`, deny-by-default) for
-  enforcement, or `witness` mode for observe-only attestation.
+  enforcement, or `witness` mode for recording without enforcement.
 
 ## Live verification receipt (this build)
 

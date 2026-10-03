@@ -5,7 +5,7 @@ swapping the terminal tool's executor. Stage B does the same for every
 file-mutating tool the agent can be granted, routing the actual write through
 WitSeal's ``file_write`` execution path (``witseal exec-file`` →
 classify → policy → mediateFile → witness → receipt) so each mutation yields a
-full, independently-verifiable execution receipt.
+full, verifiable execution receipt.
 
 Bypass-free by construction: these executors are the ONLY writer — they compute
 the resulting file content and hand it to ``witseal exec-file`` (content on

@@ -15,8 +15,9 @@ whatever model it drives.
 The server exposes a single tool, `shell`. When the model calls it, WitSeal
 own-executes the command through `runExec` inside its mediator, captures the
 output, and records a **full execution receipt** — not merely a witnessed
-decision. A command denied by policy does not run and is recorded as
-`denied_by_policy`.
+decision. In Gate Mode, a command denied by policy does not run and is recorded
+as `denied_by_policy`; in Witness Mode (the `witseal connect` default) it runs
+and is recorded as `witnessed_executed`.
 
 `mediateMcpShell` (in `mediate.ts`) is the framework-agnostic core; `server.ts`
 is the protocol surface (newline-delimited JSON-RPC 2.0 over stdio, per the MCP

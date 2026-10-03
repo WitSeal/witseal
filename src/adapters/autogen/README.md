@@ -2,7 +2,7 @@
 
 A WitSeal demo-client adapter that puts an **AutoGen** agent's code execution
 under the WitSeal witness boundary by owning AutoGen's `CodeExecutor`. Each shell
-code block the agent runs becomes an independently verifiable **execution
+code block the agent runs becomes a verifiable **execution
 receipt** (`witseal verify`).
 
 This is a **receipt-first, role-qualified** integration: WitSeal *witnesses the

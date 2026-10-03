@@ -1,7 +1,7 @@
 """Microsoft Agent Framework (MAF) witnessed-execution adapter.
 
 Routes an MAF agent's *actual* command execution through WitSeal so every run
-becomes a full, independently-verifiable execution receipt (classify -> policy
+becomes a full, verifiable execution receipt (classify -> policy
 -> mediate -> witness -> receipt), instead of a raw local subprocess.
 
 MAF Python (``pip install agent-framework``; module ``agent_framework``) exposes
@@ -136,7 +136,7 @@ def build_witseal_exec_tool(
     name: str = "witseal_exec",
     description: str = (
         "Run a shell command under WitSeal witnessed execution: the command is "
-        "mediated by a deny-by-default policy and recorded as an independently "
+        "checked against policy (deny-by-default in Gate mode) and recorded as a "
         "verifiable execution receipt."
     ),
 ) -> FunctionTool:

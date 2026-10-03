@@ -7,7 +7,7 @@ This adapter ships one WitSeal-authored tool: a same-name `bash` tool module
 built-in `bash` (last-writer-wins on tool id). Its `execute` routes every command
 through WitSeal's mediation core (`mediateOpenCodeBash` → `runExec`: classify →
 policy → mediate → witness → receipt). When this module is the `bash` the agent
-runs, every shell command it issues is a real, independently verifiable witnessed
+runs, every shell command it issues is a real, verifiable witnessed
 execution. It reuses the existing execution-result / witness schema (no new
 wire-format); the golden receipt is untouched.
 
@@ -43,7 +43,7 @@ execution path:
 - Do **not** leave another raw shell / code-exec / file-write tool enabled — that
   reintroduces an unwitnessed path.
 - Run in `gate` mode (deny-by-default) for enforcement, or `witness` mode for
-  observe-only attestation.
+  recording without enforcement.
 
 ## Override (shadow) status — honest
 

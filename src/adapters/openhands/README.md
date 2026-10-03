@@ -2,7 +2,7 @@
 
 Integrates WitSeal with [OpenHands](https://openhands.dev) (the `openhands-sdk`
 agent runtime) so the agent's **own** execution runs through WitSeal — every
-shell command becomes a full, independently-verifiable execution receipt, not
+shell command becomes a full, verifiable execution receipt, not
 just the calls routed to a separate witnessed tool.
 
 This is the full-L3 path. It differs from the MCP integration (where WitSeal is

@@ -10,7 +10,7 @@ This adapter swaps the executor: ``WitSealCommandLineCodeExecutor`` is a real
 ``autogen_core.code_executor.CodeExecutor`` whose ``execute_code_blocks`` routes
 each shell ``CodeBlock`` through WitSeal's pipeline (classify -> policy ->
 mediate -> witness -> receipt) via the built ``@witseal/cli``, instead of a raw
-local subprocess. Every block becomes an independently verifiable execution
+local subprocess. Every block becomes a verifiable execution
 receipt. Hand this executor to an agent / team (e.g. ``CodeExecutorAgent`` or a
 ``ToolAgent`` that owns a code-execution tool) IN PLACE OF the default
 ``LocalCommandLineCodeExecutor`` and the agent's actual code execution is the

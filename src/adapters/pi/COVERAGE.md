@@ -7,7 +7,7 @@ This adapter ships one WitSeal-authored tool, a Pi tool definition
 whose `execute` routes every command through WitSeal's mediation pipeline
 (classify → policy → mediate → witness → receipt). When you register **only**
 this tool as the agent's execution path, every shell command the agent runs is a
-real, independently verifiable witnessed execution. It reuses the existing
+real, verifiable witnessed execution. It reuses the existing
 execution-result / witness schema (no new wire-format); the golden receipt is
 untouched and the CLI is used unchanged.
 
@@ -46,14 +46,14 @@ Compose the registered toolset so the witnessed tool **is** the execution path:
   write/edit) tool enabled alongside it, and do not register a second raw shell /
   code-exec / file-write tool. Pair the witnessed tool with read-only tools only.
 - Run in `gate` mode (deny-by-default) for enforcement, or `witness` mode for
-  observe-only attestation.
+  recording without enforcement.
 
 > Alternative own-execute route (also Full, not used here): Pi's built-in `bash`
 > tool accepts `createBashTool(cwd, { spawnHook })`, and the `spawnHook` can
 > rewrite the spawned `{ command, cwd, env }`. Routing that hook through WitSeal
 > would witness the built-in `bash` path itself. This adapter instead registers
 > its own tool body (reusing the shared `runShellTool`), which is the same
-> Level-3 own-execute guarantee with one less moving part.
+> Level-3 own-execute property with one less moving part.
 
 ## Live verification receipt (this build)
 

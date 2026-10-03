@@ -49,7 +49,7 @@ The WitSeal tool covers only what is routed to it, so compose the workflow so it
 - Direct execution-bearing steps at the WitSeal `shell` tool when you want a
   verifiable receipt, rather than the host's built-in run action.
 - Run in `gate` mode (deny-by-default) for enforcement, or `witness` mode for
-  observe-only attestation.
+  recording without enforcement.
 - Send a given logical action through one path only — the WitSeal tool or the
   host executor, never both (there is no de-duplication by command string).
 

@@ -2,8 +2,8 @@
  * Evidence package export.
  *
  * Bundles a contiguous range of witness events, their receipts, and the
- * policy packs in effect into an exportable, independently-verifiable
- * artifact.
+ * policy packs active at export into an exportable artifact whose integrity
+ * anyone can check offline.
  *
  * Receipt-version dispatch (C2): the export path can emit either v0.1
  * receipts (the default — `generateReceipt`, unsigned hash-addressable) or

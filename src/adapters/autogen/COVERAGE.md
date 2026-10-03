@@ -17,7 +17,7 @@ tool an agent owns).
 this path: each shell `CodeBlock.code` is routed through WitSeal's pipeline
 (classify → policy → mediate → witness → receipt) via `witseal exec`
 (`runExec` → `mediateShell`), instead of a raw local subprocess. Every shell
-block becomes an independently verifiable execution receipt. Reuses the existing
+block becomes a verifiable execution receipt. Reuses the existing
 execution-result / witness schema (no new wire-format); golden receipt
 `8fc29592…` (1050 bytes) untouched.
 

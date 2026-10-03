@@ -2,7 +2,7 @@
 
 A WitSeal demo-client adapter that gives an [AWS Strands](https://github.com/strands-agents)
 agent a **witnessed shell tool**: a `@tool` whose body routes each command
-through WitSeal so the agent's execution produces an independently verifiable
+through WitSeal so the agent's execution produces a verifiable
 receipt — receipt first, then the command runs.
 
 This is **witnessed execution for Strands**, scoped to a WitSeal-authored tool.
@@ -43,7 +43,7 @@ Configuration via environment (same contract as the OpenHands adapter):
 | ------------------- | ---------------------------------------------------- | ------------ |
 | `WITSEAL_CLI_ENTRY` | absolute path to `dist/src/cli/index.js` (required)  | —            |
 | `WITSEAL_DATA_DIR`  | WitSeal data dir (chain, policy packs, receipts)     | `~/.witseal` |
-| `WITSEAL_MODE`      | `gate` (deny-by-default) or `witness` (observe-only) | `gate`       |
+| `WITSEAL_MODE`      | `gate` (deny-by-default) or `witness` (record, do not enforce) | `gate`       |
 | `WITSEAL_NODE`      | node binary                                          | `node`       |
 
 A denied command (Gate mode) does not run; the denial is recorded as evidence

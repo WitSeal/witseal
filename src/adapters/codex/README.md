@@ -4,7 +4,7 @@ Integrates WitSeal with [Codex CLI](https://github.com/openai/codex) — OpenAI'
 open-source (Apache-2.0, Rust) terminal coding agent — so that shell commands the
 agent routes through the WitSeal MCP tool pass through the WitSeal pipeline
 (classify → policy → mediate → witness → receipt) and are recorded as
-independently verifiable execution receipts.
+verifiable execution receipts.
 
 ## Model (Tool-Scoped via MCP — WitSeal owns the routed tool)
 
@@ -84,7 +84,7 @@ To confirm the server is registered, `codex mcp list` should show `witseal`, and
   and is also available via `witseal receipt show <id>`. Diagnostics go to
   stderr.
 - Run in `gate` mode (deny-by-default) for enforcement, or `witness` mode for
-  observe-only attestation.
+  recording without enforcement.
 - The WitSeal server witnesses only its own `shell` tool. It does not see, proxy,
   or record the calls Codex makes to *other* MCP servers, nor Codex's built-in
   execution. Honesty ceiling and how to keep coverage tool-scoped-complete: see

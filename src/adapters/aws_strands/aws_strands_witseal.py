@@ -11,8 +11,8 @@ So the WitSeal seam here is an **own-execute, WitSeal-authored tool**: this modu
 ships a ``@tool``-decorated shell tool whose body routes the command through
 WitSeal's pipeline (classify -> policy -> mediate -> witness -> receipt) instead
 of running a raw subprocess. When that tool is the execution path granted to the
-agent, every command the agent runs through it yields a real, independently
-verifiable execution receipt.
+agent, every command the agent runs through it yields a real, verifiable
+execution receipt.
 
 Honesty ceiling (same as the OpenHands adapter): WitSeal witnesses the **authored
 tool it owns**, not Strands' internals, the model, or any other tool you also
@@ -99,8 +99,8 @@ def witnessed_shell(command: str) -> str:
     """Run a shell command under WitSeal witnessed execution.
 
     Use this tool whenever you need to run a shell command. The command is
-    executed under WitSeal's mediation pipeline, which produces an independently
-    verifiable execution receipt instead of running a raw, unattested subprocess.
+    executed under WitSeal's mediation pipeline, which produces a verifiable
+    execution receipt instead of running a raw, unattested subprocess.
 
     Args:
         command: The shell command to run, e.g. "ls -la" or "echo hi".

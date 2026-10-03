@@ -2,7 +2,7 @@
 
 Integrates WitSeal with [Google ADK](https://google.github.io/adk-docs/)
 (`google-adk`) so that a **WitSeal-authored tool's** execution runs through
-WitSeal: the command becomes a full, independently-verifiable execution
+WitSeal: the command becomes a full, verifiable execution
 receipt. WitSeal owns that tool's execution (own-execute) — it is *not* a bare
 "WitSeal Google ADK" gateway over all agent traffic. Witnessing is **receipt-first**
 and scoped to the authored tool (the OpenHands honesty ceiling).

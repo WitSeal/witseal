@@ -1,9 +1,10 @@
 /**
  * Execution Receipt schema.
  *
- * A receipt is structured proof of a completed action — pairing 1:1 with
- * a witness event. The receipt is hash-addressable and verifiable
- * independently of the producing system.
+ * A receipt is a structured record of one witness event's outcome —
+ * executed, denied, pending, or lost — pairing 1:1 with that event. The
+ * receipt is hash-addressable, and its integrity can be checked without the
+ * producing system.
  *
  * See ARCHITECTURE.md Section 3.3 and ADR-0001.
  *

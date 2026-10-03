@@ -2,8 +2,8 @@
 
 Integrates WitSeal with [Open Interpreter](https://github.com/OpenInterpreter/open-interpreter)
 (the `interpreter` package) so the agent's **own** code execution runs through
-WitSeal — every code block the model runs becomes a full, independently
-verifiable execution receipt (witnessed execution for Open Interpreter), not
+WitSeal — every code block the model runs becomes a full, verifiable
+execution receipt (witnessed execution for Open Interpreter), not
 just calls routed to a separate witnessed tool.
 
 This is the own-execute path (Full Execution Coverage tier). It differs from the

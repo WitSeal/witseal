@@ -2,7 +2,7 @@
 
 A WitSeal-authored CrewAI tool whose execution is itself witnessed. Give it to a
 [CrewAI](https://crewai.com) agent and the command the agent runs **through this
-tool** becomes a full, independently-verifiable WitSeal execution receipt — not a
+tool** becomes a full, verifiable WitSeal execution receipt — not a
 log line, a receipt you can `witseal verify`.
 
 This is receipt-first, role-qualified: it is *witnessed execution for CrewAI*

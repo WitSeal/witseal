@@ -71,7 +71,7 @@ Both are recorded; nothing executes on a denial.
   build environment. The runtime/deployment implement the exact swerex call
   contract (`run_in_session` / `execute`, sync + async) so they are drop-in
   when those packages are installed; the execution-path VALID above is the
-  baseline guarantee.
+  baseline evidence.
 
 ## Verdict
 

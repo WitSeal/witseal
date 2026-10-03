@@ -12,7 +12,7 @@ new boundary, with no fork of Open Interpreter required.
 This adapter registers a witnessed language whose ``run`` routes the code block
 through WitSeal's pipeline (classify -> policy -> mediate -> witness -> receipt)
 instead of a raw subprocess, so every executed block yields a full,
-independently-verifiable execution receipt. It mirrors the OpenHands CLI-bridge
+verifiable execution receipt. It mirrors the OpenHands CLI-bridge
 adapter (``run_through_witseal``): Open Interpreter is Python, WitSeal's
 ``runExec`` is the TypeScript ``@witseal/cli``, so the language invokes the built
 CLI as a subprocess and parses the witness footer for the receipt id.

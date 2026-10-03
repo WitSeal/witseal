@@ -71,5 +71,5 @@ agent issues is mediated before it runs.
 - The tool result is the mediation summary; the command's captured output lives
   in the execution receipt (`witseal receipt show <id>`).
 - Run in `gate` mode (deny-by-default) for enforcement, or `witness` mode for
-  observe-only attestation.
+  recording without enforcement.
 - Honesty ceiling and how to keep coverage Full: see `COVERAGE.md`.

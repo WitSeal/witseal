@@ -12,7 +12,7 @@ WitSeal-**authored** tool, `WitSealCrewTool` (`name="witnessed_shell"`). Its
 `_run(command)` does not shell out in-process; it routes the command through the
 WitSeal pipeline (classify → policy → mediate → witness → receipt) via the built
 CLI. WitSeal **owns** this tool's execution (own-execute), so every call to it is
-a full, independently-verifiable execution receipt.
+a full, verifiable execution receipt.
 
 | Surface | Witnessed? | Notes |
 |---|---|---|

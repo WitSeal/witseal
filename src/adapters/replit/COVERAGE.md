@@ -46,7 +46,7 @@ Out of scope (NOT witnessed):
   force a closed host to send every action through the tool, so coverage is
   scoped to the calls that actually go through it.
 - Run in `gate` mode (deny-by-default) for enforcement on the witnessed tool, or
-  `witness` mode for observe-only attestation.
+  `witness` mode for recording without enforcement.
 
 ## Deployment status — honest
 

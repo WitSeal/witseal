@@ -102,4 +102,4 @@ are always available via `witseal receipt show`.
   file edits, package installs, and shell — stays outside the witness boundary.
   See `COVERAGE.md` for the exact scope and how to read it honestly.
 - Run in `gate` mode (deny-by-default) for enforcement, or `witness` mode for
-  observe-only attestation.
+  recording without enforcement.

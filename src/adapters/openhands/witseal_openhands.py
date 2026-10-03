@@ -18,7 +18,7 @@ This module provides:
 * ``WitSealTerminalExecutor`` — a real ``openhands.sdk.tool.ToolExecutor`` whose
   ``__call__(TerminalAction)`` routes the command through WitSeal's pipeline
   (classify -> policy -> mediate -> witness -> receipt) instead of a raw shell,
-  so the call yields a full, independently-verifiable execution receipt.
+  so the call yields a full, verifiable execution receipt.
 * ``build_witseal_terminal_tool`` — takes the SDK's default ``TerminalTool``
   (from ``TerminalTool.create(conv_state)``) and replaces its ``.executor`` with
   the WitSeal executor, for use in ``Agent(tools=[...])`` via a tools-list swap

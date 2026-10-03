@@ -35,9 +35,10 @@ export const SHELL_TOOL = {
   name: 'shell',
   description:
     'Run a shell command, mediated and witnessed by WitSeal. The command is ' +
-    'classified, checked against policy (deny-by-default), executed by ' +
-    "WitSeal's mediator, and recorded as a full execution receipt in an " +
-    'evidence chain. A command denied by policy does not run.',
+    "classified, checked against policy, executed by WitSeal's mediator, and " +
+    'recorded with a receipt in an evidence chain. In Gate Mode ' +
+    '(deny-by-default) a command denied by policy does not run; in Witness ' +
+    'Mode it runs and the decision is recorded.',
   inputSchema: {
     type: 'object',
     properties: {

@@ -7,7 +7,7 @@ This integration ships no new code: it registers the shipped `witseal-mcp`
 server with Codex CLI so the model can call WitSeal's `shell` tool. That tool's
 body routes every command through WitSeal's mediation core (`mediateMcpShell` →
 `runExec`: classify → policy → mediate → witness → receipt). When the agent
-calls the `shell` tool, the command is a real, independently verifiable witnessed
+calls the `shell` tool, the command is a real, verifiable witnessed
 execution. It reuses the existing execution-result / witness schema (no new
 wire-format); the golden receipt is untouched.
 
@@ -49,7 +49,7 @@ make the witnessed `shell` tool the agent's actual execution path:
   remains available and is unwitnessed; restrict or avoid it where the
   deployment requires every command to be witnessed.
 - Run in `gate` mode (deny-by-default) for enforcement, or `witness` mode for
-  observe-only attestation.
+  recording without enforcement.
 - Add a policy pack under `<WITSEAL_DATA_DIR>/policy-packs/`; in Gate mode with
   no pack, WitSeal fails closed and denies every routed command.
 
@@ -64,7 +64,7 @@ make the witnessed `shell` tool the agent's actual execution path:
   verify` confirms **VALID**.
 - **Full agent loop not run here.** This build did not run a live Codex session
   with an LLM key emitting the tool call; the model-emits-the-call step is
-  documented, not executed. The independently verifiable property rests on the
+  documented, not executed. The receipt's verifiability rests on the
   execution path, which is verified.
 
 ## Live verification receipt (this build)

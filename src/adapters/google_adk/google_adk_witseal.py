@@ -15,7 +15,7 @@ it. The intended composition is an ``LlmAgent`` whose *granted toolset is exactl
 that authored tool*: the callback intercepts the ``command`` argument, runs it
 through WitSeal's pipeline (classify → policy → mediate → witness → receipt), and
 returns the mediated result as the function response. WitSeal therefore **owns**
-that tool's execution (own-execute) and emits a full, independently-verifiable
+that tool's execution (own-execute) and emits a full, verifiable
 execution receipt — the OpenHands honesty ceiling: witnessing is scoped to the
 authored tool, NOT to ADK internals, the LLM, or any other traffic.
 

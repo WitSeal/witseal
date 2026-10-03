@@ -2,9 +2,10 @@
  * Evidence Package schema.
  *
  * An EvidencePackage is the exportable bundle: events, receipts, chain root,
- * policies in effect, classifier version. It is independently verifiable —
- * a third party with the package alone can reconstruct and verify the
- * chain head.
+ * policies in effect, classifier version. A third party with the package
+ * alone can reconstruct the chain head and check it against the head the
+ * package declares; detecting a consistently re-hashed copy also needs a head
+ * obtained separately (for example, the one printed at export).
  *
  * Schema version: witseal.evidence-package.v0.1
  */

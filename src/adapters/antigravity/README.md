@@ -9,7 +9,7 @@ WitSeal cannot own the host's native actions here. What it can do is expose its
 Protocol](https://modelcontextprotocol.io), which Antigravity's local surface
 (its Desktop / IDE / CLI) accepts as a custom stdio MCP server. Every command the
 agent routes through that tool passes the WitSeal pipeline (classify → policy →
-mediate → witness → receipt) and yields an independently verifiable execution
+mediate → witness → receipt) and yields a verifiable execution
 receipt.
 
 ## Model (Tool-Scoped Coverage via MCP)

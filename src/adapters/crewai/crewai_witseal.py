@@ -5,7 +5,7 @@ agent decides; the tool's ``_run`` body is what actually touches the world.
 This adapter ships a WitSeal-**authored** tool, ``WitSealCrewTool``, whose
 ``_run(command)`` does not shell out itself — it routes the command through the
 WitSeal pipeline (classify -> policy -> mediate -> witness -> receipt), so the
-tool's own execution produces a full, independently-verifiable execution
+tool's own execution produces a full, verifiable execution
 receipt. WitSeal *owns* this tool's execution (own-execute); the receipt id is
 returned to the agent in the tool result.
 

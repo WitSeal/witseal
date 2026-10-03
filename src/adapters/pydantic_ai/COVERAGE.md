@@ -18,7 +18,7 @@ So WitSeal **authors the tool**: `witseal_shell(command)` is a shell tool whose
 body routes the command through WitSeal's pipeline (classify → policy → mediate →
 witness → receipt) via the CLI subprocess, instead of a raw `subprocess` /
 `os.system`. WitSeal **owns that tool's execution** (own-execute) → every call
-yields a full, independently-verifiable execution receipt.
+yields a full, verifiable execution receipt.
 
 ## Witnessed execution path (core)
 

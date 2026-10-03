@@ -11,7 +11,7 @@ the agent's own execution under the witness boundary.
 This module provides a witnessed runtime/deployment that routes every command
 through WitSeal's pipeline (classify -> policy -> mediate -> witness -> receipt)
 via the built witseal CLI, instead of running it in a raw shell/session. An
-allowed command yields a full, independently-verifiable execution receipt; a
+allowed command yields a full, verifiable execution receipt; a
 denied command does not run and is recorded as evidence.
 
 Cross-language bridge (mirrors the OpenHands adapter

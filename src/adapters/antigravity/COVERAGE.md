@@ -7,7 +7,7 @@ CLI) accepts custom stdio MCP servers. This adapter registers the shipped
 `witseal-mcp` server there and exposes one WitSeal-owned tool: `shell`. When the
 agent calls that tool, WitSeal own-executes the command through its mediation core
 (`mediateMcpShell` → `runExec`: classify → policy → mediate → witness → receipt),
-so each such call is a real, independently verifiable witnessed execution. It
+so each such call is a real, verifiable witnessed execution. It
 reuses the existing execution-result / witness schema (no new wire-format); the
 golden receipt is untouched and no new code ships for this host.
 
@@ -48,7 +48,7 @@ choosing the tool:
 - Treat host-native execution as unattested: it runs outside the witness
   boundary by design on a closed host.
 - Run in `gate` mode (deny-by-default) for enforcement on the witnessed tool, or
-  `witness` mode for observe-only attestation.
+  `witness` mode for recording without enforcement.
 
 ## Registration status — honest
 

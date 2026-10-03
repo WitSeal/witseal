@@ -3,7 +3,7 @@
 A WitSeal demo-client adapter that gives a [Pydantic AI](https://ai.pydantic.dev)
 agent a **witnessed shell tool**: WitSeal authors the tool, so when the agent
 runs a command it goes through WitSeal's pipeline (classify → policy → mediate →
-witness → receipt) and produces a real, independently-verifiable **execution
+witness → receipt) and produces a real, verifiable **execution
 receipt** — not a raw subprocess.
 
 > Naming: this is *witnessed execution for Pydantic AI* — a

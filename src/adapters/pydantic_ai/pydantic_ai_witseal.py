@@ -12,7 +12,7 @@ WitSeal witness boundary is to make WitSeal **author the tool**: this module
 provides a shell tool whose body routes the command through WitSeal's pipeline
 (classify -> policy -> mediate -> witness -> receipt) instead of a raw
 ``subprocess`` / ``os.system``. WitSeal owns that tool's execution (own-execute),
-so every invocation yields a real, independently-verifiable execution receipt.
+so every invocation yields a real, verifiable execution receipt.
 
 Honesty ceiling (per the OpenHands model): witnessing is scoped to the tool(s)
 WitSeal authors here. It does NOT witness the framework's internals, the model,
