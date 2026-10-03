@@ -1,0 +1,78 @@
+{
+  "schema_version": "witseal.witness.v0.1",
+  "event_id": "evt_musnkx4g70eu07DjIt4I36",
+  "chain_segment_id": "default",
+  "sequence": 4,
+  "timestamp": "2026-10-03T17:15:40Z",
+  "previous_event_hash": "b2a912282012a75eae173f2ed85c02eb2ef67711f4e4e374a8456f5628c0bf1b",
+  "event_hash": "390c90462c5bcdeabf070c86cbdf2dde63a37cd5f876058820e9d1a2dd28b11a",
+  "originating_node": "vm",
+  "agent_identifier": "cli-user",
+  "identity_origin": "fallback",
+  "classified_intent": {
+    "schema_version": "witseal.intent.v0.1",
+    "intent_id": "int_musnkx459ibb4r83X1ZzaI",
+    "intent": {
+      "action_type": "shell_command",
+      "executable": "/nonexistent/witseal-demo-binary",
+      "args": [],
+      "cwd": "/tmp/tmp.DoGJaCAQPm",
+      "use_tty": false
+    },
+    "risk_class": "C1",
+    "classification_reasons": [
+      "shell command, no high-risk pattern matched"
+    ],
+    "classifier_version": "witseal-classifier-1.2"
+  },
+  "policy_decision": {
+    "schema_version": "witseal.policy.v0.1",
+    "outcome": "allow",
+    "matched_rule": null,
+    "reason": "no matching rule; default_decision = allow",
+    "active_pack_hashes": [
+      {
+        "pack_id": "quickstart",
+        "version": "1.0.0",
+        "content_hash": "895e35295eecffc39dad72826e94e393a215f2027defee3943e86a4c367508a4"
+      }
+    ]
+  },
+  "approval": null,
+  "execution_result": {
+    "schema_version": "witseal.execution.v0.1",
+    "started_at": "2026-10-03T17:15:40Z",
+    "finished_at": "2026-10-03T17:15:40Z",
+    "exit_code": -1,
+    "signal": null,
+    "stdout": {
+      "total_bytes": 0,
+      "content_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "head": null,
+      "tail": null,
+      "head_bytes": 0,
+      "tail_bytes": 0,
+      "truncated": false
+    },
+    "stderr": {
+      "total_bytes": 0,
+      "content_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "head": null,
+      "tail": null,
+      "head_bytes": 0,
+      "tail_bytes": 0,
+      "truncated": false
+    },
+    "executable_resolved": "/nonexistent/witseal-demo-binary",
+    "env_keys_hash": "1cee8a117bad2e486afa540c67caf434b6e92a9b0784429a6ee32f95921670c3",
+    "spawn_error": "spawn /nonexistent/witseal-demo-binary ENOENT"
+  },
+  "outcome": "allowed_executed_with_error",
+  "receipt_id": "rcpt_musnkx4g7wV4U4PFUMPpXn",
+  "intent_recorded_event_id": "evt_musnkx48URRjerevq7M3pD",
+  "versions": {
+    "witseal_runtime": "0.4.2",
+    "classifier": "witseal-classifier-1.2",
+    "schema": "witseal.witness.v0.1"
+  }
+}

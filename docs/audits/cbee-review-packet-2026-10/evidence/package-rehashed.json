@@ -1,0 +1,414 @@
+{
+  "schema_version": "witseal.evidence-package.v0.1",
+  "package_id": "pkg_musnkxgsePGNIPENdOHSNA",
+  "exported_at": "2026-10-03T17:15:40Z",
+  "chain_segment_id": "default",
+  "range": {
+    "start_sequence": 0,
+    "end_sequence": 4
+  },
+  "chain_head_before_range": null,
+  "chain_head_after_range": "c33c48538f0e616c991e4036a446260fbf13bec40799e8dcfbce1a5885672694",
+  "events": [
+    {
+      "schema_version": "witseal.witness.v0.1",
+      "event_id": "evt_musnkwyq0zSdvRc2kssv2l",
+      "chain_segment_id": "default",
+      "sequence": 0,
+      "timestamp": "2026-10-03T17:15:40Z",
+      "previous_event_hash": null,
+      "event_hash": "60f42f09002ccbae2560e9b89fcb29010abd30b4a63b092de563c5c4e54d7a68",
+      "originating_node": "vm",
+      "agent_identifier": "cli-user",
+      "identity_origin": "fallback",
+      "classified_intent": {
+        "schema_version": "witseal.intent.v0.1",
+        "intent_id": "int_musnkwym283pDnqMNjFCDG",
+        "intent": {
+          "action_type": "shell_command",
+          "executable": "echo",
+          "args": [
+            "hello"
+          ],
+          "cwd": "/tmp/tmp.DoGJaCAQPm",
+          "use_tty": false
+        },
+        "risk_class": "C0",
+        "classification_reasons": [
+          "informational command"
+        ],
+        "classifier_version": "witseal-classifier-1.2"
+      },
+      "policy_decision": {
+        "schema_version": "witseal.policy.v0.1",
+        "outcome": "allow",
+        "matched_rule": null,
+        "reason": "no matching rule; default_decision = allow",
+        "active_pack_hashes": [
+          {
+            "pack_id": "quickstart",
+            "version": "1.0.0",
+            "content_hash": "895e35295eecffc39dad72826e94e393a215f2027defee3943e86a4c367508a4"
+          }
+        ]
+      },
+      "approval": null,
+      "execution_result": null,
+      "outcome": "pending",
+      "receipt_id": "rcpt_musnkwyqQuAwAMmmQwXlxi",
+      "versions": {
+        "witseal_runtime": "0.4.2",
+        "classifier": "witseal-classifier-1.2",
+        "schema": "witseal.witness.v0.1"
+      }
+    },
+    {
+      "schema_version": "witseal.witness.v0.1",
+      "event_id": "evt_musnkwz1LyDxRoNuYb0f8i",
+      "chain_segment_id": "default",
+      "sequence": 1,
+      "timestamp": "2026-10-03T17:15:40Z",
+      "previous_event_hash": "60f42f09002ccbae2560e9b89fcb29010abd30b4a63b092de563c5c4e54d7a68",
+      "event_hash": "7746552ab8637ef64bf8d6f03e904e168057af22206a9358eadb9119572bd0c5",
+      "originating_node": "vm",
+      "agent_identifier": "tampered",
+      "identity_origin": "fallback",
+      "classified_intent": {
+        "schema_version": "witseal.intent.v0.1",
+        "intent_id": "int_musnkwym283pDnqMNjFCDG",
+        "intent": {
+          "action_type": "shell_command",
+          "executable": "echo",
+          "args": [
+            "hello"
+          ],
+          "cwd": "/tmp/tmp.DoGJaCAQPm",
+          "use_tty": false
+        },
+        "risk_class": "C0",
+        "classification_reasons": [
+          "informational command"
+        ],
+        "classifier_version": "witseal-classifier-1.2"
+      },
+      "policy_decision": {
+        "schema_version": "witseal.policy.v0.1",
+        "outcome": "allow",
+        "matched_rule": null,
+        "reason": "no matching rule; default_decision = allow",
+        "active_pack_hashes": [
+          {
+            "pack_id": "quickstart",
+            "version": "1.0.0",
+            "content_hash": "895e35295eecffc39dad72826e94e393a215f2027defee3943e86a4c367508a4"
+          }
+        ]
+      },
+      "approval": null,
+      "execution_result": {
+        "schema_version": "witseal.execution.v0.1",
+        "started_at": "2026-10-03T17:15:40Z",
+        "finished_at": "2026-10-03T17:15:40Z",
+        "exit_code": 0,
+        "signal": null,
+        "stdout": {
+          "total_bytes": 6,
+          "content_hash": "5891b5b522d5df086d0ff0b110fbd9d21bb4fc7163af34d08286a2e846f6be03",
+          "head": "hello\n",
+          "tail": null,
+          "head_bytes": 6,
+          "tail_bytes": 0,
+          "truncated": false
+        },
+        "stderr": {
+          "total_bytes": 0,
+          "content_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "head": null,
+          "tail": null,
+          "head_bytes": 0,
+          "tail_bytes": 0,
+          "truncated": false
+        },
+        "executable_resolved": "echo",
+        "env_keys_hash": "1cee8a117bad2e486afa540c67caf434b6e92a9b0784429a6ee32f95921670c3",
+        "spawn_error": null
+      },
+      "outcome": "allowed_executed",
+      "receipt_id": "rcpt_musnkwz1O3mcrnix5uSf25",
+      "intent_recorded_event_id": "evt_musnkwyq0zSdvRc2kssv2l",
+      "versions": {
+        "witseal_runtime": "0.4.2",
+        "classifier": "witseal-classifier-1.2",
+        "schema": "witseal.witness.v0.1"
+      }
+    },
+    {
+      "schema_version": "witseal.witness.v0.1",
+      "event_id": "evt_musnkx1clcjYwJ5QBgvmzN",
+      "chain_segment_id": "default",
+      "sequence": 2,
+      "timestamp": "2026-10-03T17:15:40Z",
+      "previous_event_hash": "7746552ab8637ef64bf8d6f03e904e168057af22206a9358eadb9119572bd0c5",
+      "event_hash": "acabd71a8111c9b811493e22a953df4ef9b7475318e13a60a65bd96604c50fd0",
+      "originating_node": "vm",
+      "agent_identifier": "cli-user",
+      "identity_origin": "fallback",
+      "classified_intent": {
+        "schema_version": "witseal.intent.v0.1",
+        "intent_id": "int_musnkx19lcAxoc3U2tKr49",
+        "intent": {
+          "action_type": "shell_command",
+          "executable": "rm",
+          "args": [
+            "-rf",
+            "/nonexistent/witseal-demo-target"
+          ],
+          "cwd": "/tmp/tmp.DoGJaCAQPm",
+          "use_tty": false
+        },
+        "risk_class": "C4",
+        "classification_reasons": [
+          "rm -rf on root or home"
+        ],
+        "classifier_version": "witseal-classifier-1.2"
+      },
+      "policy_decision": {
+        "schema_version": "witseal.policy.v0.1",
+        "outcome": "deny",
+        "matched_rule": {
+          "pack_id": "quickstart",
+          "pack_version": "1.0.0",
+          "rule_id": "deny-rm-rf-absolute"
+        },
+        "reason": "rm -rf on absolute paths is denied",
+        "active_pack_hashes": [
+          {
+            "pack_id": "quickstart",
+            "version": "1.0.0",
+            "content_hash": "895e35295eecffc39dad72826e94e393a215f2027defee3943e86a4c367508a4"
+          }
+        ]
+      },
+      "approval": null,
+      "execution_result": null,
+      "outcome": "denied_by_policy",
+      "receipt_id": "rcpt_musnkx1cphh6kemhqMMFin",
+      "versions": {
+        "witseal_runtime": "0.4.2",
+        "classifier": "witseal-classifier-1.2",
+        "schema": "witseal.witness.v0.1"
+      }
+    },
+    {
+      "schema_version": "witseal.witness.v0.1",
+      "event_id": "evt_musnkx48URRjerevq7M3pD",
+      "chain_segment_id": "default",
+      "sequence": 3,
+      "timestamp": "2026-10-03T17:15:40Z",
+      "previous_event_hash": "acabd71a8111c9b811493e22a953df4ef9b7475318e13a60a65bd96604c50fd0",
+      "event_hash": "69ab8fc417209ba9128054ebe087dc79da7533e0f05ceb5bb40f95466eb49381",
+      "originating_node": "vm",
+      "agent_identifier": "cli-user",
+      "identity_origin": "fallback",
+      "classified_intent": {
+        "schema_version": "witseal.intent.v0.1",
+        "intent_id": "int_musnkx459ibb4r83X1ZzaI",
+        "intent": {
+          "action_type": "shell_command",
+          "executable": "/nonexistent/witseal-demo-binary",
+          "args": [],
+          "cwd": "/tmp/tmp.DoGJaCAQPm",
+          "use_tty": false
+        },
+        "risk_class": "C1",
+        "classification_reasons": [
+          "shell command, no high-risk pattern matched"
+        ],
+        "classifier_version": "witseal-classifier-1.2"
+      },
+      "policy_decision": {
+        "schema_version": "witseal.policy.v0.1",
+        "outcome": "allow",
+        "matched_rule": null,
+        "reason": "no matching rule; default_decision = allow",
+        "active_pack_hashes": [
+          {
+            "pack_id": "quickstart",
+            "version": "1.0.0",
+            "content_hash": "895e35295eecffc39dad72826e94e393a215f2027defee3943e86a4c367508a4"
+          }
+        ]
+      },
+      "approval": null,
+      "execution_result": null,
+      "outcome": "pending",
+      "receipt_id": "rcpt_musnkx49Ibj4wpfeLajqSn",
+      "versions": {
+        "witseal_runtime": "0.4.2",
+        "classifier": "witseal-classifier-1.2",
+        "schema": "witseal.witness.v0.1"
+      }
+    },
+    {
+      "schema_version": "witseal.witness.v0.1",
+      "event_id": "evt_musnkx4g70eu07DjIt4I36",
+      "chain_segment_id": "default",
+      "sequence": 4,
+      "timestamp": "2026-10-03T17:15:40Z",
+      "previous_event_hash": "69ab8fc417209ba9128054ebe087dc79da7533e0f05ceb5bb40f95466eb49381",
+      "event_hash": "c33c48538f0e616c991e4036a446260fbf13bec40799e8dcfbce1a5885672694",
+      "originating_node": "vm",
+      "agent_identifier": "cli-user",
+      "identity_origin": "fallback",
+      "classified_intent": {
+        "schema_version": "witseal.intent.v0.1",
+        "intent_id": "int_musnkx459ibb4r83X1ZzaI",
+        "intent": {
+          "action_type": "shell_command",
+          "executable": "/nonexistent/witseal-demo-binary",
+          "args": [],
+          "cwd": "/tmp/tmp.DoGJaCAQPm",
+          "use_tty": false
+        },
+        "risk_class": "C1",
+        "classification_reasons": [
+          "shell command, no high-risk pattern matched"
+        ],
+        "classifier_version": "witseal-classifier-1.2"
+      },
+      "policy_decision": {
+        "schema_version": "witseal.policy.v0.1",
+        "outcome": "allow",
+        "matched_rule": null,
+        "reason": "no matching rule; default_decision = allow",
+        "active_pack_hashes": [
+          {
+            "pack_id": "quickstart",
+            "version": "1.0.0",
+            "content_hash": "895e35295eecffc39dad72826e94e393a215f2027defee3943e86a4c367508a4"
+          }
+        ]
+      },
+      "approval": null,
+      "execution_result": {
+        "schema_version": "witseal.execution.v0.1",
+        "started_at": "2026-10-03T17:15:40Z",
+        "finished_at": "2026-10-03T17:15:40Z",
+        "exit_code": -1,
+        "signal": null,
+        "stdout": {
+          "total_bytes": 0,
+          "content_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "head": null,
+          "tail": null,
+          "head_bytes": 0,
+          "tail_bytes": 0,
+          "truncated": false
+        },
+        "stderr": {
+          "total_bytes": 0,
+          "content_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "head": null,
+          "tail": null,
+          "head_bytes": 0,
+          "tail_bytes": 0,
+          "truncated": false
+        },
+        "executable_resolved": "/nonexistent/witseal-demo-binary",
+        "env_keys_hash": "1cee8a117bad2e486afa540c67caf434b6e92a9b0784429a6ee32f95921670c3",
+        "spawn_error": "spawn /nonexistent/witseal-demo-binary ENOENT"
+      },
+      "outcome": "allowed_executed_with_error",
+      "receipt_id": "rcpt_musnkx4g7wV4U4PFUMPpXn",
+      "intent_recorded_event_id": "evt_musnkx48URRjerevq7M3pD",
+      "versions": {
+        "witseal_runtime": "0.4.2",
+        "classifier": "witseal-classifier-1.2",
+        "schema": "witseal.witness.v0.1"
+      }
+    }
+  ],
+  "policy_packs": [
+    {
+      "schema_version": "witseal.policy.v0.1",
+      "pack_id": "quickstart",
+      "version": "1.0.0",
+      "description": "Quickstart: allow by default; deny rm -rf on absolute paths.",
+      "rules": [
+        {
+          "id": "deny-rm-rf-absolute",
+          "match": {
+            "command_matches": "^rm\\s+(-[rRf]+\\s+)+(/|\\$HOME|~)"
+          },
+          "decision": "deny",
+          "reason": "rm -rf on absolute paths is denied"
+        }
+      ],
+      "default_decision": "allow"
+    }
+  ],
+  "classifier_version": "witseal-classifier-1.2",
+  "witseal_runtime_version": "0.4.2",
+  "receipts": [
+    {
+      "schema_version": "witseal.receipt.v0.1",
+      "receipt_id": "rcpt_musnkwyqQuAwAMmmQwXlxi",
+      "witness_event_id": "evt_musnkwyq0zSdvRc2kssv2l",
+      "chain_segment_id": "default",
+      "finalized_at": "2026-10-03T17:15:40Z",
+      "policy_decision_hash": "7b8e3e6d389432e2ae8d64536a2438db233a3820748be42196b406884e4c8c68",
+      "classified_intent_hash": "e6498e33e8ccb5c4961399ff25ea7fa85a7e2ef4175b9c321d0441630d36006e",
+      "execution_result_hash": null,
+      "outcome": "pending",
+      "receipt_hash": "58e404ec9d78db7f8a9e8c47208b27a17c3b4533331480dd885c7a0ef4d92dad"
+    },
+    {
+      "schema_version": "witseal.receipt.v0.1",
+      "receipt_id": "rcpt_musnkwz1O3mcrnix5uSf25",
+      "witness_event_id": "evt_musnkwz1LyDxRoNuYb0f8i",
+      "chain_segment_id": "default",
+      "finalized_at": "2026-10-03T17:15:40Z",
+      "policy_decision_hash": "7b8e3e6d389432e2ae8d64536a2438db233a3820748be42196b406884e4c8c68",
+      "classified_intent_hash": "e6498e33e8ccb5c4961399ff25ea7fa85a7e2ef4175b9c321d0441630d36006e",
+      "execution_result_hash": "ced31cfe6e35daedccccf4dd66bedc8830544ab4b4c48746280f6569630cc5da",
+      "outcome": "allowed_executed",
+      "receipt_hash": "d51df57055b723c70cc8966f9f464db0cb8dfd5f99fc40d714ab2fb471d29896"
+    },
+    {
+      "schema_version": "witseal.receipt.v0.1",
+      "receipt_id": "rcpt_musnkx1cphh6kemhqMMFin",
+      "witness_event_id": "evt_musnkx1clcjYwJ5QBgvmzN",
+      "chain_segment_id": "default",
+      "finalized_at": "2026-10-03T17:15:40Z",
+      "policy_decision_hash": "7d57bd0fc6d35909404bea05d181a2878090040ebe0e34274c2c9591e8bd29b9",
+      "classified_intent_hash": "e6d9dab0edac40e18331fdca8cfd1cfceb59a2dba017054286557320b9d075af",
+      "execution_result_hash": null,
+      "outcome": "denied_by_policy",
+      "receipt_hash": "2cc203fdc80e1e0e7c5d75262b69cedc37ccbbe64912bb6baeff5ecf58710942"
+    },
+    {
+      "schema_version": "witseal.receipt.v0.1",
+      "receipt_id": "rcpt_musnkx49Ibj4wpfeLajqSn",
+      "witness_event_id": "evt_musnkx48URRjerevq7M3pD",
+      "chain_segment_id": "default",
+      "finalized_at": "2026-10-03T17:15:40Z",
+      "policy_decision_hash": "7b8e3e6d389432e2ae8d64536a2438db233a3820748be42196b406884e4c8c68",
+      "classified_intent_hash": "8f8e705d5fe64a09eeeeeaaf8e4d4fe9072fdb9eba1af5df9d7f783b1e435862",
+      "execution_result_hash": null,
+      "outcome": "pending",
+      "receipt_hash": "50d8705f7a1de816bb71db1448723fdd73a2650d6e3728e7b3cfecdaa8deaed0"
+    },
+    {
+      "schema_version": "witseal.receipt.v0.1",
+      "receipt_id": "rcpt_musnkx4g7wV4U4PFUMPpXn",
+      "witness_event_id": "evt_musnkx4g70eu07DjIt4I36",
+      "chain_segment_id": "default",
+      "finalized_at": "2026-10-03T17:15:40Z",
+      "policy_decision_hash": "7b8e3e6d389432e2ae8d64536a2438db233a3820748be42196b406884e4c8c68",
+      "classified_intent_hash": "8f8e705d5fe64a09eeeeeaaf8e4d4fe9072fdb9eba1af5df9d7f783b1e435862",
+      "execution_result_hash": "9d6430c7183ac226c6dcdec7cfac32ff0ecbc713ac2ed3c5f712aa01db5fea8a",
+      "outcome": "allowed_executed_with_error",
+      "receipt_hash": "d193c2f9806667aab3a63ea0c6da9f3fb1be98e56d048f2ab20b474162082a39"
+    }
+  ]
+}

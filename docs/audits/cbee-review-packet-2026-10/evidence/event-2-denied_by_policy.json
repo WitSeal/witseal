@@ -1,0 +1,57 @@
+{
+  "schema_version": "witseal.witness.v0.1",
+  "event_id": "evt_musnkx1clcjYwJ5QBgvmzN",
+  "chain_segment_id": "default",
+  "sequence": 2,
+  "timestamp": "2026-10-03T17:15:40Z",
+  "previous_event_hash": "2ecb7108737f68afd57d2d049a1bc4d6675f52767361984d6187c7bbd658cc2b",
+  "event_hash": "67db18896bdfbde6b9452decb047469e024eaf30b2b693d86e07e6e08e24e98b",
+  "originating_node": "vm",
+  "agent_identifier": "cli-user",
+  "identity_origin": "fallback",
+  "classified_intent": {
+    "schema_version": "witseal.intent.v0.1",
+    "intent_id": "int_musnkx19lcAxoc3U2tKr49",
+    "intent": {
+      "action_type": "shell_command",
+      "executable": "rm",
+      "args": [
+        "-rf",
+        "/nonexistent/witseal-demo-target"
+      ],
+      "cwd": "/tmp/tmp.DoGJaCAQPm",
+      "use_tty": false
+    },
+    "risk_class": "C4",
+    "classification_reasons": [
+      "rm -rf on root or home"
+    ],
+    "classifier_version": "witseal-classifier-1.2"
+  },
+  "policy_decision": {
+    "schema_version": "witseal.policy.v0.1",
+    "outcome": "deny",
+    "matched_rule": {
+      "pack_id": "quickstart",
+      "pack_version": "1.0.0",
+      "rule_id": "deny-rm-rf-absolute"
+    },
+    "reason": "rm -rf on absolute paths is denied",
+    "active_pack_hashes": [
+      {
+        "pack_id": "quickstart",
+        "version": "1.0.0",
+        "content_hash": "895e35295eecffc39dad72826e94e393a215f2027defee3943e86a4c367508a4"
+      }
+    ]
+  },
+  "approval": null,
+  "execution_result": null,
+  "outcome": "denied_by_policy",
+  "receipt_id": "rcpt_musnkx1cphh6kemhqMMFin",
+  "versions": {
+    "witseal_runtime": "0.4.2",
+    "classifier": "witseal-classifier-1.2",
+    "schema": "witseal.witness.v0.1"
+  }
+}

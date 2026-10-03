@@ -1,0 +1,12 @@
+{
+  "schema_version": "witseal.receipt.v0.1",
+  "receipt_id": "rcpt_musnkwyqQuAwAMmmQwXlxi",
+  "witness_event_id": "evt_musnkwyq0zSdvRc2kssv2l",
+  "chain_segment_id": "default",
+  "finalized_at": "2026-10-03T17:15:40Z",
+  "policy_decision_hash": "7b8e3e6d389432e2ae8d64536a2438db233a3820748be42196b406884e4c8c68",
+  "classified_intent_hash": "e6498e33e8ccb5c4961399ff25ea7fa85a7e2ef4175b9c321d0441630d36006e",
+  "execution_result_hash": null,
+  "outcome": "pending",
+  "receipt_hash": "58e404ec9d78db7f8a9e8c47208b27a17c3b4533331480dd885c7a0ef4d92dad"
+}

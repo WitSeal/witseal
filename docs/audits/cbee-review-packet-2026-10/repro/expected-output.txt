@@ -1,0 +1,94 @@
+
+=== A1. allowed command (Gate Mode)
+hello
+
+[witseal: event=evt_musnkwz1LyDxRoNuYb0f8i receipt=rcpt_musnkwz1O3mcrnix5uSf25 risk=C0 outcome=allowed_executed]
+exit=0
+
+=== A2. denied command (Gate Mode) - it does not run
+witseal: action denied by policy (rule deny-rm-rf-absolute, event evt_musnkx1clcjYwJ5QBgvmzN)
+         reason: rm -rf on absolute paths is denied
+exit=100
+
+=== A3. allowed command whose executable does not exist
+
+[witseal: event=evt_musnkx4g70eu07DjIt4I36 receipt=rcpt_musnkx4g7wV4U4PFUMPpXn risk=C1 outcome=allowed_executed_with_error]
+exit=1
+
+=== A4. every witness event, with its outcome (each has a receipt id)
+  SEQ  EVENT_ID                      RISK  DECISION            OUTCOME
+    0  evt_musnkwyq0zSdvRc2kssv2l    C0    allow               pending
+    1  evt_musnkwz1LyDxRoNuYb0f8i    C0    allow               allowed_executed
+    2  evt_musnkx1clcjYwJ5QBgvmzN    C4    deny                denied_by_policy
+    3  evt_musnkx48URRjerevq7M3pD    C1    allow               pending
+    4  evt_musnkx4g70eu07DjIt4I36    C1    allow               allowed_executed_with_error
+
+shown: 5 / 5 total
+
+=== A5. receipts exist for a pending precursor and for a denial
+Receipt rcpt_musnkwyqQuAwAMmmQwXlxi
+  schema:          witseal.receipt.v0.1
+  witness event:   evt_musnkwyq0zSdvRc2kssv2l
+  chain segment:   default
+  finalized at:    2026-10-03T17:15:40Z
+  outcome:         pending
+  mode:            gate
+
+Receipt rcpt_musnkx1cphh6kemhqMMFin
+  schema:          witseal.receipt.v0.1
+  witness event:   evt_musnkx1clcjYwJ5QBgvmzN
+  chain segment:   default
+  finalized at:    2026-10-03T17:15:40Z
+  outcome:         denied_by_policy
+  mode:            gate
+
+
+=== A6. the 'executed_with_error' event: spawn_error is set, nothing ran
+outcome: allowed_executed_with_error | exit_code: -1 | spawn_error: spawn /nonexistent/witseal-demo-binary ENOENT
+
+=== B1. export; the CLI prints the head of the exported range
+witseal: exported 5 events to ./pkg.json
+         receipts: witseal.receipt.v0.1
+         range:  0..4
+         head:   390c90462c5bcdeabf070c86cbdf2dde63a37cd5f876058820e9d1a2dd28b11a
+witseal: VALID ✓ (evidence-package.v0.1)
+         file:    ./pkg.json
+         receipts: 5 verified
+exit=0
+
+=== B2. edit one field without re-hashing (the CLAIM_BOUNDARY QA edit)
+witseal: INVALID ✗ (evidence-package.v0.1)
+         file:   ./pkg-naive.json
+         reason: chain verification failed: event_hash invalid at index 1 (event_id=evt_musnkwz1LyDxRoNuYb0f8i)
+exit=1 (expected 1)
+
+=== B3. the same edit, then re-hash every later event and receipt
+witseal: VALID ✓ (evidence-package.v0.1)
+         file:    ./pkg-rehashed.json
+         receipts: 5 verified
+exit=0 (0 means the edit is NOT detected by verify alone)
+
+=== B4. drop the newest two events and re-hash
+witseal: VALID ✓ (evidence-package.v0.1)
+         file:    ./pkg-truncated.json
+         receipts: 3 verified
+exit=0 (0 means the truncation is NOT detected by verify alone)
+
+=== B5. the anchor: compare chain_head_after_range with the head printed at export
+pkg.json: head matches export
+pkg-rehashed.json: head DIFFERS from export -> change detected
+pkg-truncated.json: head DIFFERS from export -> change detected
+
+=== B6. export a sub-range that leaves out the denial (sequence 2)
+witseal: VALID ✓ (evidence-package.v0.1)
+         file:    ./pkg-range.json
+         receipts: 2 verified
+exit=0 (0: a package does not show what it leaves out)
+
+=== C1. live chain: same edit, re-hashed in the data directory
+witseal: VALID ✓ (chain)
+         segment: default
+         events:  5
+exit=0 (0 means the rewrite is NOT detected by verify alone)
+
+=== done (work dir: /tmp/tmp.DoGJaCAQPm)
