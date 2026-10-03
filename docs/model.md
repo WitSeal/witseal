@@ -38,7 +38,9 @@ acts on behalf of a Claimant.
 - A shell wrapping `witseal exec` is a Claimer
 
 The Claimer is **not** the Claimant. The Claimer acts; the Claimant
-authorizes. WitSeal records both, distinctly.
+authorizes. WitSeal records them distinctly — the Claimer's identifier on
+every event, the approving principal when an approval is required — as
+declared, not authenticated.
 
 > **Note on usage.** In everyday English, "claimer" and "claimant" can
 > blur together (especially in legal or insurance contexts). In WitSeal,
@@ -53,7 +55,8 @@ The **WitSeal runtime itself**, observing execution and recording it.
 Witness is a software role, not a human one. The Witness:
 - Observes the attempted execution before, during, and after
 - Records observations into the evidence chain
-- Cannot be bypassed if mediation is enabled
+- Sees only the actions routed through it: an action taken by another path
+  is neither blocked nor recorded, and the Witness does not detect it
 
 > **Distinction from Observer.** The Witness creates evidence during
 > execution. The Observer (below) reads evidence after the fact. Different
@@ -68,7 +71,10 @@ The Attester is responsible for cryptographically signing artifacts and
 identities such that downstream parties can trace evidence to a specific
 key, organization, or system.
 
-In WitSeal Phase 1, attestation is minimal (hash chain integrity only).
+In WitSeal Phase 1, no Attester identity is bound by default: the hash
+chain gives integrity, not identity. Opt-in v0.2 receipts are signed with
+an operator-held Ed25519 key, which ties a receipt to that key, not to a
+verified party.
 In Phase 5+, full Sigstore-based attestation binds GitHub OIDC identity,
 keyless signing, and Rekor transparency log inclusion.
 
@@ -78,9 +84,11 @@ A **downstream consumer** of evidence who actively checks integrity.
 
 Verifiers:
 - Run `witseal verify` against an evidence chain
-- Run `cosign verify-blob` against signed receipts
+- Run `witseal verify --public-key` against signed v0.2 receipts
 - Validate that claims match recorded execution
-- Detect tampering, omission, or substitution
+- Detect edits, re-linking, or sequence gaps that break hash continuity;
+  a consistent rewrite or a dropped tail is detectable only against a chain
+  head held elsewhere
 
 Verifiers have **active rights**: they perform cryptographic and
 structural checks. They are distinct from Observers.
@@ -109,9 +117,10 @@ specific responsibility.
 
 **To make a verifiable assertion through the WitSeal runtime.**
 
-A claim is co-emergent with execution: it cannot exist without the
-execution having occurred, and the execution cannot produce a record
-without a claim being formed.
+A claim is formed by the runtime as it mediates an action, for every
+outcome: an executed action, and also a denied, pending, or lost one,
+where nothing ran or the result is unknown. The claim records which of
+these occurred; it is the runtime's own account of it.
 
 This distinguishes claiming from signing (a post-hoc binding) and from
 attesting (a post-hoc binding of identity to a claim).
@@ -130,16 +139,18 @@ Performed by: Witness (the WitSeal runtime).
 
 ### to stamp
 
-**To bind a claim irreversibly into the persistent evidence chain such
-that removal is detectable.**
+**To bind a claim into the persistent evidence chain so that a later edit
+breaks the chain.**
 
-A stamp is **structural** integrity: the chain itself enforces detection
-of tampering through hash linking. A stamped record may or may not also
-be cryptographically signed.
+A stamp is **structural** integrity: through hash linking, an edit,
+removal, or insertion inside the chain fails verification unless every
+later hash is recomputed. A stamped record may or may not also be
+cryptographically signed.
 
-In Phase 1, WitSeal stamps every claim into the local evidence chain.
-The chain is self-verifying via hash links; removal of any stamped record
-produces a verifiable break in the chain.
+In Phase 1, WitSeal stamps every claim it forms into the local evidence
+chain. Removing a record from inside the chain breaks it; removing the
+newest records, or rewriting the chain consistently, is detectable only
+against a chain head held elsewhere.
 
 Performed by: Witness, automatically as part of recording.
 
@@ -204,12 +215,12 @@ The WitSeal verbs (claim, stamp, seal, attest, witness, verify, observe)
 ## Three-tier integrity model
 
 WitSeal organizes integrity into three distinct layers, each with its
-own verb and its own guarantee:
+own verb and its own property:
 
-| Layer | Verb | Guarantee | Phase |
+| Layer | Verb | Property | Phase |
 |---|---|---|---|
-| Semantic | claim | Verifiable assertion: claim co-emerges with execution | 1 |
-| Structural | stamp | Chain integrity: tampering is detectable through hash links | 1 |
+| Semantic | claim | Recorded assertion: formed as the runtime mediates the action, for every outcome | 1 |
+| Structural | stamp | Chain integrity: an edit that is not re-hashed fails verification | 1 |
 | Cryptographic | seal | Identity binding: signature ties claim to verifiable identity | 5+ |
 
 A Phase 1 receipt is **claimed and stamped**. A Phase 5+ receipt is
@@ -226,8 +237,8 @@ WitSeal produces several distinct artifacts during witnessed execution:
 
 | Artifact | Definition |
 |---|---|
-| **Claim** | The verifiable assertion (the unit of recorded execution). A noun. |
-| **Receipt** | The persisted record of a claim. Stored as a chain entry. |
+| **Claim** | The verifiable assertion (the unit WitSeal records per mediated action). A noun. |
+| **Receipt** | The structured record of a claim, derived from its witness event (the chain entry); exported evidence packages carry receipts. |
 | **Stamp** | The structural binding of a receipt into the chain (hash link). |
 | **Seal** | The cryptographic binding of a receipt to an Attester identity. |
 | **Evidence chain** | The cumulative sequence of receipts. |
@@ -295,12 +306,12 @@ Later, a code reviewer (Verifier) runs:
 
 ```
 witseal verify
-cosign verify-blob …
+cosign verify-blob …    # Phase 5+
 ```
 
-…and confirms that the Receipt is intact, the chain is unbroken, and
-(in Phase 5+) the signature is valid against the developer's published
-identity.
+…and confirms that the chain holding the Receipt's witness event is
+unbroken, and (in Phase 5+) that the signature is valid against the
+developer's published identity.
 
 A security researcher (Observer) reading public evidence packages
 inspects receipts to study patterns of denied actions. They do not

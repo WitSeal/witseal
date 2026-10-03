@@ -11,7 +11,7 @@ In about 90 seconds this walkthrough demonstrates:
 3. WitSeal denies a destructive command through policy.
 4. The denial itself is recorded as evidence.
 5. The live chain and exported evidence package can be verified.
-6. Tampering with the exported package is reported as `INVALID`.
+6. An edit to the exported package, made without re-hashing, is reported as `INVALID`.
 
 You will need a working WitSeal install:
 
@@ -124,7 +124,9 @@ witseal evidence export --out ./hello-witness-evidence.json
 witseal verify ./hello-witness-evidence.json
 ```
 
-The exported package is independently verifiable from the package contents.
+Anyone can check the exported package from its contents alone. To catch a
+copy whose events were re-hashed as well, also compare its
+`chain_head_after_range` with the `head:` line printed at export.
 
 ### 9. Confirm tamper detection
 
@@ -142,9 +144,9 @@ You produced two pieces of evidence:
 - One completed execution receipt for an allowed action you ran
 - One denial receipt for an attempt that policy refused
 
-Both are hash-linked. Tampering with the exported evidence package is detectable.
+Both are hash-linked. An edit to the exported evidence package that is not re-hashed is detected, as step 9 showed; a copy whose events were re-hashed is detected against the head printed at export.
 
-This is the WitSeal Phase 1 wedge: every significant agent action — including the ones policy refuses to allow — becomes a verifiable artifact.
+This is the WitSeal Phase 1 wedge: every agent action routed through WitSeal — including the ones policy refuses to allow — becomes a verifiable artifact.
 
 This walkthrough ran in **Gate Mode** — the default, deny-by-default: the denied `rm -rf` did not execute. WitSeal also has **Witness Mode** (`--mode witness`, from `0.1.3`), which does not block — it executes an action the policy would deny and records it as evidence under a distinct `witnessed_executed` outcome, never confused with a blocked `denied_by_policy`. See [`docs/CLAIM_BOUNDARY.md`](../../docs/CLAIM_BOUNDARY.md) for both modes.
 

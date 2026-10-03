@@ -118,13 +118,13 @@ The default runtime path — v0.1 receipts and the live evidence chain — uses 
 The full threat model lives at [`docs/threat-model.md`](./docs/threat-model.md). Summary of what Phase 1 does and does not protect:
 
 **Phase 1 protects against:**
-- Silent tampering of the evidence chain by a non-producer (chain re-verification detects)
-- Accidental execution of denied-by-policy actions (deny-by-default policy enforcement)
+- Edits to the evidence chain or an exported package that are not re-hashed (chain re-verification detects them); a consistent rewrite is detectable only against a chain head obtained separately, such as the head printed at export
+- Accidental execution of denied-by-policy actions routed through WitSeal in Gate Mode (deny-by-default policy enforcement)
 - Unrecorded approvals (every approval is recorded as evidence; silence is not consent)
 - Replay-time inconsistency (RFC 8785 canonical hashing)
 
 **Phase 1 does NOT protect against:**
-- A malicious producer rewriting the entire chain (Phase 5: Sigstore + Rekor)
+- A malicious producer, or anyone else who can write the data directory or holds a copy of an unsigned package, rewriting the chain consistently or dropping its newest events (Phase 5: Sigstore + Rekor)
 - Subprocess escapes via `LD_PRELOAD`, kernel modules, or unprivileged escalations (Phase 5: kernel-level mediation)
 - Prompt injection or model-level jailbreak (out of scope; this is the model layer)
 - Tampering with the WitSeal binary itself (verify via Sigstore before installing)

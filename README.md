@@ -2,10 +2,11 @@
 
 > A witnessed execution runtime for AI-agent actions.
 
-WitSeal produces execution evidence for agent actions. It classifies each action
-against an explicit authority boundary, then records witness events and execution
-receipts in an evidence chain so a developer can inspect what was witnessed and
-verify the resulting evidence within the documented claim boundary.
+WitSeal produces execution evidence for the agent actions routed through it. It
+classifies each action against an explicit authority boundary, then records
+witness events and execution receipts in an evidence chain so a developer can
+inspect what was witnessed and verify the resulting evidence within the
+documented claim boundary.
 
 WitSeal Phase 1 is a pre-release. Schemas and CLI surface may change before
 `v1.0`.
@@ -43,7 +44,7 @@ npm install -g @witseal/cli@0.4.2
 
 Wire WitSeal into your MCP client — **Claude Desktop**, **Claude Code**, or
 **Cursor** — so the agent gets a witnessed `shell` tool. One command, idempotent,
-safe by default (witness mode records without blocking):
+non-blocking by default (witness mode records without blocking):
 
 ```bash
 witseal connect                 # auto-detect + configure all supported clients
@@ -94,7 +95,7 @@ policy decided — it does not prevent a denied action from running.
 Gate Mode places WitSeal in the agent's critical path. WitSeal classifies the
 action, evaluates policy, records any approval-gate outcome, and — when the
 policy decision is `deny` — the constraint blocks execution: the action does
-not run, and the denial is recorded as execution evidence. The action proceeds
+not run, and the denial is recorded as evidence. The action proceeds
 only after the pipeline clears. This is the deny-by-default posture, and the
 default with no `--mode`.
 
@@ -162,9 +163,11 @@ The same `deny` that Witness merely recorded now blocks execution. The two runs
 are distinguishable by outcome: `witnessed_executed` (Witness, executed) versus
 `denied_by_policy` (Gate, not executed).
 
-Because the chain is hash-linked, `witseal verify` surfaces tampering with a
-recorded receipt or event — and any break in the chain — as an evidence-
-continuity failure, within the documented claim boundary.
+Because the chain is hash-linked, `witseal verify` reports an event edited
+without re-hashing, or any break in the chain, as an evidence-continuity
+failure. A chain rewritten and re-hashed consistently — by anyone who can write
+the data directory, the producer included — still verifies; see the claim
+boundary.
 
 ## Claim boundary
 

@@ -88,19 +88,19 @@ flowchart TD
     APPROVAL["3. APPROVAL (conditional)<br/>━━━━━━━━━━<br/>If decision is require-approval,<br/>prompt the human principal.<br/>Result: ApprovalRecord.<br/>Skipped if decision is allow or deny."]:::stage
     APPROVAL -- "approved action" --> EXEC
 
-    EXEC["4. EXECUTION<br/>━━━━━━━━━━<br/>Mediated execution through controlled<br/>boundary (shell, filesystem, tool call).<br/>Captures stdout, stderr, exit code,<br/>side effects."]:::stage
+    EXEC["4. EXECUTION<br/>━━━━━━━━━━<br/>Mediated execution through controlled<br/>boundary (shell, filesystem, tool call).<br/>Captures stdout, stderr, exit code<br/>(not other side effects)."]:::stage
     EXEC -- "execution result" --> WITNESS
 
     WITNESS["5. WITNESS<br/>━━━━━━━━━━<br/>Emits append-only WitnessEvent capturing<br/>intent, decision, approval, and execution<br/>summary. Linked to previous event by hash."]:::stage
     WITNESS -- "witness event" --> RECEIPT
 
-    RECEIPT["6. RECEIPT<br/>━━━━━━━━━━<br/>Generates ExecutionReceipt:<br/>structured proof of completed action.<br/>Hash-addressable.<br/>Verifiable independently of producer."]:::stage
+    RECEIPT["6. RECEIPT<br/>━━━━━━━━━━<br/>Generates ExecutionReceipt:<br/>structured record of the outcome.<br/>Hash-addressable.<br/>Integrity checkable by anyone."]:::stage
     RECEIPT -- "receipt" --> CHAIN
 
     CHAIN["7. HASH-CHAIN UPDATE<br/>━━━━━━━━━━<br/>Appends receipt hash to chain root.<br/>Chain head is the canonical state of<br/>WitSeal evidence at any moment."]:::stage
     CHAIN --> EVIDENCE
 
-    EVIDENCE["8. EVIDENCE PACKAGE (on demand)<br/>━━━━━━━━━━<br/>Exportable bundle: events, receipts,<br/>chain root, policies in effect,<br/>classifier version.<br/>Independently verifiable."]:::output
+    EVIDENCE["8. EVIDENCE PACKAGE (on demand)<br/>━━━━━━━━━━<br/>Exportable bundle: events, receipts,<br/>chain root, policies in effect,<br/>classifier version.<br/>Integrity checkable offline."]:::output
 
     classDef external fill:#f5f5f5,stroke:#888,stroke-width:1px,color:#333
     classDef stage fill:#e8f0fe,stroke:#1a73e8,stroke-width:2px,color:#000
@@ -254,9 +254,9 @@ stateDiagram-v2
     end note
 
     note left of FINALIZED
-        hash computed
-        and immutable
-        (no further edits)
+        hash computed;
+        any later edit
+        breaks the hash
     end note
 
     note right of CHAINED
@@ -275,7 +275,7 @@ stateDiagram-v2
 **State definitions:**
 
 - **DRAFTED**: receipt structure is being assembled during/after execution. Mutable. Not addressable.
-- **FINALIZED**: all fields populated, receipt hash computed. Immutable. Hash-addressable.
+- **FINALIZED**: all fields populated, receipt hash computed. Any later edit breaks the hash. Hash-addressable.
 - **CHAINED**: receipt hash has been appended to the chain. Verifiable: given chain head and receipt, anyone can prove the receipt is in the chain.
 - **EXPORTED**: receipt has been included in at least one evidence package. The receipt itself does not change in state; this is metadata.
 
@@ -284,8 +284,8 @@ stateDiagram-v2
 - A FINALIZED receipt: "this is a structured record of an action."
 - A CHAINED receipt: "this action is part of WitSeal's evidence chain at chain head H."
 - In Gate Mode, a CHAINED receipt + chain head + classifier version + active
-  policies at the time: "this action passed WitSeal Phase 1 evaluation under
-  these specific rules."
+  policies at the time: "this action went through WitSeal Phase 1 evaluation
+  under these specific rules, with the recorded decision."
 
 **What a Phase 1 receipt does NOT claim:**
 
@@ -322,7 +322,7 @@ stateDiagram-v2
 
 **Idempotence rule:** witness emit is idempotent on `intent_id`. A retry of intent `int_X` produces zero or one witness event for `int_X`, never more than one.
 
-**Append-only invariant:** the witness event log is strictly append-only at the file system level. Edit operations are forbidden by the runtime; tampering is detectable by chain re-verification (Phase 5) or by simple log replay (Phase 1).
+**Append-only invariant:** the runtime only appends to the witness event log; it never edits or deletes a complete event (after a crash it truncates only a torn, incomplete last line). The file system does not enforce this: anyone who can write the log can rewrite it. In Phase 1, chain re-verification detects an edit that was not re-hashed; a consistent rewrite is detectable only against a chain head held elsewhere.
 
 **Single witness owner per operation:** WitSeal does not allow two independent witness surfaces to claim the same logical operation. A deployment must assign exactly one witness owner per operation class. One logical action → one witness owner → one receipt. (This is a deployment-discipline principle; per-operation enforcement of it is out of Phase 1 scope.)
 
@@ -412,7 +412,7 @@ flowchart TD
     AGENT ==>|"MODEL BOUNDARY<br/>intent crosses here"| WITSEAL
     WITSEAL ==>|"TOOL BOUNDARY<br/>WitSeal spawns / invokes"| EXEC
     EXEC ==>|"SHELL BOUNDARY<br/>stdout / stderr / exit captured"| SHELL
-    EXEC ==>|"FILESYSTEM BOUNDARY<br/>direct ops witnessed,<br/>shell-induced ops observed only"| FS
+    EXEC ==>|"FILESYSTEM BOUNDARY<br/>direct ops witnessed,<br/>shell-induced ops not observed"| FS
     EXEC -.->|"REMOTE BOUNDARY<br/>Phase 6"| REMOTE_NODE
 
     classDef untrusted fill:#fce8e6,stroke:#d93025,stroke-width:2px,color:#000
@@ -468,12 +468,12 @@ the receipt.
 
 **Evidence claim:** In Gate Mode: "This subprocess was spawned with these
 exact arguments, exited with this code, and produced output with these content
-hashes."
+hashes" — or, when `spawn_error` is set, failed to start.
 
 **Phase 1 limitation:** In Gate Mode, WitSeal does not prevent a malicious agent
 from achieving an effect through a shell command that is allowed by policy.
-Policy authoring is the responsibility of the user; WitSeal proves what was
-attempted and what happened.
+Policy authoring is the responsibility of the user; WitSeal records what was
+attempted and what happened at its boundary.
 
 ### 5.4 Filesystem Boundary
 
@@ -483,8 +483,8 @@ attempted and what happened.
 
 **Mediation:** In Gate Mode, filesystem operations performed *through* WitSeal's
 tool layer (e.g., a `write_file` action) are mediated and witnessed. Filesystem
-operations performed *by* an executed shell command are observed only via
-stdout/stderr capture and exit code.
+operations performed *by* an executed shell command are not observed: WitSeal
+sees only the command's stdout/stderr and exit code.
 
 **Evidence claim:** In Gate Mode: "These specific file operations were
 performed through WitSeal." WitSeal does **not** claim "these are the only
@@ -527,10 +527,12 @@ deployment modes.
 **The replay invariant:** given an evidence package, a verifier can reconstruct
 the chain head deterministically. In Gate Mode, the verifier uses the same
 classifier version and policy packs for the policy-dependent stages. If the
-reconstruction differs from the recorded chain head, evidence has been tampered
-with.
+reconstruction differs from the recorded chain head, the evidence was altered
+after that head was recorded. A rewrite that also replaces the recorded head —
+possible for anyone who can write the log or the package — is detectable only
+against a head held elsewhere.
 
-This is the entire point of Phase 1's hash-chain: to make tampering detectable through replay, without yet requiring third-party signatures (those come in Phase 5).
+This is the entire point of Phase 1's hash-chain: to make tampering detectable through replay against a recorded head, without yet requiring third-party signatures (those come in Phase 5).
 
 ---
 
@@ -595,7 +597,7 @@ modes.
 
 **Handling:** evidence package includes the exact policy pack content (or a content hash + reference) used at chain time. Verifier resolves the historical pack from the package, not from current configuration.
 
-**Why this matters:** policies evolve. The verification claim is "this action was allowed by policies in effect at the time," not "this action would be allowed by current policies."
+**Why this matters:** policies evolve. The claim at issue is "this decision was made under the policies in effect at the time," not "this action would be allowed by current policies." `witseal verify` checks evidence continuity; it does not re-run that evaluation.
 
 ---
 
@@ -603,7 +605,7 @@ modes.
 
 These are documented limitations of Phase 1, not features. They must appear in the public threat model.
 
-1. **No third-party signatures.** Receipts are hash-chained but not signed by a non-producer. A producer with full filesystem access can rewrite the entire chain consistently. Phase 5 introduces Sigstore-based signing and Rekor transparency log integration to address this.
+1. **No third-party signatures.** Receipts are hash-chained but not signed by a non-producer. Anyone with write access to the event log — the producer included — can rewrite the chain consistently, and anyone holding an unsigned exported package can re-hash an edited copy. Phase 5 introduces Sigstore-based signing and Rekor transparency log integration to address this.
 
 2. **No kernel-level mediation.** WitSeal observes shell command outcomes via stdout/stderr/exit-code capture. A malicious shell command may perform side effects that WitSeal does not directly witness. Phase 5 introduces kernel-level interposition (eBPF / ptrace) to close this gap on supported platforms.
 

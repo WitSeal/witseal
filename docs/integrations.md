@@ -1,7 +1,8 @@
 # Integrations & capability matrix
 
-WitSeal is execution evidence infrastructure. It records what an agent's actions
-actually did, so they can be inspected and independently verified.
+WitSeal is execution evidence infrastructure. It records what was decided for
+the agent actions routed through it and, for the ones it ran, what they
+returned, so the record can be inspected and its integrity checked by anyone.
 
 A given host or framework reaches one or more of three evidence capabilities.
 The **category** an integration belongs to is set by the **highest** evidence
@@ -13,11 +14,11 @@ level it reaches — not by the full list of capabilities it happens to support.
 |---|---|---|
 | **Gate** | Decides *before* the action runs (deny-by-default) and blocks a denied action. The decision is recorded. | The constraint and its policy decision are recorded as evidence. |
 | **Witness** | Records the result the **host** reports after the action ran. | The evidence is only as trustworthy as the host's report — WitSeal did not run the action itself. |
-| **Witnessed Execution** | WitSeal **runs the action itself**, captures the output, and records a signed, hash-chained execution receipt. | **Independently verifiable** — anyone can check the receipt with `witseal verify` (VALID / INVALID), with no WitSeal account, no server, and **no trust in the host required**. |
+| **Witnessed Execution** | WitSeal **runs the action itself**, captures the output, and records a hash-chained execution receipt (signed when exported as v0.2 with an operator key). | **WitSeal's own record of the action it ran**, not the host's report. Anyone can check its integrity with `witseal verify` (VALID / INVALID), with no WitSeal account or server; the record is produced on the machine that ran the action, so its truth still rests on that machine and its operator. |
 
 The jump from Witness to Witnessed Execution is a jump in the *source of trust*:
 Witness asks you to trust the host's account of what happened; Witnessed
-Execution produces evidence that stands on its own.
+Execution replaces it with WitSeal's own record of an action WitSeal ran itself.
 
 **Gate is a capability, available and measured from launch.** It is documented
 here from day one; it is simply not the headline of the public showcase, which
@@ -31,7 +32,7 @@ default · — not applicable. The **WitSeal adapter** column states what ships
 today (capability ≠ a shipped turnkey adapter).
 
 **Same receipts. Different execution boundaries.** Witnessed Execution spans two
-execution boundaries that produce the *same* independently-verifiable receipt;
+execution boundaries that produce the *same* receipt;
 they differ only in how much of the host's execution falls inside the witness
 boundary — *Full Execution Coverage* (WitSeal owns the action end to end) and
 *Tool-Scoped Coverage via MCP* (WitSeal witnesses the calls routed through its
@@ -42,8 +43,8 @@ core* below.
 
 **Who executes: WitSeal-mediated executor.** WitSeal runs the action itself
 through `runExec`, so all three capabilities are reachable: Gate is the default
-mode (deny-by-default), Witness Mode is available (`--mode witness`), and the
-action's receipt is independently verifiable.
+mode (deny-by-default), Witness Mode is available (`--mode witness`), and
+anyone can check the action's receipt with `witseal verify`.
 
 | Integration | Gate | Witness | Witnessed Execution | WitSeal adapter |
 |---|:---:|:---:|:---:|---|
@@ -78,13 +79,13 @@ Activity for Temporal): WitSeal owns that action end to end through `runExec`.
 The author-the-tool mediation core witnesses both shell commands
 (`mediateShellCommand`) and file writes (`mediateFileWrite`, routed through
 `runFileExec`); the witnessed file write is deny-by-default and yields the same
-independently verifiable receipt as the shell path. Execution the framework
+receipt as the shell path. Execution the framework
 performs *outside* the WitSeal-provided tool is not covered — "Full" is scoped to
 the witnessed tool, as with OpenHands above.
 Live-verified 2026-06-05: OpenAI Agents SDK `rcpt_mq1dxdskTdRrdYxarTmEh0`,
 Temporal `rcpt_mq1dxtszhOBzERBqPoKjcC`, GitHub Copilot SDK
 `rcpt_mq1laky3RzxGUJ6weihogF`, and Mastra `rcpt_mq1p7xs79L42AJdPFe4xtg` each →
-`witseal verify` VALID; the LangGraph factory was proven live previously.
+`witseal verify` VALID; the LangGraph factory was live-verified previously.
 
 ³ Kilo Code reaches Full Execution Coverage via a **B2 bash-shadow override**: a
 same-id `bash` tool placed in Kilo's tool directory overrides the built-in.
@@ -163,14 +164,14 @@ Because Witnessed Execution is a stronger record. In a sealed host you get
 Witness today — each action's result is recorded as evidence, on the host's
 word. Routing the action through an own-execute integration (OpenCode, a
 framework tool, or WitSeal MCP) lets WitSeal run it and produce a
-receipt that is **independently verifiable** — the next level of evidence, not
-the observation you already had.
+receipt from **its own observation** — the next level of evidence, not the
+host's report you already had.
 
 ## Multiple surfaces, one evidence core
 
 WitSeal exposes more than one integration surface over a single evidence core:
 every surface runs through `runExec` and produces the same witness event →
-receipt → hash chain. The proof model is identical across surfaces; only the
+receipt → hash chain. The evidence model is identical across surfaces; only the
 connection surface differs.
 
 - **Use the WitSeal MCP server** for MCP-hosted workflows — configure the

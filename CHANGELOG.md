@@ -8,6 +8,20 @@ Pre-1.0 versions: schemas and CLI surface are unstable. Minor versions may intro
 
 ## [Unreleased]
 
+### Changed
+
+- **Documentation: public claims bounded to the claim boundary.** A self-audit
+  of public wording against `docs/CLAIM_BOUNDARY.md` (unchanged) and
+  `draft-sergeev-claim-boundaries-01` corrects statements that said more than
+  the evidence supports: a receipt is a record of an outcome (executed, denied,
+  pending, or lost), not proof of a completed action; tamper-evidence is stated
+  with its anchor (a consistently re-hashed chain verifies unless compared with
+  a chain head held elsewhere); "independently verifiable" becomes "anyone can
+  check its integrity"; coverage is scoped to actions routed through WitSeal.
+  `STYLE.md` gains a claim-discipline section. The MCP `shell` tool description
+  now states that Witness Mode runs a denied command. No runtime, schema, or
+  wire-format change. See `docs/audits/CBEE-SELF-AUDIT-2026-10.md`.
+
 ## [0.4.2] - 2026-06-11
 
 ### Added

